@@ -1,0 +1,6 @@
+year,ori,violent_crime_actual,violent_crime_cleared,homicide_actual,homicide_cleared,robbery_actual,robbery_cleared,aggravated_assault_actual,aggravated_assault_cleared,property_crime_actual,property_crime_cleared,arson_actual,arson_cleared,burglary_actual,burglary_cleared,larceny_actual,larceny_cleared,motor_vehicle_theft_actual,motor_vehicle_theft_cleared
+1985,OH0350400,0,0,0,0,0,0,0,0,9,1,0,0,4,1,5,0,0,0
+1986,OH0350400,2,2,0,0,0,0,2,2,26,14,0,0,22,14,3,0,1,0
+1987,OH0350400,0,0,0,0,0,0,0,0,8,1,0,0,8,1,0,0,0,0
+1988,OH0350400,0,0,0,0,0,0,0,0,1,1,0,0,0,0,1,1,0,0
+1990,OH0350400,0,0,0,0,0,0,0,0,2,0,0,0,2,0,0,0,0,0

@@ -1,0 +1,32 @@
+Package: fbi
+Title: R Wrapper for the FBI's Crime Data API
+Version: 0.1.0
+Authors@R: 
+    person(given = "Jacob",
+           family = "Kaplan",
+           role = c("aut", "cre"),
+           email = "jkkaplan6@gmail.com",
+           comment = c(ORCID = "0000-0002-0601-0387"))
+Description: Uses the FBI's Crime Data API <https://crime-data-explorer.fr.cloud.gov/api> to get information about crime. 
+    This includes are from the FBI's UCR (including the 'Offenses Known
+    and Clearances by Arrest', 'Arrests by Age, Sex, and Race', 'Supplement 
+    to Return A', 'Law Enforcement Officers Killed and Assaulted' data sets) 
+    and National Incident-Based Reporting System (NIBRS) data.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+URL: https://github.com/jacobkap/fbi
+BugReports: https://github.com/jacobkap/fbi/issues
+Depends:
+    R (>= 3.5.0)
+Suggests: 
+    testthat (>= 2.1.0),
+    covr
+Imports: 
+    httr,
+    jsonlite,
+    data.table,
+    datasets,
+    utils
+RoxygenNote: 7.1.1
+Language: en-US

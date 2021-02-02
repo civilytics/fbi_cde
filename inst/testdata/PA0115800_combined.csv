@@ -1,0 +1,15 @@
+year,ori,violent_crime_actual,violent_crime_cleared,homicide_actual,homicide_cleared,robbery_actual,robbery_cleared,aggravated_assault_actual,aggravated_assault_cleared,property_crime_actual,property_crime_cleared,arson_actual,arson_cleared,burglary_actual,burglary_cleared,larceny_actual,larceny_cleared,motor_vehicle_theft_actual,motor_vehicle_theft_cleared
+1985,PA0115800,0,0,0,0,0,0,0,0,3,0,0,0,0,0,3,0,0,0
+1986,PA0115800,0,0,0,0,0,0,0,0,2,0,0,0,0,0,1,0,1,0
+1987,PA0115800,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0
+1989,PA0115800,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0
+1990,PA0115800,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0
+1991,PA0115800,0,0,0,0,0,0,0,0,2,0,0,0,1,0,0,0,1,0
+2007,PA0115800,0,0,0,0,0,0,0,0,2,2,0,0,0,0,2,2,0,0
+2008,PA0115800,0,0,0,0,0,0,0,0,4,0,0,0,2,0,2,0,0,0
+2009,PA0115800,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0
+2010,PA0115800,0,0,0,0,0,0,0,0,2,0,0,0,1,0,1,0,0,0
+2011,PA0115800,1,0,0,0,0,0,1,0,3,0,0,0,1,0,2,0,0,0
+2012,PA0115800,1,0,0,0,0,0,1,0,1,0,0,0,0,0,1,0,0,0
+2017,PA0115800,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0
+2018,PA0115800,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
