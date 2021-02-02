@@ -25,6 +25,8 @@ get_agency_crime("AK0010100")
 \seealso{
 Other UCR crime functions: 
 \code{\link{get_estimated_arson}()},
-\code{\link{get_estimated_crime}()}
+\code{\link{get_estimated_crime}()},
+\code{\link{get_participation_region}()},
+\code{\link{get_participation_state}()}
 }
 \concept{UCR crime functions}

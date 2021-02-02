@@ -28,6 +28,8 @@ get_estimated_arson("CA")
 \seealso{
 Other UCR crime functions: 
 \code{\link{get_agency_crime}()},
-\code{\link{get_estimated_crime}()}
+\code{\link{get_estimated_crime}()},
+\code{\link{get_participation_region}()},
+\code{\link{get_participation_state}()}
 }
 \concept{UCR crime functions}

@@ -127,16 +127,20 @@ combine_url_section <- function(data_type, ori, region_name, state_abb) {
 
 make_url <- function(url_section,
                      start_year,
+                     end_year = NULL,
                      key) {
 
   url <- paste0("https://api.usa.gov/crime/fbi/sapi/api/",
                 url_section,
                 "/",
                 start_year,
-                "/2018?API_KEY=",
+                "/",
+                end_year,
+                "?API_KEY=",
                 key)
   return(url)
 }
+
 
 srs_long_to_wide <- function(.data) {
   .data <- data.table::melt(.data, id = c("ori",
