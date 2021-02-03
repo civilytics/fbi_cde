@@ -38,4 +38,12 @@ test_that("Arrests total offense count works", {
   get_arrest_count(state_abb = "CA", region = "Midwest")
 
 
+
+  off1 <- get_arrest_demographics(state_abb = "MT", offense = sample(fbi:::ucr_arrest_offenses, 1))
+  off2 <- get_arrest_demographics(state_abb = "MT", offense = sample(fbi:::ucr_arrest_offenses, 1))
+
+  get_arrest_demographics(region = "South", offense = sample(fbi:::ucr_arrest_offenses, 1))
+  get_arrest_demographics_all(region = "South")
+
+
 })

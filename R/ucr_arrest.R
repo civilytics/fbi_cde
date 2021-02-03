@@ -45,16 +45,13 @@ get_arrest_count <- function(ori = NULL,
                   end_year = end_year,  key)
   url <- gsub("offense/agencies", "offense", url)
   url <- gsub("national", "national/offense", url)
-
-  if(is.null(ori) & !is.null(state_abb)) {
-    url <- gsub("/states", "states/offense/", url)
-  } else if (is.null(ori) & !is.null(region)) {
-    url <- gsub("/regions", "regions/offense/", url)
-  }
+  url <- gsub("states", "states/offense", url)
+  url <- gsub("regions", "regions/offense", url)
 
 
   data <- url_to_dataframe(url)
   data <- clean_column_names(data)
+  stopifnot(is.data.frame(as.data.frame(data)))
 
   if (!is.null(ori)) {
     data$ori <- ori
@@ -101,36 +98,70 @@ get_arrest_demographics <- function(ori = NULL,
                                     key = get_api_key()) {
 
   # TODO: Fix API calls to get state and region accurately
-
+  if (end_year == make_year()) {
+    end_year <- make_year() - 2
+  }
   url_section <- combine_url_section("data/arrest",
                                      ori = ori,
                                      state_abb = state_abb,
                                      region_name = region)
 
   data <- data.frame()
-  for (arrest_variable in c("male", "female", "race")) {
-    url_section_temp <- paste0(url_section, "/", offense, "/", arrest_variable)
-    url <- make_url(url_section_temp, start_year = 1985, end_year = end_year, key)
-    if (!is.null(ori)) {
-      url <- gsub("offense/agencies", "offense", url)
-    }
 
+
+  for (arrest_variable in c("male", "female", "race")) {
+      url_section_temp <- paste0(url_section, "/", offense, "/", arrest_variable)
+      url <- make_url(url_section_temp, start_year = 1985, end_year = end_year, key)
+      if (!is.null(ori)) {
+        url <- gsub("offense/agencies", "offense", url)
+      }
+
+      temp <- url_to_dataframe(url)
+      temp <- clean_column_names(temp)
+
+      if(!is.null(state_abb)) {
+        temp$geog <- state_abb
+        temp$offense <- offense
+        temp$measure <- arrest_variable
+      } else if(!is.null(region)) {
+        temp$geog <- region
+        temp$offense <- offense
+        temp$measure <- arrest_variable
+      } else if(!is.null(ori)) {
+        temp$geog <- ori
+        temp$offense <- offense
+        temp$measure <- arrest_variable
+      }
+
+
+      names(temp) <- gsub("range_", "arrests.", names(temp))
+
+      if (arrest_variable == "race") {
+        temp <- reshape(temp, direction = "long",
+                        idvar = c("geog", "year", "offense", "measure"),
+                        varying = list(race = names(temp)[1:6]),
+                       v.names = "arrests",
+                       timevar = "submeasure",
+                       times = names(temp)[1:6])
+        row.names(temp) <- NULL
+      } else {
+        temp <- reshape(temp, direction = "long",
+                        idvar = c("geog", "year", "offense", "measure"),
+                        varying = names(temp)[1:22],
+                        timevar = "submeasure",
+                        sep = ".")
+        row.names(temp) <- NULL
+
+      }
+      if (nrow(data) == 0) {
+        data <- temp
+      } else {
+        data <- rbind(data, temp)
+      }
 
     # https://api.usa.gov/crime/fbi/sapi/api/arrest/states/MT//race/1988/1995?API_KEY=iiHnOKfno2Mgkt5AynpvPpUQTEyxE77jo1RU8PIv
-
-    temp <- url_to_dataframe(url)
-    temp <- clean_column_names(temp)
-    names(temp) <- gsub("range", "", names(temp))
-    names(temp) <- paste0(offense, "_", arrest_variable, "_", names(temp))
-    names(temp) <- gsub(".*year", "year", names(temp))
-    names(temp) <- gsub("_race_", "_", names(temp))
-
-    if (nrow(data) == 0) {
-      data <- temp
-    } else {
-      data <- merge(data, temp, by = "year")
-    }
   }
+
   if (!is.null(ori)) {
     data$ori <- ori
     data <- data[, c("ori", "year",
@@ -141,3 +172,35 @@ get_arrest_demographics <- function(ori = NULL,
   return(data)
 }
 
+#' Get arrest data by arrestee demographic from the UCR's Arrests by Age, Sex, and Race data set for all offenses.
+#'
+#' @inheritParams get_arrest_demographics
+#'
+#' @param ... all parameters valid for \link{get_arrest_demographics}
+#'
+#' @return
+#' A data.frame with the number of arrests by arrestee demographic for each crime-year in the jurisdiction.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' get_arrest_demographics_all(region = "South")
+#' }
+get_arrest_demographics_all <- function(...) {
+  data <- data.frame()
+  for(o in fbi:::ucr_arrest_offenses) {
+
+    temp <- tryCatch({
+      get_arrest_demographics(offense = o, ...)},
+      error = function(e) data.frame()
+    )
+
+
+    if(nrow(data) == 0) {
+      data <- temp
+    } else if(nrow(temp) > 0) {
+      data <- rbind(data, temp)
+    }
+  }
+  return(data)
+}

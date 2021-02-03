@@ -21,7 +21,8 @@ If NULL (default) returns national data. If `state_abb` and `region` both have v
 
 \item{region}{String or vector of strings input for region name(s) to get data for. Please run `list_regions()`  to see all possible variables.}
 
-\item{monthly}{If TRUE (not default), returns data as monthly units. Otherwise returns annual data.}
+\item{end_year}{= last year of the collection to get, defaults to the prior calendar year from today
+If TRUE (not default), returns data as monthly units. Otherwise returns annual data.}
 
 \item{key}{A string containing your FBI's Crime Data Explorer API key}
 }

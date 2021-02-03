@@ -61,6 +61,8 @@ get_estimated_crime <- function(state_abb = NULL,
                                 end_year = make_year()) {
 
   # Test and make sure both aren't defined
+  # TODO: Estiamted crime seems to only return violent crime, fix this by
+  # checking the API
 
   url_section <- combine_url_section("estimates",
                                      ori = NULL,
