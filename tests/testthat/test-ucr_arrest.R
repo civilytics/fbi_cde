@@ -29,3 +29,13 @@ test_that("Arrests total offense count works", {
   expect_equal(get_arrest_count('SC0321600')[, arrest_matching_columns],
                fix_arrest_test('SC0321600'))
 })
+
+test_that("Arrests total offense count works", {
+  skip_on_cran()
+# TODO fix these tests
+  get_arrest_count(state_abb = "MT")
+  get_arrest_count(region = "South")
+  get_arrest_count(state_abb = "CA", region = "Midwest")
+
+
+})

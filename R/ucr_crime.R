@@ -15,14 +15,16 @@
 #' get_agency_crime("AK0010100")
 #' }
 get_agency_crime <- function(ori,
-                             key = get_api_key()) {
+                             key = get_api_key(),
+                             start_year = 1985,
+                             end_year = make_year()) {
 
   url <- paste0("https://api.usa.gov/crime/fbi/sapi/",
                 "api/summarized/agencies/",
                 ori, "/",
                 "offenses/",
-                1985, "/",
-                2018,
+                start_year, "/",
+                end_year,
                 "?api_key=",
                 key)
 
@@ -53,13 +55,20 @@ get_agency_crime <- function(ori,
 #' get_estimated_crime("CA")
 #' }
 get_estimated_crime <- function(state_abb = NULL,
-                                key = get_api_key()) {
+                                region_name = NULL,
+                                key = get_api_key(),
+                                start_year = 1979,
+                                end_year = make_year()) {
+
+  # Test and make sure both aren't defined
 
   url_section <- combine_url_section("estimates",
                                      ori = NULL,
                                      state_abb = state_abb,
-                                     region_name = NULL)
-  url <- make_url(url_section, 1979, key)
+                                     region_name = region_name)
+
+  url <- make_url(url_section, start_year = start_year, end_year = end_year,
+                  key = key)
 
 
   data <- url_to_dataframe(url)
@@ -93,13 +102,16 @@ get_estimated_crime <- function(state_abb = NULL,
 #' }
 get_estimated_arson <- function(state_abb = NULL,
                                 region = NULL,
-                                key = get_api_key()) {
+                                key = get_api_key(),
+                                start_year = 1975,
+                                end_year = make_year()) {
 
   url_section <- combine_url_section("arson",
                                      ori = NULL,
                                      state_abb = state_abb,
                                      region_name = region)
-  url <- make_url(url_section, 1975, key)
+  url <- make_url(url_section, start_year = start_year, end_year = end_year,
+                  key = key)
 
 
   data <- url_to_dataframe(url)

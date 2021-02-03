@@ -4,7 +4,13 @@
 \alias{get_estimated_arson}
 \title{Get state-, region- or national-level estimated arson data from the UCR's Offenses Known and Clearances by Arrest data set.}
 \usage{
-get_estimated_arson(state_abb = NULL, region = NULL, key = get_api_key())
+get_estimated_arson(
+  state_abb = NULL,
+  region = NULL,
+  key = get_api_key(),
+  start_year = 1975,
+  end_year = make_year()
+)
 }
 \arguments{
 \item{state_abb}{String or vector of strings input for state abbreviation(s) to get data for.
@@ -28,8 +34,9 @@ get_estimated_arson("CA")
 \seealso{
 Other UCR crime functions: 
 \code{\link{get_agency_crime}()},
+\code{\link{get_agency_participation}()},
 \code{\link{get_estimated_crime}()},
-\code{\link{get_participation_region}()},
-\code{\link{get_participation_state}()}
+\code{\link{get_region_participation}()},
+\code{\link{get_state_participation}()}
 }
 \concept{UCR crime functions}

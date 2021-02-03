@@ -8,6 +8,10 @@ make_state <- function(state_abb) {
   return(state)
 }
 
+make_year <- function() {
+  as.numeric(format(Sys.Date(), "%Y"))
+}
+
 read.csv_system_file <- function(file) {
   data <- utils::read.csv(system.file("testdata",
                                       file,
@@ -128,7 +132,7 @@ combine_url_section <- function(data_type, ori, region_name, state_abb) {
 make_url <- function(url_section,
                      start_year,
                      end_year = NULL,
-                     key) {
+                     key = NULL) {
 
   url <- paste0("https://api.usa.gov/crime/fbi/sapi/api/",
                 url_section,

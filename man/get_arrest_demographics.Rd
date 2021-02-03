@@ -9,6 +9,7 @@ get_arrest_demographics(
   state_abb = NULL,
   region = NULL,
   offense = "all",
+  end_year = make_year(),
   key = get_api_key()
 )
 }

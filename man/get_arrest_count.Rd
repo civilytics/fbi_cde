@@ -9,6 +9,7 @@ get_arrest_count(
   state_abb = NULL,
   region = NULL,
   monthly = FALSE,
+  end_year = make_year(),
   key = get_api_key()
 )
 }
