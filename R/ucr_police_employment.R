@@ -21,11 +21,12 @@
 get_police_employment <- function(ori = NULL,
                                   state_abb = NULL,
                                   region = NULL,
+                                  end_year = make_year() - 2,
                                   key = get_api_key()) {
 
   data_type <- "police-employment"
   url_section <- combine_url_section(data_type, ori, region, state_abb)
-  url <- make_url(url_section, 1985, key)
+  url <- make_url(url_section, 1985, end_year = end_year, key)
 
   data <- url_to_dataframe(url)
   data <- clean_column_names(data)
