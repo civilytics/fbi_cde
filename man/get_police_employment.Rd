@@ -8,6 +8,7 @@ get_police_employment(
   ori = NULL,
   state_abb = NULL,
   region = NULL,
+  start_year = 1985,
   end_year = make_year() - 2,
   key = get_api_key()
 )
