@@ -127,6 +127,7 @@ ucr_arrest_offenses <- c("aggravated-assault",
                          "human-trafficking-servitude",
                          "larceny",
                          "liqour-laws", # MISPELLED
+                         "manslaughter",
                          "motor-vehcile-theft", # MISPELLED
                          "murder",
                          "offense-against-family",
