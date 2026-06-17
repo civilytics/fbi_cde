@@ -2,3 +2,8 @@
 .Rhistory
 .RData
 .Ruserdata
+
+# Editor / agent scratch
+.playwright-mcp/
+.DS_Store
+*~
