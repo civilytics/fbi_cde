@@ -1,5 +1,5 @@
 test_that("Arrests total offense count works", {
-  skip_on_cran()
+  skip_if_no_fbi_api()
   expect_equal(get_arrest_count('CA0191900')[, arrest_matching_columns],
                fix_arrest_test('CA0191900'))
   expect_equal(get_arrest_count('CA0370900')[, arrest_matching_columns],
@@ -31,7 +31,7 @@ test_that("Arrests total offense count works", {
 })
 
 test_that("Arrests total offense count works", {
-  skip_on_cran()
+  skip_if_no_fbi_api()
 # TODO fix these tests
   get_arrest_count(state_abb = "MT")
   get_arrest_count(region = "South")

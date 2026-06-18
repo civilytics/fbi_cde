@@ -80,7 +80,5 @@ fix_arrest_test <- function(ori) {
   return(test)
 }
 
-set_api_key("1XL4E8WFE3SCJLl6x4eojlnpseUIz7RIZaEPZNVH")
-
-#
-#
+# NOTE: API-key handling and skip/mocking helpers live in helper-fbi.R.
+# Never hardcode an API key here; live tests read FBI_API_KEY from the env.

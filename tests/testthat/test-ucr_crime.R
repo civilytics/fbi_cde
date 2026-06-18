@@ -1,7 +1,7 @@
 
 
 test_that("State-level UCR crime estimates works", {
-  skip_on_cran()
+  skip_if_no_fbi_api()
   us_estimated_crime <- get_estimated_crime()
   us_estimated_crime$state_id <- NULL
   us_estimated_crime$arson <- NULL
@@ -60,7 +60,7 @@ test_that("State-level UCR crime estimates works", {
 
 
 test_that("Agency-level UCR data works", {
-  skip_on_cran()
+  skip_if_no_fbi_api()
   expect_equal(get_agency_crime('AK0010100')[, crime_matching_columns],
                read.csv_system_file('AK0010100_combined.csv'))
   expect_equal(get_agency_crime('AL0210200')[, crime_matching_columns],
