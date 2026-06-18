@@ -80,18 +80,5 @@ fix_arrest_test <- function(ori) {
   return(test)
 }
 
-# Use the API key from the environment (FBI_API_KEY). Never hardcode keys.
-# Live API tests skip when no key is available (e.g. on CI without the secret).
-fbi_has_key <- function() {
-  nzchar(Sys.getenv("FBI_API_KEY"))
-}
-
-# Skip integration tests that require the live FBI API. These hit the network
-# and need a valid FBI_API_KEY; they are skipped on CI and CRAN by default.
-skip_if_no_fbi_api <- function() {
-  testthat::skip_on_cran()
-  testthat::skip_on_ci()
-  if (!fbi_has_key()) {
-    testthat::skip("FBI_API_KEY not set; skipping live API test")
-  }
-}
+# NOTE: API-key handling and skip/mocking helpers live in helper-fbi.R.
+# Never hardcode an API key here; live tests read FBI_API_KEY from the env.
