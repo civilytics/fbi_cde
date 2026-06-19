@@ -40,7 +40,7 @@ fake_response <- function(status_code, body_raw = raw()) {
     list(
       url = "https://example.com/test",
       status_code = status_code,
-      headers = httr::headers(),
+      headers = structure(list(), class = "headers"),
       content = body_raw,
       type = "application/json",
       encoding = "bytes"

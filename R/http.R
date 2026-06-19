@@ -50,7 +50,7 @@ cde_request <- function(path, query = list(), get_fun = httr::GET) {
   response <- get_fun(full_url, httr::user_agent(useragent))
 
   if (response$status_code != 200L) {
-    body_raw <- httr::content(response, as = "raw", type = "application/json")
+    body_raw <- response$content
     msg <- ""
     if (length(body_raw) > 0) {
       body_text <- rawToChar(body_raw)
@@ -68,7 +68,7 @@ cde_request <- function(path, query = list(), get_fun = httr::GET) {
     )
   }
 
-  body_raw <- httr::content(response, as = "raw", type = "application/json")
+  body_raw <- response$content
   if (length(body_raw) == 0) {
     stop(
       "Empty response body for ", full_url, " (HTTP 200 but no data)",
