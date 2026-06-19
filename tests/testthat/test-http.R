@@ -61,7 +61,7 @@ test_that("cde_request() stops on empty body", {
   fake_resp <- fake_response(200L, raw())
   expect_error(
     cde_request("summarized/national/V", get_fun = function(url, ...) fake_resp),
-    "empty"
+    "Empty"
   )
 })
 
@@ -74,7 +74,7 @@ test_that("cde_request() includes API message in error", {
     cde_request("summarized/national/V", get_fun = function(url, ...) fake_resp),
     "Invalid date range"
   )
-  expect_match(err, "HTTP 400")
+  expect_match(conditionMessage(err), "HTTP 400")
 })
 
 test_that("cde_request() returns parsed JSON on success", {
