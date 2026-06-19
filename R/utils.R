@@ -56,19 +56,7 @@ clean_column_names <- function(.data) {
 
 
 url_to_dataframe <- function(url) {
-  useragent <- paste0(
-    "Mozilla/5.0 (compatible; a bot using the R fbi",
-    " package; https://github.com/jacobkap/fbi/)")
-
-  response <- httr::GET(url = url,
-                        httr::user_agent(useragent))
-
-
-  if (response$status_code %in% 200) {
-    response <- jsonlite::fromJSON(rawToChar(response$content))
-    response <- response$results
-  }
-  return(response)
+  cde_request(url)
 }
 
 
