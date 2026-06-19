@@ -11,13 +11,9 @@ get_agencies <- function(key = get_api_key()) {
 
 parse_lookup_response <- function(url) {
   # Returns a stupid list of lists of lists
-  response <- httr::GET(url = paste0(url))
-
-  if (response$status_code %in% 200) {
-    response <- jsonlite::fromJSON(rawToChar(response$content))
-    response <- lapply(response, function(x)data.frame(t(sapply(x, c))))
-    response <- data.table::rbindlist(response)
-  }
+  response <- cde_request(url)
+  response <- lapply(response, function(x) data.frame(t(sapply(x, c))))
+  response <- data.table::rbindlist(response)
   return(response)
 }
 
