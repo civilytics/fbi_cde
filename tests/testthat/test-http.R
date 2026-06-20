@@ -180,3 +180,9 @@ test_that("cde_query() includes type with four_digit_year", {
   expect_equal(result$to, "2020")
   expect_equal(result$type, "counts")
 })
+
+test_that("cde_query() extracts year from MM-YYYY when four_digit_year = TRUE", {
+  result <- cde_query("01-2015", "12-2020", four_digit_year = TRUE)
+  expect_equal(result$from, "2015")
+  expect_equal(result$to, "2020")
+})

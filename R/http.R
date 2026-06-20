@@ -134,7 +134,9 @@ cde_path <- function(type, level, offense = NULL) {
 cde_query <- function(from, to, type = NULL, four_digit_year = FALSE) {
   if (four_digit_year) {
     from <- as.character(from)
+    from <- sub(".*-(\\d{4})$", "\\1", from)
     to <- as.character(to)
+    to <- sub(".*-(\\d{4})$", "\\1", to)
   } else {
     from <- as.character(from)
     to <- as.character(to)
