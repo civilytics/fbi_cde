@@ -112,3 +112,77 @@ test_that("cde_request() is the only httr::GET caller in the package", {
     }
   }
 })
+
+# ---- cde_path() ------------------------------------------------------------
+
+test_that("cde_path() builds national path without offense", {
+  expect_equal(cde_path("summarized", "national"), "summarized/national")
+  expect_equal(cde_path("shr", "national"), "shr/national")
+  expect_equal(cde_path("pe", "national"), "pe/national")
+})
+
+test_that("cde_path() builds national path with offense", {
+  expect_equal(cde_path("summarized", "national", "V"), "summarized/national/V")
+  expect_equal(cde_path("arrest", "national", "LARC"), "arrest/national/LARC")
+  expect_equal(cde_path("nibrs", "national", "BUR"), "nibrs/national/BUR")
+})
+
+test_that("cde_path() builds state path without offense", {
+  expect_equal(cde_path("shr", "state/CA"), "shr/state/CA")
+  expect_equal(cde_path("pe", "state/NY"), "pe/state/NY")
+})
+
+test_that("cde_path() builds state path with offense", {
+  expect_equal(cde_path("summarized", "state/CA", "V"), "summarized/state/CA/V")
+  expect_equal(cde_path("arrest", "state/TX", "MUR"), "arrest/state/TX/MUR")
+})
+
+test_that("cde_path() builds agency path without offense", {
+  expect_equal(cde_path("shr", "agency/CA0010900"), "shr/agency/CA0010900")
+})
+
+test_that("cde_path() builds agency path with offense", {
+  expect_equal(cde_path("summarized", "agency/CA0010900", "V"),
+               "summarized/agency/CA0010900/V")
+})
+
+# ---- cde_query() -----------------------------------------------------------
+
+test_that("cde_query() formats years as MM-YYYY by default", {
+  result <- cde_query("01-2015", "12-2020")
+  expect_equal(result$from, "01-2015")
+  expect_equal(result$to, "12-2020")
+  expect_null(result$type)
+})
+
+test_that("cde_query() includes type when provided", {
+  result <- cde_query("01-2015", "12-2020", type = "counts")
+  expect_equal(result$from, "01-2015")
+  expect_equal(result$to, "12-2020")
+  expect_equal(result$type, "counts")
+})
+
+test_that("cde_query() formats years as YYYY when four_digit_year = TRUE", {
+  result <- cde_query(2015, 2020, four_digit_year = TRUE)
+  expect_equal(result$from, "2015")
+  expect_equal(result$to, "2020")
+})
+
+test_that("cde_query() formats YYYY strings as YYYY when four_digit_year = TRUE", {
+  result <- cde_query("2015", "2020", four_digit_year = TRUE)
+  expect_equal(result$from, "2015")
+  expect_equal(result$to, "2020")
+})
+
+test_that("cde_query() includes type with four_digit_year", {
+  result <- cde_query(2015, 2020, type = "counts", four_digit_year = TRUE)
+  expect_equal(result$from, "2015")
+  expect_equal(result$to, "2020")
+  expect_equal(result$type, "counts")
+})
+
+test_that("cde_query() extracts year from MM-YYYY when four_digit_year = TRUE", {
+  result <- cde_query("01-2015", "12-2020", four_digit_year = TRUE)
+  expect_equal(result$from, "2015")
+  expect_equal(result$to, "2020")
+})
