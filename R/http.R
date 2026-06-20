@@ -78,3 +78,71 @@ cde_request <- function(path, query = list(), get_fun = httr::GET) {
 
   jsonlite::fromJSON(rawToChar(body_raw), simplifyVector = FALSE)
 }
+
+#' Build an FBI CDE API path string
+#'
+#' Constructs the path portion of a CDE API endpoint URL from its components.
+#'
+#' @param type Character string with the endpoint type
+#'   (e.g. `"summarized"`, `"arrest"`, `"nibrs"`, `"shr"`, `"pe"`).
+#' @param level Character string with the geographic level. One of
+#'   `"national"`, `"state/{ABBR}"`, or `"agency/{ORI}"`.
+#' @param offense Optional character string with the offense identifier
+#'   (e.g. `"V"` for violent crime, `"LARC"` for larceny). Defaults to `NULL`.
+#'
+#' @return A character string with the API path, e.g.
+#'   `"summarized/national/V"` or `"shr/state/CA"`.
+#'
+#' @examples
+#' cde_path("summarized", "national", "V")
+#' cde_path("summarized", "state/CA", "V")
+#' cde_path("shr", "agency/CA0010900")
+#' @export
+#'
+cde_path <- function(type, level, offense = NULL) {
+  path <- paste0(type, "/", level)
+  if (!is.null(offense)) {
+    path <- paste0(path, "/", offense)
+  }
+  path
+}
+
+#' Build query parameters for FBI CDE API requests
+#'
+#' Formats year values and assembles a named list of query parameters
+#' for CDE API endpoint calls.
+#'
+#' @param from Character string or numeric with the start date/year.
+#'   When `four_digit_year = FALSE` expects `"MM-YYYY"` format;
+#'   when `TRUE` accepts `"YYYY"` or a 4-digit numeric.
+#' @param to Character string or numeric with the end date/year.
+#'   Same format rules as `from`.
+#' @param type Optional character string with the query type
+#'   (e.g. `"counts"`, `"rates"`, `"totals"`). Defaults to `NULL`.
+#' @param four_digit_year Logical; when `TRUE` formats years as
+#'   4-digit `YYYY` (used for police employment `pe` endpoints).
+#'   When `FALSE` (default) formats as `MM-YYYY`.
+#'
+#' @return A named list of query parameters, e.g.
+#'   `list(from = "01-2015", to = "12-2020", type = "counts")`.
+#'
+#' @examples
+#' cde_query("01-2015", "12-2020", type = "counts")
+#' cde_query(2015, 2020, four_digit_year = TRUE)
+#' @export
+#'
+cde_query <- function(from, to, type = NULL, four_digit_year = FALSE) {
+  if (four_digit_year) {
+    from <- format(as.numeric(from), "%Y")
+    to <- format(as.numeric(to), "%Y")
+  } else {
+    from <- as.character(from)
+    to <- as.character(to)
+  }
+
+  params <- list(from = from, to = to)
+  if (!is.null(type)) {
+    params$type <- type
+  }
+  params
+}
