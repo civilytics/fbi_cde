@@ -133,8 +133,8 @@ cde_path <- function(type, level, offense = NULL) {
 #'
 cde_query <- function(from, to, type = NULL, four_digit_year = FALSE) {
   if (four_digit_year) {
-    from <- format(as.numeric(from), "%Y")
-    to <- format(as.numeric(to), "%Y")
+    from <- as.character(from)
+    to <- as.character(to)
   } else {
     from <- as.character(from)
     to <- as.character(to)
