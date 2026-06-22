@@ -2,15 +2,14 @@
 % Please edit documentation in R/ucr_arrest.R
 \name{get_arrest_demographics}
 \alias{get_arrest_demographics}
-\title{Get arrest data by arrestee demographic from the UCR's Arrests by Age, Sex, and Race data set.}
+\title{Get arrestee demographics from the UCR Crime Data Explorer}
 \usage{
 get_arrest_demographics(
   ori = NULL,
   state_abb = NULL,
-  region = NULL,
-  offense = "all",
-  end_year = make_year(),
-  key = get_api_key()
+  from = "01-2015",
+  to = "12-2020",
+  offense
 )
 }
 \arguments{
@@ -19,18 +18,32 @@ get_arrest_demographics(
 \item{state_abb}{String for state abbreviation. If `NULL` (default) returns
 national data.}
 
-\item{offense}{A string or vector of strings with the offenses you want to scrape. If
-input is 'all' (default), returns data for all offenses. Please run `list_ucr_arrest_offenses()` to see all possible offenses.}
+\item{from}{Start date in MM-YYYY format (default "01-2015").}
+
+\item{to}{End date in MM-YYYY format (default "12-2020").}
+
+\item{offense}{Offense code (required for demographics). See
+`list_ucr_arrest_offenses()` for available codes.}
 }
 \value{
-A data.frame with the number of arrests by arrestee demographic for each crime-year in the jurisdiction.
+A data.frame with columns: geography, offense, period,
+  demographic_type, demographic_value, count
 }
 \description{
-Get arrest data by arrestee demographic from the UCR's Arrests by Age, Sex, and Race data set.
+Retrieves arrest counts broken down by demographic categories (sex, age,
+race) for a specific offense. Uses the CDE API endpoint
+`arrest/{level}/{offense}?type=totals`.
 }
 \examples{
 \dontrun{
 get_arrest_demographics(ori = "CA0010900", offense = "robbery")
-get_arrest_demographics(offense = "robbery")
+get_arrest_demographics(state_abb = "CA", offense = "murder")
 }
 }
+\seealso{
+Other UCR arrest functions:
+\code{\link[=get_arrest_count]{get_arrest_count()}},
+\code{\link[=get_arrest_demographics_all]{get_arrest_demographics_all()}},
+\code{\link[=list_ucr_arrest_offenses]{list_ucr_arrest_offenses()}}
+}
+\concept{UCR arrest functions}

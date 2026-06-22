@@ -23,7 +23,6 @@ Other NIBRS functions:
 \code{\link[=list_nibrs_offender_variables]{list_nibrs_offender_variables()}},
 \code{\link[=list_nibrs_offense_variables]{list_nibrs_offense_variables()}},
 \code{\link[=list_nibrs_offenses]{list_nibrs_offenses()}},
-\code{\link[=list_regions]{list_regions()}},
-\code{\link[=list_ucr_arrest_offenses]{list_ucr_arrest_offenses()}}
+\code{\link[=list_regions]{list_regions()}}
 }
 \concept{NIBRS functions}

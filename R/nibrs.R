@@ -184,20 +184,6 @@ list_nibrs_offense_variables <- function() {
 }
 
 
-#' Return a vector of all offenses in the UCR Arrest data.
-#'
-#' @family NIBRS functions
-#'
-#' @return
-#' A vector containing all permissible offenses to input to `get_agency_arrest()`.
-#' @export
-#'
-#' @examples
-#' list_ucr_arrest_offenses()
-list_ucr_arrest_offenses <- function() {
-  return(fbi::ucr_arrest_offenses)
-}
-
 #' Return a vector of all regions choices.
 #'
 #' @family NIBRS functions

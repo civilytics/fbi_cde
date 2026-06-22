@@ -2,15 +2,14 @@
 % Please edit documentation in R/ucr_arrest.R
 \name{get_arrest_count}
 \alias{get_arrest_count}
-\title{Get arrest data from the UCR's Arrests by Age, Sex, and Race data set.}
+\title{Get arrest offense counts from the UCR Crime Data Explorer}
 \usage{
 get_arrest_count(
   ori = NULL,
   state_abb = NULL,
-  region = NULL,
-  monthly = FALSE,
-  end_year = make_year(),
-  key = get_api_key()
+  from = "01-2015",
+  to = "12-2020",
+  offense = "all"
 )
 }
 \arguments{
@@ -19,18 +18,31 @@ get_arrest_count(
 \item{state_abb}{String for state abbreviation. If `NULL` (default) returns
 national data.}
 
-\item{end_year}{= last year of the collection to get, defaults to the prior calendar year from today
-If TRUE (not default), returns data as monthly units. Otherwise returns annual data.}
+\item{from}{Start date in MM-YYYY format (default "01-2015").}
+
+\item{to}{End date in MM-YYYY format (default "12-2020").}
+
+\item{offense}{Offense code (default "all" for total arrests). See
+`list_ucr_arrest_offenses()` for available codes.}
 }
 \value{
-A data.frame with the number of arrests for each crime-year in the jurisdiction.
+A data.frame with columns: geography, offense, period, count, rate
 }
 \description{
-Get arrest data from the UCR's Arrests by Age, Sex, and Race data set.
+Retrieves arrest counts by offense for an agency, state, or nationally.
+Uses the CDE API endpoint `arrest/{level}/{offense}?type=counts`.
 }
 \examples{
 \dontrun{
 get_arrest_count(ori = "CA0010900")
+get_arrest_count(state_abb = "CA")
 get_arrest_count()
 }
 }
+\seealso{
+Other UCR arrest functions:
+\code{\link[=get_arrest_demographics]{get_arrest_demographics()}},
+\code{\link[=get_arrest_demographics_all]{get_arrest_demographics_all()}},
+\code{\link[=list_ucr_arrest_offenses]{list_ucr_arrest_offenses()}}
+}
+\concept{UCR arrest functions}
