@@ -16,14 +16,14 @@ Return a vector of all offenses in the UCR Arrest data.
 list_ucr_arrest_offenses()
 }
 \seealso{
-Other NIBRS functions: 
-\code{\link{get_nibrs_offender}()},
-\code{\link{get_nibrs_offense}()},
-\code{\link{get_nibrs_victim}()},
-\code{\link{list_nibrs_offender_variables}()},
-\code{\link{list_nibrs_offense_variables}()},
-\code{\link{list_nibrs_offenses}()},
-\code{\link{list_nibrs_victim_variables}()},
-\code{\link{list_regions}()}
+Other NIBRS functions:
+\code{\link[=get_nibrs_offender]{get_nibrs_offender()}},
+\code{\link[=get_nibrs_offense]{get_nibrs_offense()}},
+\code{\link[=get_nibrs_victim]{get_nibrs_victim()}},
+\code{\link[=list_nibrs_offender_variables]{list_nibrs_offender_variables()}},
+\code{\link[=list_nibrs_offense_variables]{list_nibrs_offense_variables()}},
+\code{\link[=list_nibrs_offenses]{list_nibrs_offenses()}},
+\code{\link[=list_nibrs_victim_variables]{list_nibrs_victim_variables()}},
+\code{\link[=list_regions]{list_regions()}}
 }
 \concept{NIBRS functions}

@@ -7,14 +7,17 @@
 set_api_key(key)
 }
 \arguments{
-\item{key}{A string containing your FBI's Crime Data Explorer API key}
+\item{key}{Character string with the API key.}
 }
 \value{
-A string with the FBI's Crime Data Explorer API key
+The key that was set (invisible).
 }
 \description{
-Sets the FBI's Crime Data Explorer API key
+Writes the key to .Renviron. The key is never echoed in messages.
+Note: the current CDE host (cde.ucr.cjis.gov) does not require an API key.
 }
 \examples{
+\dontrun{
 set_api_key("abc123")
+}
 }

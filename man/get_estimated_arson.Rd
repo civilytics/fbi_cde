@@ -2,29 +2,23 @@
 % Please edit documentation in R/ucr_crime.R
 \name{get_estimated_arson}
 \alias{get_estimated_arson}
-\title{Get state-, region- or national-level estimated arson data from the UCR's Offenses Known and Clearances by Arrest data set.}
+\title{Get estimated arson data}
 \usage{
-get_estimated_arson(
-  state_abb = NULL,
-  region = NULL,
-  key = get_api_key(),
-  start_year = 1975,
-  end_year = make_year()
-)
+get_estimated_arson(state_abb = NULL, from = "01-2015", to = "12-2020")
 }
 \arguments{
-\item{state_abb}{String or vector of strings input for state abbreviation(s) to get data for.
-If NULL (default) returns national data. If `state_abb` and `region` both have values, will use return `region` input data.}
+\item{state_abb}{String for state abbreviation. If `NULL` (default) returns
+national data.}
 
-\item{region}{String or vector of strings input for region name(s) to get data for. Please run `list_regions()`  to see all possible variables.}
+\item{from}{Start date in MM-YYYY format (default "01-2015").}
 
-\item{key}{A string containing your FBI's Crime Data Explorer API key}
+\item{to}{End date in MM-YYYY format (default "12-2020").}
 }
 \value{
-A data.frame with state-level estimated UCR arson data for selected state
+A data.frame with columns: geography, offense, period, count, rate
 }
 \description{
-Get state-, region- or national-level estimated arson data from the UCR's Offenses Known and Clearances by Arrest data set.
+Get estimated arson data
 }
 \examples{
 \dontrun{
@@ -32,11 +26,11 @@ get_estimated_arson("CA")
 }
 }
 \seealso{
-Other UCR crime functions: 
-\code{\link{get_agency_crime}()},
-\code{\link{get_agency_participation}()},
-\code{\link{get_estimated_crime}()},
-\code{\link{get_region_participation}()},
-\code{\link{get_state_participation}()}
+Other UCR crime functions:
+\code{\link[=get_agency_crime]{get_agency_crime()}},
+\code{\link[=get_agency_participation]{get_agency_participation()}},
+\code{\link[=get_estimated_crime]{get_estimated_crime()}},
+\code{\link[=get_region_participation]{get_region_participation()}},
+\code{\link[=get_state_participation]{get_state_participation()}}
 }
 \concept{UCR crime functions}

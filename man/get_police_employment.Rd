@@ -14,14 +14,10 @@ get_police_employment(
 )
 }
 \arguments{
-\item{ori}{A string or vector of strings of the 9-character ORI code (unique agency ID) for the desired agency.}
+\item{ori}{A string of the 9-character ORI code for the desired agency.}
 
-\item{state_abb}{String or vector of strings input for state abbreviation(s) to get data for.
-If NULL (default) returns national data. If `state_abb` and `region` both have values, will use return `region` input data.}
-
-\item{region}{String or vector of strings input for region name(s) to get data for. Please run `list_regions()`  to see all possible variables.}
-
-\item{key}{A string containing your FBI's Crime Data Explorer API key}
+\item{state_abb}{String for state abbreviation. If `NULL` (default) returns
+national data.}
 }
 \value{
 A data.frame with columns for annual number of employees and officers (also broken up by gender).

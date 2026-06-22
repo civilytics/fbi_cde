@@ -8,8 +8,6 @@ get_region_participation(region_name = NULL, key = get_api_key())
 }
 \arguments{
 \item{region_name}{String or vector of strings for region to get data for}
-
-\item{key}{A string containing your FBI's Crime Data Explorer API key}
 }
 \value{
 A data.frame with regional NIBRS and UCR participation rates for selected state#'
@@ -23,12 +21,12 @@ get_region_participation("South")
 }
 }
 \seealso{
-Other UCR crime functions: 
-\code{\link{get_agency_crime}()},
-\code{\link{get_agency_participation}()},
-\code{\link{get_estimated_arson}()},
-\code{\link{get_estimated_crime}()},
-\code{\link{get_state_participation}()}
+Other UCR crime functions:
+\code{\link[=get_agency_crime]{get_agency_crime()}},
+\code{\link[=get_agency_participation]{get_agency_participation()}},
+\code{\link[=get_estimated_arson]{get_estimated_arson()}},
+\code{\link[=get_estimated_crime]{get_estimated_crime()}},
+\code{\link[=get_state_participation]{get_state_participation()}}
 }
 \author{
 Jared E. Knowles, Civilytics Consulting

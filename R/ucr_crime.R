@@ -1,13 +1,50 @@
-#' Get agency-level crime data from the UCR's Offenses Known and Clearances by Arrest data set.
+# Internal helper: parse summarized crime API response into a tidy data.frame
+parse_summarized_response <- function(response, geography) {
+  offenses <- response$offenses
+
+  # Flatten counts if present
+  if (!is.null(offenses$counts) && length(offenses$counts) > 0) {
+    counts_df <- flatten_cde_json(offenses$counts)
+    names(counts_df) <- c("offense", "period", "count")
+  } else {
+    counts_df <- data.frame(
+      offense = character(), period = character(), count = numeric(),
+      stringsAsFactors = FALSE
+    )
+  }
+
+  # Flatten rates if present
+  if (!is.null(offenses$rates) && length(offenses$rates) > 0) {
+    rates_df <- flatten_cde_json(offenses$rates)
+    names(rates_df) <- c("offense", "period", "rate")
+  } else {
+    rates_df <- data.frame(
+      offense = character(), period = character(), rate = numeric(),
+      stringsAsFactors = FALSE
+    )
+  }
+
+  # Full outer join on offense and period
+  result <- merge(counts_df, rates_df, by = c("offense", "period"), all = TRUE)
+  result$geography <- geography
+
+  # Reorder columns
+  result <- result[, c("geography", "offense", "period", "count", "rate")]
+  rownames(result) <- NULL
+
+  result
+}
+
+#' Get agency-level crime data from the UCR Offenses Known and Clearances
 #'
 #' @family UCR crime functions
-#' @param ori
-#' A string or vector of strings of the 9-character ORI code (unique agency ID) for the desired agency.
-#' @param key
-#' A string containing your FBI's Crime Data Explorer API key
+#' @param ori A string of the 9-character ORI code for the desired agency.
+#' @param from Start date in MM-YYYY format (default "01-2015").
+#' @param to End date in MM-YYYY format (default "12-2020").
+#' @param offense Offense code (default "V" for violent crime). See
+#'   `get_offense_codes()` for available codes.
 #'
-#' @return
-#' A data.frame with agency-level UCR crime data for selected agency.
+#' @return A data.frame with columns: geography, offense, period, count, rate
 #' @export
 #'
 #' @examples
@@ -15,87 +52,74 @@
 #' get_agency_crime("AK0010100")
 #' }
 get_agency_crime <- function(ori,
-                             key = get_api_key(),
-                             start_year = 1985,
-                             end_year = make_year()) {
+                             from = "01-2015",
+                             to = "12-2020",
+                             offense = "V") {
+  if (!is_valid_ori(ori)) {
+    stop(
+      "Invalid ORI code: ", ori,
+      ". Must match format: 2 letters + 7 digits (e.g., CA0010900)",
+      call. = FALSE
+    )
+  }
 
-  url <- paste0("https://api.usa.gov/crime/fbi/sapi/",
-                "api/summarized/agencies/",
-                ori, "/",
-                "offenses/",
-                start_year, "/",
-                end_year,
-                "?api_key=",
-                key)
+  cde_validate_dates(from, to, "mm-yyyy")
 
-  response <- url_to_dataframe(url)
-  response <- data.table::as.data.table(response)
-  response <- srs_long_to_wide(response)
-  response <- clean_column_names(response)
-  response <- as.data.frame(response)
-  return(response)
+  path <- cde_path("summarized", paste0("agency/", ori), offense)
+  query <- list(from = from, to = to, type = "counts")
+
+  response <- cde_request(path, query)
+  parse_summarized_response(response, geography = ori)
 }
 
-#' Get state- or national-level estimated crime counts from the UCR's Offenses Known
-#' and Clearances by Arrest data set.
+#' Get state- or national-level estimated crime counts
 #'
 #' @family UCR crime functions
-#' @inheritParams get_agency_crime
+#' @param state_abb String for state abbreviation. If `NULL` (default) returns
+#'   national data.
+#' @param from Start date in MM-YYYY format (default "01-2015").
+#' @param to End date in MM-YYYY format (default "12-2020").
+#' @param offense Offense code (default "V" for violent crime). See
+#'   `get_offense_codes()` for available codes.
 #'
-#' @param state_abb
-#' String or vector of strings input for state abbreviation(s) to get data for.
-#' If NULL (default) returns national data.
-#'
-#' @return
-#' A data.frame with state-level estimated UCR crime data for selected state
+#' @return A data.frame with columns: geography, offense, period, count, rate
 #' @export
 #'
 #' @examples
-#'\dontrun{
+#' \dontrun{
 #' get_estimated_crime("CA")
 #' }
 get_estimated_crime <- function(state_abb = NULL,
-                                region_name = NULL,
-                                key = get_api_key(),
-                                start_year = 1979,
-                                end_year = make_year()) {
+                                from = "01-2015",
+                                to = "12-2020",
+                                offense = "V") {
+  if (!is.null(state_abb) && !is_valid_state(state_abb)) {
+    stop("Invalid state abbreviation: ", state_abb, call. = FALSE)
+  }
 
-  # Test and make sure both aren't defined
-  # TODO: Estiamted crime seems to only return violent crime, fix this by
-  # checking the API
+  cde_validate_dates(from, to, "mm-yyyy")
 
-  url_section <- combine_url_section("estimates",
-                                     ori = NULL,
-                                     state_abb = state_abb,
-                                     region_name = region_name)
+  if (is.null(state_abb)) {
+    level <- "national"
+  } else {
+    level <- paste0("state/", toupper(state_abb))
+  }
 
-  url <- make_url(url_section, start_year = start_year, end_year = end_year,
-                  key = key)
+  path <- cde_path("summarized", level, offense)
+  query <- list(from = from, to = to, type = "counts")
 
+  response <- cde_request(path, query)
 
-  data <- url_to_dataframe(url)
-  data <- clean_column_names(data)
-  data <- data.table::setorder(data, -"year")
-  data$state <- make_state(data$state_abbr)
-  rownames(data) <- 1:nrow(data)
-  data <- data[, c(2, 16, 1, 3, 4:15)]
-
-  return(data)
+  geo <- if (is.null(state_abb)) "US" else toupper(state_abb)
+  parse_summarized_response(response, geography = geo)
 }
 
-#' Get state-, region- or national-level estimated arson data from the UCR's Offenses Known and Clearances by Arrest data set.
+#' Get estimated arson data
 #'
 #' @family UCR crime functions
-#' @inheritParams get_agency_crime
+#' @inheritParams get_estimated_crime
 #'
-#' @param state_abb
-#' String or vector of strings input for state abbreviation(s) to get data for.
-#' If NULL (default) returns national data. If `state_abb` and `region` both have values, will use return `region` input data.
-#' @param region
-#' String or vector of strings input for region name(s) to get data for. Please run `list_regions()`  to see all possible variables.
-#'
-#' @return
-#' A data.frame with state-level estimated UCR arson data for selected state
+#' @return A data.frame with columns: geography, offense, period, count, rate
 #' @export
 #'
 #' @examples
@@ -103,22 +127,12 @@ get_estimated_crime <- function(state_abb = NULL,
 #' get_estimated_arson("CA")
 #' }
 get_estimated_arson <- function(state_abb = NULL,
-                                region = NULL,
-                                key = get_api_key(),
-                                start_year = 1975,
-                                end_year = make_year()) {
-
-  url_section <- combine_url_section("arson",
-                                     ori = NULL,
-                                     state_abb = state_abb,
-                                     region_name = region)
-  url <- make_url(url_section, start_year = start_year, end_year = end_year,
-                  key = key)
-
-
-  data <- url_to_dataframe(url)
-  data <- clean_column_names(data)
-  return(data)
+                                from = "01-2015",
+                                to = "12-2020") {
+  get_estimated_crime(
+    state_abb = state_abb,
+    from = from,
+    to = to,
+    offense = "AR"
+  )
 }
-
-

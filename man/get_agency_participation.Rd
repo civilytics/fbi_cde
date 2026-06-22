@@ -7,9 +7,7 @@
 get_agency_participation(ori, key = get_api_key())
 }
 \arguments{
-\item{ori}{A string or vector of strings of the 9-character ORI code (unique agency ID) for the desired agency.}
-
-\item{key}{A string containing your FBI's Crime Data Explorer API key}
+\item{ori}{A string of the 9-character ORI code for the desired agency.}
 }
 \value{
 A data.frame with regional NIBRS and UCR participation rates for selected agency
@@ -23,12 +21,12 @@ get_agency_participation("AK0010100")
 }
 }
 \seealso{
-Other UCR crime functions: 
-\code{\link{get_agency_crime}()},
-\code{\link{get_estimated_arson}()},
-\code{\link{get_estimated_crime}()},
-\code{\link{get_region_participation}()},
-\code{\link{get_state_participation}()}
+Other UCR crime functions:
+\code{\link[=get_agency_crime]{get_agency_crime()}},
+\code{\link[=get_estimated_arson]{get_estimated_arson()}},
+\code{\link[=get_estimated_crime]{get_estimated_crime()}},
+\code{\link[=get_region_participation]{get_region_participation()}},
+\code{\link[=get_state_participation]{get_state_participation()}}
 }
 \author{
 Jared E. Knowles, Civilytics Consulting

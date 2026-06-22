@@ -14,19 +14,15 @@ get_nibrs_victim(
 )
 }
 \arguments{
-\item{key}{A string containing your FBI's Crime Data Explorer API key}
-
 \item{offense}{A string or vector of strings with the offenses you want to scrape. If
 input is 'all' (default), returns data for all offenses. Please run `list_nibrs_offenses()` to see all possible offenses.}
 
 \item{variable}{A string with the variable you want the data to be in. This is essentially the units you want returned (number of victims by age, race, sex, etc.). By default returns total count of victims. Please run `list_nibrs_victim_variables()`  to see all possible variables.}
 
-\item{ori}{A string or vector of strings of the 9-character ORI code (unique agency ID) for the desired agency.}
+\item{ori}{A string of the 9-character ORI code for the desired agency.}
 
-\item{region}{String or vector of strings input for region name(s) to get data for. Please run `list_regions()`  to see all possible variables.}
-
-\item{state_abb}{String or vector of strings input for state abbreviation(s) to get data for.
-If NULL (default) returns national data. If `state_abb` and `region` both have values, will use return `region` input data.}
+\item{state_abb}{String for state abbreviation. If `NULL` (default) returns
+national data.}
 }
 \value{
 A data.frame of NIBRS victim data.
@@ -40,14 +36,14 @@ get_nibrs_victim(ori = "DE0010100")
 }
 }
 \seealso{
-Other NIBRS functions: 
-\code{\link{get_nibrs_offender}()},
-\code{\link{get_nibrs_offense}()},
-\code{\link{list_nibrs_offender_variables}()},
-\code{\link{list_nibrs_offense_variables}()},
-\code{\link{list_nibrs_offenses}()},
-\code{\link{list_nibrs_victim_variables}()},
-\code{\link{list_regions}()},
-\code{\link{list_ucr_arrest_offenses}()}
+Other NIBRS functions:
+\code{\link[=get_nibrs_offender]{get_nibrs_offender()}},
+\code{\link[=get_nibrs_offense]{get_nibrs_offense()}},
+\code{\link[=list_nibrs_offender_variables]{list_nibrs_offender_variables()}},
+\code{\link[=list_nibrs_offense_variables]{list_nibrs_offense_variables()}},
+\code{\link[=list_nibrs_offenses]{list_nibrs_offenses()}},
+\code{\link[=list_nibrs_victim_variables]{list_nibrs_victim_variables()}},
+\code{\link[=list_regions]{list_regions()}},
+\code{\link[=list_ucr_arrest_offenses]{list_ucr_arrest_offenses()}}
 }
 \concept{NIBRS functions}

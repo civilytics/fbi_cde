@@ -2,34 +2,24 @@
 % Please edit documentation in R/http.R
 \name{cde_query}
 \alias{cde_query}
-\title{Build query parameters for FBI CDE API requests}
+\title{Build query parameters for CDE API requests}
 \usage{
-cde_query(from, to, type = NULL, four_digit_year = FALSE)
+cde_query(from, to, type = NULL, year_format = "mm-yyyy")
 }
 \arguments{
-\item{from}{Character string or numeric with the start date/year.
-When \code{four_digit_year = FALSE} expects \code{"MM-YYYY"} format;
-when \code{TRUE} accepts \code{"YYYY"} or a 4-digit numeric.}
+\item{from}{Character string for the start date (MM-YYYY or YYYY).}
 
-\item{to}{Character string or numeric with the end date/year.
-Same format rules as \code{from}.}
+\item{to}{Character string for the end date (MM-YYYY or YYYY).}
 
-\item{type}{Optional character string with the query type
-(e.g. \code{"counts"}, \code{"rates"}, \code{"totals"}). Defaults to \code{NULL}.}
+\item{type}{Optional character string for the type parameter (e.g. "counts", "totals", "rates").}
 
-\item{four_digit_year}{Logical; when \code{TRUE} formats years as
-4-digit \code{YYYY} (used for police employment \code{pe} endpoints).
-When \code{FALSE} (default) formats as \code{MM-YYYY}.}
+\item{year_format}{Character string, either "mm-yyyy" or "yyyy".}
 }
 \value{
-A named list of query parameters, e.g.
-\code{list(from = "01-2015", to = "12-2020", type = "counts")}.
+A list of query parameters.
 }
 \description{
-Formats year values and assembles a named list of query parameters
-for CDE API endpoint calls.
+Constructs query parameter strings for CDE API requests.
+Most endpoints use MM-YYYY date format; police employment uses 4-digit years.
 }
-\examples{
-cde_query("01-2015", "12-2020", type = "counts")
-cde_query(2015, 2020, four_digit_year = TRUE)
-}
+\keyword{internal}
