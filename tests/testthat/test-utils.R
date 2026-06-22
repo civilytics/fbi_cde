@@ -22,11 +22,36 @@ test_that("combine_url_section builds geography paths", {
   )
 })
 
-test_that("is_valid_ori checks membership in the bundled agency list", {
+test_that("is_valid_ori checks ORI format (2 letters + 7 digits)", {
   expect_true(is_valid_ori("CA0010900"))
+  expect_true(is_valid_ori("NY1234567"))
   expect_false(is_valid_ori("not-an-ori"))
+  expect_false(is_valid_ori("ABC123"))
+  expect_false(is_valid_ori("A0010900"))
+  # case-insensitive
+  expect_true(is_valid_ori("ca0010900"))
   # vectorised
   expect_equal(is_valid_ori(c("CA0010900", "not-an-ori")), c(TRUE, FALSE))
+})
+
+test_that("is_valid_state checks state abbreviation format", {
+  expect_true(is_valid_state("CA"))
+  expect_true(is_valid_state("NY"))
+  expect_true(is_valid_state("DC"))
+  expect_true(is_valid_state("PR"))
+  expect_false(is_valid_state("XX"))
+  expect_false(is_valid_state("ABC"))
+  expect_false(is_valid_state(""))
+  # case-insensitive
+  expect_true(is_valid_state("ca"))
+  expect_true(is_valid_state("Ca"))
+})
+
+test_that("cde_validate_dates rejects inverted ranges", {
+  expect_error(cde_validate_dates("12-2020", "01-2015", "mm-yyyy"), "Invalid date range")
+  expect_error(cde_validate_dates("2020", "2015", "yyyy"), "Invalid date range")
+  expect_true(cde_validate_dates("01-2015", "12-2020", "mm-yyyy"))
+  expect_true(cde_validate_dates("2015", "2020", "yyyy"))
 })
 
 test_that("clean_column_names lowercases, renames, and drops csv_header", {

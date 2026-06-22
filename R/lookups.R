@@ -63,26 +63,7 @@ get_agency_info <- function(agency,
   return(data)
 }
 
-#' Checks if the ORI is valid
-#'
-#' Checks if ORI (a 9-digit unique identifier code assigned to each agency)
-#' is valid for the API.
-#'
-#' @inheritParams get_agency_crime
-#'
-#' @return
-#' TRUE if ori is valid, else FALSE. If ori is a vector, returns TRUE or FALSE
-#' for each ori.
-#' @export
-#'
-#' @examples
-#' # ORI for Oakland Police Deparment in California
-#' is_valid_ori("CA0010900")
-#' # Incorrect ori
-#' is_valid_ori("abc123")
-is_valid_ori <- function(ori) {
-  return(ori %in% fbi::fbi_api_agencies$ori)
-}
+
 
 
 
