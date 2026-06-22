@@ -7,7 +7,7 @@
 list_nibrs_victim_variables()
 }
 \value{
-A vector of all `variable` parameter options for `get_nibrs_victim()`.
+A character vector of all `variable` parameter options for `get_nibrs_victim()`.
 }
 \description{
 Returns a vector of all `variable` parameter options for `get_nibrs_victim()`.

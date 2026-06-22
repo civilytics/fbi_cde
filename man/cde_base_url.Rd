@@ -2,7 +2,7 @@
 % Please edit documentation in R/http.R
 \name{cde_base_url}
 \alias{cde_base_url}
-\title{CDE base URL}
+\title{Get the FBI CDE API base URL}
 \usage{
 cde_base_url()
 }
@@ -10,8 +10,9 @@ cde_base_url()
 A character string with the base URL.
 }
 \description{
-Returns the base URL for the FBI CDE API. Overridable via the
-`fbi_cde_base_url` option or the `FBI_CDE_BASE_URL` environment variable.
+Returns the base URL for the FBI Crime Data Explorer API.
+Can be overridden via `getOption("fbi.cde.base_url")` or
+`Sys.getenv("FBI_CDE_BASE_URL")` (for tests).
 }
 \examples{
 cde_base_url()

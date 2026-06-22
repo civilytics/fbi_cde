@@ -5,34 +5,44 @@
 \title{Gets victim-level data from the FBI's National Incident-Based Reporting System (NIBRS)}
 \usage{
 get_nibrs_victim(
-  key = get_api_key(),
-  offense = "robbery",
-  variable = "race",
   ori = NULL,
-  region = NULL,
-  state_abb = NULL
+  state_abb = NULL,
+  from = "01-2015",
+  to = "12-2020",
+  offense = "robbery",
+  variable = "race"
 )
 }
 \arguments{
-\item{offense}{A string or vector of strings with the offenses you want to scrape. If
-input is 'all' (default), returns data for all offenses. Please run `list_nibrs_offenses()` to see all possible offenses.}
-
-\item{variable}{A string with the variable you want the data to be in. This is essentially the units you want returned (number of victims by age, race, sex, etc.). By default returns total count of victims. Please run `list_nibrs_victim_variables()`  to see all possible variables.}
-
 \item{ori}{A string of the 9-character ORI code for the desired agency.}
 
 \item{state_abb}{String for state abbreviation. If `NULL` (default) returns
 national data.}
+
+\item{from}{Start date in MM-YYYY format (default "01-2015").}
+
+\item{to}{End date in MM-YYYY format (default "12-2020").}
+
+\item{offense}{Offense code (default "robbery"). See
+`list_nibrs_offenses()` for available codes.}
+
+\item{variable}{A string with the demographic variable to return. Selects
+which sub-object within the victim section to use (e.g., "age", "race",
+"sex", "ethnicity", "relationship", "location"). By default returns total
+count of victims. See `list_nibrs_victim_variables()` for available options.}
 }
 \value{
-A data.frame of NIBRS victim data.
+A data.frame with columns: geography, offense, period,
+  demographic_type, demographic_value, count
 }
 \description{
-Gets victim-level data from the FBI's National Incident-Based Reporting System (NIBRS)
+Retrieves victim demographics (age, race, sex, ethnicity, relationship, location)
+from the CDE API endpoint `nibrs/{level}/{offense}?type=totals`.
 }
 \examples{
 \dontrun{
-get_nibrs_victim(ori = "DE0010100")
+get_nibrs_victim(ori = "CA0010900")
+get_nibrs_victim(state_abb = "CA", offense = "murder", variable = "race")
 }
 }
 \seealso{

@@ -49,10 +49,11 @@ flatten_cde_json <- function(obj) {
   )
 }
 
-#' CDE base URL
+#' Get the FBI CDE API base URL
 #'
-#' Returns the base URL for the FBI CDE API. Overridable via the
-#' `fbi_cde_base_url` option or the `FBI_CDE_BASE_URL` environment variable.
+#' Returns the base URL for the FBI Crime Data Explorer API.
+#' Can be overridden via `getOption("fbi.cde.base_url")` or
+#' `Sys.getenv("FBI_CDE_BASE_URL")` (for tests).
 #'
 #' @return A character string with the base URL.
 #' @export
@@ -60,115 +61,143 @@ flatten_cde_json <- function(obj) {
 #' @examples
 #' cde_base_url()
 cde_base_url <- function() {
-  env <- Sys.getenv("FBI_CDE_BASE_URL")
-  if (nzchar(env)) {
-    return(env)
+  default_url <- "https://cde.ucr.cjis.gov/LATEST/"
+
+  option_url <- getOption("fbi.cde.base_url")
+  if (!is.null(option_url) && nzchar(option_url)) {
+    return(option_url)
   }
-  opt <- getOption("fbi_cde_base_url")
-  if (!is.null(opt)) {
-    return(opt)
+
+  env_url <- Sys.getenv("FBI_CDE_BASE_URL")
+  if (nzchar(env_url)) {
+    return(env_url)
   }
-  "https://cde.ucr.cjis.gov/LATEST/"
+
+  default_url
 }
 
-#' Build a CDE API path
+#' Make a request to the FBI CDE API
 #'
-#' Constructs the path portion of a CDE API URL from the data type,
-#' geography level, and optional offense code.
+#' The single network seam for the package. Builds the full URL from
+#' base + path + encoded query, performs the GET request, and returns
+#' the parsed JSON list.
 #'
-#' @param data_type Character string for the data type (e.g. "summarized", "arrest", "nibrs", "shr", "pe").
-#' @param level Character string for geography level: "national", "state/{ABBR}", or "agency/{ORI}".
-#' @param offense Optional character string for the offense code (e.g. "V", "all").
-#' @return A character string with the API path.
+#' @param path Character string with the API path (e.g. `"summarized/national/V"`).
+#' @param query Named list of query parameters (default: `list()`).
+#' @param get_fun Function to perform the HTTP GET request. Defaults to
+#'   `httr::GET`. Inject this for testing (e.g. with a mock response).
+#'
+#' @return The parsed JSON response as a list.
 #' @keywords internal
-cde_path <- function(data_type, level, offense = NULL) {
-  if (!is.null(offense)) {
-    paste0(data_type, "/", level, "/", offense)
-  } else {
-    paste0(data_type, "/", level)
-  }
-}
-
-#' Build query parameters for CDE API requests
-#'
-#' Constructs query parameter strings for CDE API requests.
-#' Most endpoints use MM-YYYY date format; police employment uses 4-digit years.
-#'
-#' @param from Character string for the start date (MM-YYYY or YYYY).
-#' @param to Character string for the end date (MM-YYYY or YYYY).
-#' @param type Optional character string for the type parameter (e.g. "counts", "totals", "rates").
-#' @param year_format Character string, either "mm-yyyy" or "yyyy".
-#' @return A list of query parameters.
-#' @keywords internal
-cde_query <- function(from, to, type = NULL, year_format = "mm-yyyy") {
-  query <- list()
-  if (year_format == "mm-yyyy") {
-    query$from <- paste0(from, "-", substr(from, 1, 2))
-    query$to <- paste0(to, "-", substr(to, 1, 2))
-  } else {
-    query$from <- from
-    query$to <- to
-  }
-  if (!is.null(type)) {
-    query$type <- type
-  }
-  query
-}
-
-#' Perform a CDE API request
-#'
-#' The single network seam for the package. Performs the HTTP GET, checks
-#' the status code, and returns the parsed JSON body. All other functions
-#' should use this instead of calling httr::GET directly.
-#'
-#' @param path Character string for the API path (e.g. "summarized/national/V").
-#' @param query Optional list of query parameters.
-#' @return The parsed JSON response (typically a list).
-#' @stop On non-200 status codes with a descriptive error message.
-#' @export
-#'
-#' @examples
-#' \dontrun{
-#' cde_request("summarized/national/V", list(from = "01-2015", to = "12-2020", type = "counts"))
-#' }
-cde_request <- function(path, query = list()) {
+cde_request <- function(path, query = list(), get_fun = httr::GET) {
   base <- cde_base_url()
-  url <- paste0(base, path)
-  if (length(query) > 0) {
-    url <- paste0(url, "?", paste(
-      names(query),
-      vapply(query, as.character, ""),
-      sep = "=",
-      collapse = "&"
-    ))
-  }
+  full_url <- httr::modify_url(paste0(base, path), query = query)
 
   useragent <- paste0(
     "Mozilla/5.0 (compatible; a bot using the R fbi",
-    " package; https://github.com/Civilytics/fbi_cde/)"
+    " package; https://github.com/jacobkap/fbi/)"
   )
 
-  response <- httr::GET(url, httr::user_agent(useragent))
+  response <- get_fun(full_url, httr::user_agent(useragent))
 
-  if (response$status_code != 200) {
-    body <- tryCatch(
-      rawToChar(response$content),
-      error = function(e) ""
-    )
+  if (response$status_code != 200L) {
+    body_raw <- response$content
+    msg <- ""
+    if (length(body_raw) > 0) {
+      body_text <- rawToChar(body_raw)
+      parsed <- tryCatch(
+        jsonlite::fromJSON(body_text, simplifyVector = FALSE),
+        error = function(e) NULL
+      )
+      if (!is.null(parsed) && !is.null(parsed$message)) {
+        msg <- paste0(" - ", parsed$message)
+      }
+    }
     stop(
-      "CDE API request failed: ",
-      response$status_code, " ", httr::status_code(response),
-      " ", url,
-      if (nzchar(body)) paste0("\nResponse: ", substr(body, 1, 500)),
+      "HTTP ", response$status_code, " for ", full_url, msg,
       call. = FALSE
     )
   }
 
-  if (length(response$content) == 0) {
-    stop("CDE API returned an empty response for: ", url, call. = FALSE)
+  body_raw <- response$content
+  if (length(body_raw) == 0) {
+    stop(
+      "Empty response body for ", full_url, " (HTTP 200 but no data)",
+      call. = FALSE
+    )
   }
 
-  jsonlite::fromJSON(rawToChar(response$content), simplifyVector = TRUE)
+  jsonlite::fromJSON(rawToChar(body_raw), simplifyVector = FALSE)
+}
+
+#' Build an FBI CDE API path string
+#'
+#' Constructs the path portion of a CDE API endpoint URL from its components.
+#'
+#' @param type Character string with the endpoint type
+#'   (e.g. `"summarized"`, `"arrest"`, `"nibrs"`, `"shr"`, `"pe"`).
+#' @param level Character string with the geographic level. One of
+#'   `"national"`, `"state/{ABBR}"`, or `"agency/{ORI}"`.
+#' @param offense Optional character string with the offense identifier
+#'   (e.g. `"V"` for violent crime, `"LARC"` for larceny). Defaults to `NULL`.
+#'
+#' @return A character string with the API path, e.g.
+#'   `"summarized/national/V"` or `"shr/state/CA"`.
+#'
+#' @examples
+#' cde_path("summarized", "national", "V")
+#' cde_path("summarized", "state/CA", "V")
+#' cde_path("shr", "agency/CA0010900")
+#' @export
+#'
+cde_path <- function(type, level, offense = NULL) {
+  path <- paste0(type, "/", level)
+  if (!is.null(offense)) {
+    path <- paste0(path, "/", offense)
+  }
+  path
+}
+
+#' Build query parameters for FBI CDE API requests
+#'
+#' Formats year values and assembles a named list of query parameters
+#' for CDE API endpoint calls.
+#'
+#' @param from Character string or numeric with the start date/year.
+#'   When `four_digit_year = FALSE` expects `"MM-YYYY"` format;
+#'   when `TRUE` accepts `"YYYY"` or a 4-digit numeric.
+#' @param to Character string or numeric with the end date/year.
+#'   Same format rules as `from`.
+#' @param type Optional character string with the query type
+#'   (e.g. `"counts"`, `"rates"`, `"totals"`). Defaults to `NULL`.
+#' @param four_digit_year Logical; when `TRUE` formats years as
+#'   4-digit `YYYY` (used for police employment `pe` endpoints).
+#'   When `FALSE` (default) formats as `MM-YYYY`.
+#'
+#' @return A named list of query parameters, e.g.
+#'   `list(from = "01-2015", to = "12-2020", type = "counts")`.
+#'
+#' @examples
+#' cde_query("01-2015", "12-2020", type = "counts")
+#' cde_query(2015, 2020, four_digit_year = TRUE)
+#' @export
+#'
+cde_query <- function(from, to, type = NULL, four_digit_year = FALSE) {
+  if (four_digit_year) {
+    from <- as.character(from)
+    from <- sub(".*-(\\d{4})$", "\\1", from)
+    to <- as.character(to)
+    to <- sub(".*-(\\d{4})$", "\\1", to)
+  } else {
+    from <- as.character(from)
+    to <- as.character(to)
+  }
+
+  params <- list(from = from, to = to)
+  if (!is.null(type)) {
+    params$type <- type
+  }
+  params
 }
 
 #' Validate an ORI code

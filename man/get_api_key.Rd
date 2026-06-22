@@ -7,12 +7,12 @@
 get_api_key()
 }
 \value{
-A string with the FBI's Crime Data Explorer API key, or NULL if not set.
+A string with the FBI's Crime Data Explorer API key
 }
 \description{
-Returns the FBI's Crime Data Explorer API key if one is set. For the
-current CDE host (cde.ucr.cjis.gov), no API key is required, so this
-function returns NULL when no key is configured rather than erroring.
+Returns the FBI's Crime Data Explorer API is one is set. If the key is not
+set then it will ask you to enter the key in the console and set the key
+for you.
 }
 \examples{
 \dontrun{

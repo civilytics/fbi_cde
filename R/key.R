@@ -1,11 +1,11 @@
 #' Returns the FBI's Crime Data Explorer API key
 #'
-#' Returns the FBI's Crime Data Explorer API key if one is set. For the
-#' current CDE host (cde.ucr.cjis.gov), no API key is required, so this
-#' function returns NULL when no key is configured rather than erroring.
+#' Returns the FBI's Crime Data Explorer API is one is set. If the key is not
+#' set then it will ask you to enter the key in the console and set the key
+#' for you.
 #'
 #' @return
-#' A string with the FBI's Crime Data Explorer API key, or NULL if not set.
+#' A string with the FBI's Crime Data Explorer API key
 #' @export
 #'
 #' @examples
@@ -17,28 +17,33 @@ get_api_key <- function() {
   if (env != "") {
     return(env)
   }
-  NULL
+
+  if (!interactive()) {
+    stop("Please set the environment variable FBI_API_KEY to your FBI API key. Keys can be acquired at https://api.data.gov/signup/",
+         call. = FALSE)
+  }
+  message("Please enter your FBI API key and press enter:")
+  key <- readline(": ")
+  fbi::set_api_key(key)
+  return(key)
 }
 
 #' Sets the FBI's Crime Data Explorer API key
 #'
-#' Writes the key to .Renviron. The key is never echoed in messages.
-#' Note: the current CDE host (cde.ucr.cjis.gov) does not require an API key.
-#'
-#' @param key Character string with the API key.
+#' @inheritParams get_agency_crime
 #'
 #' @return
-#' The key that was set (invisible).
+#' A string with the FBI's Crime Data Explorer API key
 #' @export
 #'
 #' @examples
-#' \dontrun{
 #' set_api_key("abc123")
-#' }
 set_api_key <- function(key) {
-  if (is.null(key) || length(key) != 1 || !is.character(key)) {
-    stop("key must be a single character string", call. = FALSE)
+  if (key %in% c("", NA, NULL) || length(key) != 1 || !is.character(key)) {
+    message("Incorrect key. Please enter the API key you received from https://api.data.gov/signup/ and press enter:")
+    key <- readline(": ")
   }
   Sys.setenv(FBI_API_KEY = key)
-  invisible(key)
+  message(paste0("FBI API key set to: '", key, "'."))
+  return(key)
 }

@@ -2,25 +2,24 @@
 % Please edit documentation in R/http.R
 \name{cde_request}
 \alias{cde_request}
-\title{Perform a CDE API request}
+\title{Make a request to the FBI CDE API}
 \usage{
-cde_request(path, query = list())
+cde_request(path, query = list(), get_fun = httr::GET)
 }
 \arguments{
-\item{path}{Character string for the API path (e.g. "summarized/national/V").}
+\item{path}{Character string with the API path (e.g. `"summarized/national/V"`).}
 
-\item{query}{Optional list of query parameters.}
+\item{query}{Named list of query parameters (default: `list()`).}
+
+\item{get_fun}{Function to perform the HTTP GET request. Defaults to
+`httr::GET`. Inject this for testing (e.g. with a mock response).}
 }
 \value{
-The parsed JSON response (typically a list).
+The parsed JSON response as a list.
 }
 \description{
-The single network seam for the package. Performs the HTTP GET, checks
-the status code, and returns the parsed JSON body. All other functions
-should use this instead of calling httr::GET directly.
+The single network seam for the package. Builds the full URL from
+base + path + encoded query, performs the GET request, and returns
+the parsed JSON list.
 }
-\examples{
-\dontrun{
-cde_request("summarized/national/V", list(from = "01-2015", to = "12-2020", type = "counts"))
-}
-}
+\keyword{internal}

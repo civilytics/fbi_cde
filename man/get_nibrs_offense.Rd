@@ -5,34 +5,47 @@
 \title{Gets offense-level data from the FBI's National Incident-Based Reporting System (NIBRS)}
 \usage{
 get_nibrs_offense(
-  key = get_api_key(),
-  offense = "all",
-  variable = "count",
   ori = NULL,
-  region = NULL,
-  state_abb = NULL
+  state_abb = NULL,
+  from = "01-2015",
+  to = "12-2020",
+  offense = "all",
+  variable = "count"
 )
 }
 \arguments{
-\item{offense}{A string or vector of strings with the offenses you want to scrape. If
-input is 'all' (default), returns data for all offenses. Please run `list_nibrs_offenses()` to see all possible offenses.}
-
-\item{variable}{A string with the variable you want the data to be in. This is essentially the units you want returned (number of offenses by weapon used, race, bias motivation, etc.). By default returns total count of offenders Please run `list_nibrs_offense_variables()`  to see all possible variables.}
-
 \item{ori}{A string of the 9-character ORI code for the desired agency.}
 
 \item{state_abb}{String for state abbreviation. If `NULL` (default) returns
 national data.}
+
+\item{from}{Start date in MM-YYYY format (default "01-2015").}
+
+\item{to}{End date in MM-YYYY format (default "12-2020").}
+
+\item{offense}{Offense code (default "robbery"). See
+`list_nibrs_offenses()` for available codes.}
+
+\item{variable}{A string with the variable to return. Selects which
+sub-object within the offense section to use (e.g., "count", "weapons",
+"linkedoffense", "suspectusing", "criminal_activity",
+"property_recovered", "property_stolen", "bias"). By default returns
+total count of offenses. See `list_nibrs_offense_variables()` for
+available options.}
 }
 \value{
-A data.frame of NIBRS offense data.
+A data.frame with columns: geography, offense, period,
+  demographic_type, demographic_value, count
 }
 \description{
-Gets offense-level data from the FBI's National Incident-Based Reporting System (NIBRS)
+Retrieves offense characteristics (count, weapons, linkedoffense,
+suspectusing, criminal_activity, property_recovered, property_stolen, bias)
+from the CDE API endpoint `nibrs/{level}/{offense}?type=totals`.
 }
 \examples{
 \dontrun{
-get_nibrs_offense(ori = "DE0010100")
+get_nibrs_offense(ori = "CA0010900")
+get_nibrs_offense(state_abb = "CA", offense = "murder", variable = "weapons")
 }
 }
 \seealso{

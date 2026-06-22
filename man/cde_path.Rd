@@ -2,22 +2,29 @@
 % Please edit documentation in R/http.R
 \name{cde_path}
 \alias{cde_path}
-\title{Build a CDE API path}
+\title{Build an FBI CDE API path string}
 \usage{
-cde_path(data_type, level, offense = NULL)
+cde_path(type, level, offense = NULL)
 }
 \arguments{
-\item{data_type}{Character string for the data type (e.g. "summarized", "arrest", "nibrs", "shr", "pe").}
+\item{type}{Character string with the endpoint type
+(e.g. `"summarized"`, `"arrest"`, `"nibrs"`, `"shr"`, `"pe"`).}
 
-\item{level}{Character string for geography level: "national", "state/{ABBR}", or "agency/{ORI}".}
+\item{level}{Character string with the geographic level. One of
+`"national"`, `"state/{ABBR}"`, or `"agency/{ORI}"`.}
 
-\item{offense}{Optional character string for the offense code (e.g. "V", "all").}
+\item{offense}{Optional character string with the offense identifier
+(e.g. `"V"` for violent crime, `"LARC"` for larceny). Defaults to `NULL`.}
 }
 \value{
-A character string with the API path.
+A character string with the API path, e.g.
+  `"summarized/national/V"` or `"shr/state/CA"`.
 }
 \description{
-Constructs the path portion of a CDE API URL from the data type,
-geography level, and optional offense code.
+Constructs the path portion of a CDE API endpoint URL from its components.
 }
-\keyword{internal}
+\examples{
+cde_path("summarized", "national", "V")
+cde_path("summarized", "state/CA", "V")
+cde_path("shr", "agency/CA0010900")
+}

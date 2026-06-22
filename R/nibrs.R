@@ -106,7 +106,7 @@ get_nibrs_victim <- function(ori = NULL,
                               from = "01-2015",
                               to = "12-2020",
                               offense = "robbery",
-                              variable = "count") {
+                              variable = "race") {
   if (!is.null(ori) && !is_valid_ori(ori)) {
     stop(
       "Invalid ORI code: ", ori,

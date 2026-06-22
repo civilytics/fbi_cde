@@ -7,13 +7,13 @@
 list_nibrs_offense_variables()
 }
 \value{
-A vector of all `variable` parameter options for `get_nibrs_offense()`.
+A character vector of all `variable` parameter options for `get_nibrs_offense()`.
 }
 \description{
 Returns a vector of all `variable` parameter options for `get_nibrs_offense()`.
 }
 \examples{
-list_nibrs_offender_variables()
+list_nibrs_offense_variables()
 }
 \seealso{
 Other NIBRS functions:

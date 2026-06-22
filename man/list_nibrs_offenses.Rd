@@ -7,8 +7,7 @@
 list_nibrs_offenses()
 }
 \value{
-A vector containing all permissible offenses to input to `get_nibrs_offenses()`,
-`get_nibrs_victim()`, and `get_nibrs_offender()`.`
+A character vector of NIBRS offense codes.
 }
 \description{
 Return a vector of all offenses in the NIBRS data.
