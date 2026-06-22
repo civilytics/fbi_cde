@@ -18,6 +18,6 @@ A wide data.frame with columns: year, male_officers, female_officers,
 }
 \description{
 Response shape (CDE API):
-  {"Male Officers": {"2015": 100, "2016": 110}, "Female Officers": {...}, ...}
+  A named list where each top-level key maps to a list of period-value pairs.
 }
 \keyword{internal}

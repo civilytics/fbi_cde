@@ -1,7 +1,8 @@
 # Internal helper: parse NIBRS API response into a tidy data.frame
 #
 # Response shape (CDE API):
-#   {"victim": {"age": {"Under 18": 100, "18-24": 200}, "race": {"White": 300}}, ...}
+#   A nested list with victim/offender/offense sections, each containing
+#   variable sub-objects mapping demographic values to counts.
 #
 # The `section` argument selects the top-level key (victim/offender/offense).
 # The `variable` argument selects which sub-object within that section to use.
@@ -77,7 +78,7 @@ parse_nibrs_response <- function(response, geography, offense, section, variable
 #' Gets victim-level data from the FBI's National Incident-Based Reporting System (NIBRS)
 #'
 #' Retrieves victim demographics (age, race, sex, ethnicity, relationship, location)
-#' from the CDE API endpoint `nibrs/{level}/{offense}?type=totals`.
+#' from the CDE API endpoint `nibrs/{level}/{offense}` with `type=totals`.
 #'
 #' @family NIBRS functions
 #' @param ori A string of the 9-character ORI code for the desired agency.
@@ -143,7 +144,7 @@ get_nibrs_victim <- function(ori = NULL,
 #' Gets offender-level data from the FBI's National Incident-Based Reporting System (NIBRS)
 #'
 #' Retrieves offender demographics (age, count, ethnicity, race, sex) from the
-#' CDE API endpoint `nibrs/{level}/{offense}?type=totals`.
+#' CDE API endpoint `nibrs/{level}/{offense}` with `type=totals`.
 #'
 #' @family NIBRS functions
 #' @inheritParams get_nibrs_victim
@@ -204,7 +205,7 @@ get_nibrs_offender <- function(ori = NULL,
 #'
 #' Retrieves offense characteristics (count, weapons, linkedoffense,
 #' suspectusing, criminal_activity, property_recovered, property_stolen, bias)
-#' from the CDE API endpoint `nibrs/{level}/{offense}?type=totals`.
+#' from the CDE API endpoint `nibrs/{level}/{offense}` with `type=totals`.
 #'
 #' @family NIBRS functions
 #' @inheritParams get_nibrs_victim

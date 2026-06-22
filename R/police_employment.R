@@ -2,9 +2,11 @@
 #'
 #' @inheritParams get_estimated_arson
 #' @inheritParams get_agency_crime
+#' @param region Character string for the census region (e.g. "Northeast",
+#'   "Midwest", "South", "West").
 #'
-#' @return
-#' A data.frame with columns for annual number of employees and officers (also broken up by gender).
+#' @return A data.frame with columns for annual number of employees and officers
+#'   (also broken up by gender).
 #' @export
 #'
 #' @examples
@@ -19,10 +21,10 @@
 #' get_police_employment()
 #' }
 get_police_employment <- function(ori = NULL,
-                                   state_abb = NULL,
-                                   region = NULL,
-                                   from = "2015",
-                                   to = "2020") {
+                                    state_abb = NULL,
+                                    region = NULL,
+                                    from = "2015",
+                                    to = "2020") {
 
   if (!is.null(ori) && !is_valid_ori(ori)) {
     stop(
@@ -60,7 +62,7 @@ get_police_employment <- function(ori = NULL,
 #' Internal helper: parse police employment API response into a wide data.frame
 #'
 #' Response shape (CDE API):
-#'   {"Male Officers": {"2015": 100, "2016": 110}, "Female Officers": {...}, ...}
+#'   A named list where each top-level key maps to a list of period-value pairs.
 #'
 #' @param response Parsed JSON response from the pe endpoint
 #' @param geography Geographic identifier (ORI, state, region, or "US")

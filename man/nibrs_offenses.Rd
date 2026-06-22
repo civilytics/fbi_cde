@@ -8,7 +8,7 @@
 A vector with 72 elements:
 }
 \source{
-\url{https://crime-data-explorer.fr.cloud.gov/api}
+\url{https://cde.ucr.cjis.gov/LATEST/}
 }
 \usage{
 nibrs_offenses

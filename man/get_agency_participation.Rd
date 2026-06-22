@@ -8,9 +8,12 @@ get_agency_participation(ori, key = get_api_key())
 }
 \arguments{
 \item{ori}{A string of the 9-character ORI code for the desired agency.}
+
+\item{key}{API key for the legacy FBI API (not needed for CDE API).}
 }
 \value{
-A data.frame with regional NIBRS and UCR participation rates for selected agency
+A data.frame with regional NIBRS and UCR participation rates for
+  selected agency
 }
 \description{
 Get agency level UCR and NIBRS participation data

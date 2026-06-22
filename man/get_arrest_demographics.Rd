@@ -32,7 +32,7 @@ A data.frame with columns: geography, offense, period,
 \description{
 Retrieves arrest counts broken down by demographic categories (sex, age,
 race) for a specific offense. Uses the CDE API endpoint
-`arrest/{level}/{offense}?type=totals`.
+`arrest/{level}/{offense}` with `type=totals`.
 }
 \examples{
 \dontrun{

@@ -1,8 +1,9 @@
 #' Flatten CDE JSON response
 #'
-#' Turns an object-of-{label -> {period -> value}} into a long/tidy data.frame
+#' Turns an object-of-`label -> period -> value` into a long/tidy data.frame
 #'
-#' @param obj A nested list/object from the CDE API with structure {label -> {period -> value}}
+#' @param obj A nested list/object from the CDE API with structure
+#'   `label -> period -> value`
 #' @return A data.frame with columns: label, period, value
 #' @examples
 #' obj <- list(
@@ -11,7 +12,9 @@
 #'     "01-2016" = 29.62
 #'   )
 #' )
+#' \dontrun{
 #' flatten_cde_json(obj)
+#' }
 flatten_cde_json <- function(obj) {
   if (is.null(obj) || length(obj) == 0) {
     return(data.frame(label = character(), period = character(), value = numeric(), stringsAsFactors = FALSE))
@@ -95,7 +98,7 @@ cde_request <- function(path, query = list(), get_fun = httr::GET) {
 
   useragent <- paste0(
     "Mozilla/5.0 (compatible; a bot using the R fbi",
-    " package; https://github.com/jacobkap/fbi/)"
+    " package; https://github.com/Civilytics/fbi_cde)"
   )
 
   response <- get_fun(full_url, httr::user_agent(useragent))
@@ -137,7 +140,8 @@ cde_request <- function(path, query = list(), get_fun = httr::GET) {
 #' @param type Character string with the endpoint type
 #'   (e.g. `"summarized"`, `"arrest"`, `"nibrs"`, `"shr"`, `"pe"`).
 #' @param level Character string with the geographic level. One of
-#'   `"national"`, `"state/{ABBR}"`, or `"agency/{ORI}"`.
+#'   `"national"`, `"state/XX"` (replace XX with state abbreviation), or
+#'   `"agency/XX"` (replace XX with ORI code).
 #' @param offense Optional character string with the offense identifier
 #'   (e.g. `"V"` for violent crime, `"LARC"` for larceny). Defaults to `NULL`.
 #'

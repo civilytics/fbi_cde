@@ -16,7 +16,6 @@ A data.frame with columns: geography, period, count
 }
 \description{
 Response shape (CDE API):
-  {"actuals": {"United States Offenses": {"01-2015": 1088, ...}, ...},
-   "tooltips": {...}, "cde_properties": {...}}
+  A list with `actuals`, `tooltips`, and `cde_properties` elements.
 }
 \keyword{internal}

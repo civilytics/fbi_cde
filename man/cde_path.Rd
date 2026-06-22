@@ -11,7 +11,8 @@ cde_path(type, level, offense = NULL)
 (e.g. `"summarized"`, `"arrest"`, `"nibrs"`, `"shr"`, `"pe"`).}
 
 \item{level}{Character string with the geographic level. One of
-`"national"`, `"state/{ABBR}"`, or `"agency/{ORI}"`.}
+`"national"`, `"state/XX"` (replace XX with state abbreviation), or
+`"agency/XX"` (replace XX with ORI code).}
 
 \item{offense}{Optional character string with the offense identifier
 (e.g. `"V"` for violent crime, `"LARC"` for larceny). Defaults to `NULL`.}

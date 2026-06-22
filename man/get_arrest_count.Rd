@@ -30,7 +30,7 @@ A data.frame with columns: geography, offense, period, count, rate
 }
 \description{
 Retrieves arrest counts by offense for an agency, state, or nationally.
-Uses the CDE API endpoint `arrest/{level}/{offense}?type=counts`.
+Uses the CDE API endpoint `arrest/{level}/{offense}` with `type=counts`.
 }
 \examples{
 \dontrun{

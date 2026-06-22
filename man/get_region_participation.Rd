@@ -8,9 +8,12 @@ get_region_participation(region_name = NULL, key = get_api_key())
 }
 \arguments{
 \item{region_name}{String or vector of strings for region to get data for}
+
+\item{key}{API key for the legacy FBI API (not needed for CDE API).}
 }
 \value{
-A data.frame with regional NIBRS and UCR participation rates for selected state#'
+A data.frame with regional NIBRS and UCR participation rates for
+  selected state
 }
 \description{
 Get regional level UCR and NIBRS participation data

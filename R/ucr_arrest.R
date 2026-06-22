@@ -1,7 +1,7 @@
 #' Get arrest offense counts from the UCR Crime Data Explorer
 #'
 #' Retrieves arrest counts by offense for an agency, state, or nationally.
-#' Uses the CDE API endpoint `arrest/{level}/{offense}?type=counts`.
+#' Uses the CDE API endpoint `arrest/{level}/{offense}` with `type=counts`.
 #'
 #' @family UCR arrest functions
 #' @param ori A string of the 9-character ORI code for the desired agency.
@@ -62,7 +62,7 @@ get_arrest_count <- function(ori = NULL,
 #'
 #' Retrieves arrest counts broken down by demographic categories (sex, age,
 #' race) for a specific offense. Uses the CDE API endpoint
-#' `arrest/{level}/{offense}?type=totals`.
+#' `arrest/{level}/{offense}` with `type=totals`.
 #'
 #' @family UCR arrest functions
 #' @inheritParams get_arrest_count
@@ -166,7 +166,7 @@ get_arrest_demographics_all <- function(...) {
 # Internal: parse arrest counts response into a tidy data.frame
 #
 # Response shape:
-#   {"offenses": {"counts": {"Label": {"01-2015": 100}}, "rates": {"Label": {"01-2015": 0.5}}}}
+#   A list with `offenses` containing `counts` and `rates` sub-objects.
 parse_arrest_counts_response <- function(response, geography) {
   offenses <- response$offenses
 
@@ -210,7 +210,8 @@ parse_arrest_counts_response <- function(response, geography) {
 # Internal: parse arrest demographics response into a tidy data.frame
 #
 # Response shape:
-#   {"offenses": {"totals": {"Arrestee Sex": {"Male": 500}, "Age": {"Under 18": 100}}}}
+#   A list with `offenses` containing a `totals` sub-object mapping
+#   demographic categories to period-value pairs.
 parse_arrest_demographics_response <- function(response, geography, offense) {
   offenses <- response$offenses
 

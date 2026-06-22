@@ -7,11 +7,14 @@
 get_state_participation(state_abb = NULL, key = get_api_key())
 }
 \arguments{
-\item{state_abb}{String or vector of strings input for state abbreviation(s) to get data for.
-If NULL (default) returns national data.}
+\item{state_abb}{String or vector of strings input for state abbreviation(s)
+to get data for. If NULL (default) returns national data.}
+
+\item{key}{API key for the legacy FBI API (not needed for CDE API).}
 }
 \value{
-A data.frame with state-level NIBRS and UCR participation rates for selected state
+A data.frame with state-level NIBRS and UCR participation rates for
+  selected state
 }
 \description{
 Get state level UCR and NIBRS participation data

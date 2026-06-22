@@ -1,5 +1,5 @@
 Package: fbi
-Title: R Wrapper for the FBI's Crime Data API
+Title: R Wrapper for the FBI Crime Data Explorer (CDE) API
 Version: 0.1.0
 Authors@R: 
     person(given = "Jacob",
@@ -7,16 +7,19 @@ Authors@R:
            role = c("aut", "cre"),
            email = "jkkaplan6@gmail.com",
            comment = c(ORCID = "0000-0002-0601-0387"))
-Description: Uses the FBI's Crime Data API <https://crime-data-explorer.fr.cloud.gov/api> to get information about crime. 
-    This includes are from the FBI's UCR (including the 'Offenses Known
-    and Clearances by Arrest', 'Arrests by Age, Sex, and Race', 'Supplement 
-    to Return A', 'Law Enforcement Officers Killed and Assaulted' data sets) 
-    and National Incident-Based Reporting System (NIBRS) data.
+Author: Jacob Kaplan [aut, cre] (<https://orcid.org/0000-0002-0601-0387>)
+Maintainer: Jacob Kaplan <jkkaplan6@gmail.com>
+Description: An R wrapper for the FBI Crime Data Explorer (CDE) API
+    (<https://cde.ucr.cjis.gov/LATEST/>) providing access to UCR and NIBRS
+    crime data. Functions cover lookups (agencies, offense codes, states),
+    summarized crime data, arrest statistics, NIBRS incident-level data,
+    Supplemental Homicide Reports (SHR), and police employment statistics.
+    No API key is required for the current CDE host.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
-URL: https://github.com/jacobkap/fbi
-BugReports: https://github.com/jacobkap/fbi/issues
+URL: https://github.com/Civilytics/fbi_cde
+BugReports: https://github.com/Civilytics/fbi_cde/issues
 Depends:
     R (>= 3.5.0)
 Suggests:

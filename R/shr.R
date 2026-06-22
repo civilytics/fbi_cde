@@ -1,8 +1,7 @@
 #' Internal helper: parse SHR API response into a tidy data.frame
 #'
 #' Response shape (CDE API):
-#'   {"actuals": {"United States Offenses": {"01-2015": 1088, ...}, ...},
-#'    "tooltips": {...}, "cde_properties": {...}}
+#'   A list with `actuals`, `tooltips`, and `cde_properties` elements.
 #'
 #' @param response Parsed JSON response from the SHR endpoint
 #' @param geography Geographic identifier (ORI, state, or "US")
@@ -32,7 +31,7 @@ parse_shr_response <- function(response, geography) {
 #' Get Supplemental Homicide Reports (SHR) offense counts
 #'
 #' Retrieves homicide offense counts from the FBI's Supplemental Homicide Reports
-#' via the CDE API endpoint `shr/{level}?from=MM-YYYY&to=MM-YYYY&type=counts`.
+#' via the CDE API endpoint `shr/{level}` with `type=counts`.
 #'
 #' @family SHR functions
 #' @param ori A string of the 9-character ORI code for the desired agency.

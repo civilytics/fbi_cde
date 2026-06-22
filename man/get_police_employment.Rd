@@ -18,12 +18,16 @@ get_police_employment(
 \item{state_abb}{String for state abbreviation. If `NULL` (default) returns
 national data.}
 
+\item{region}{Character string for the census region (e.g. "Northeast",
+"Midwest", "South", "West").}
+
 \item{from}{Start date in MM-YYYY format (default "01-2015").}
 
 \item{to}{End date in MM-YYYY format (default "12-2020").}
 }
 \value{
-A data.frame with columns for annual number of employees and officers (also broken up by gender).
+A data.frame with columns for annual number of employees and officers
+  (also broken up by gender).
 }
 \description{
 Get agency-, state-, region-, or national-level police staffing data.

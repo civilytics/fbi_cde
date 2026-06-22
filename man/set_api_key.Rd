@@ -6,6 +6,9 @@
 \usage{
 set_api_key(key)
 }
+\arguments{
+\item{key}{A character string with the API key.}
+}
 \value{
 A string with the FBI's Crime Data Explorer API key
 }

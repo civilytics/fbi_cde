@@ -8,7 +8,7 @@
 A vector with 8 elements:
 }
 \source{
-\url{https://crime-data-explorer.fr.cloud.gov/api}
+\url{https://cde.ucr.cjis.gov/LATEST/}
 }
 \usage{
 nibrs_offense_variables

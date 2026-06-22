@@ -3,12 +3,12 @@
 #' @family UCR crime functions
 #' @inheritParams get_agency_crime
 #'
-#' @param state_abb
-#' String or vector of strings input for state abbreviation(s) to get data for.
-#' If NULL (default) returns national data.
+#' @param state_abb String or vector of strings input for state abbreviation(s)
+#'   to get data for. If NULL (default) returns national data.
+#' @param key API key for the legacy FBI API (not needed for CDE API).
 #'
-#' @return
-#' A data.frame with state-level NIBRS and UCR participation rates for selected state
+#' @return A data.frame with state-level NIBRS and UCR participation rates for
+#'   selected state
 #' @export
 #' @author Jared E. Knowles, Civilytics Consulting
 #' @examples
@@ -39,11 +39,11 @@ get_state_participation <- function(state_abb = NULL,
 #' @family UCR crime functions
 #' @inheritParams get_agency_crime
 #'
-#' @param region_name
-#' String or vector of strings for region to get data for
+#' @param region_name String or vector of strings for region to get data for
+#' @param key API key for the legacy FBI API (not needed for CDE API).
 #'
-#' @return
-#' A data.frame with regional NIBRS and UCR participation rates for selected state#'
+#' @return A data.frame with regional NIBRS and UCR participation rates for
+#'   selected state
 #' @author Jared E. Knowles, Civilytics Consulting
 #' @export
 #'
@@ -52,7 +52,7 @@ get_state_participation <- function(state_abb = NULL,
 #' get_region_participation("South")
 #' }
 get_region_participation <- function(region_name = NULL,
-                                     key = get_api_key()) {
+                                      key = get_api_key()) {
 
   url_section <- combine_url_section("participation",
                                      ori = NULL,
@@ -76,9 +76,10 @@ get_region_participation <- function(region_name = NULL,
 #'
 #' @family UCR crime functions
 #' @inheritParams get_agency_crime
+#' @param key API key for the legacy FBI API (not needed for CDE API).
 #'
-#' @return
-#' A data.frame with regional NIBRS and UCR participation rates for selected agency
+#' @return A data.frame with regional NIBRS and UCR participation rates for
+#'   selected agency
 #' @author Jared E. Knowles, Civilytics Consulting
 #' @export
 #'
@@ -87,7 +88,7 @@ get_region_participation <- function(region_name = NULL,
 #' get_agency_participation("AK0010100")
 #' }
 get_agency_participation <- function(ori,
-                             key = get_api_key()) {
+                              key = get_api_key()) {
 
 
   url_section <- combine_url_section("participation",

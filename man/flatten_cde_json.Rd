@@ -7,13 +7,14 @@
 flatten_cde_json(obj)
 }
 \arguments{
-\item{obj}{A nested list/object from the CDE API with structure {label -> {period -> value}}}
+\item{obj}{A nested list/object from the CDE API with structure
+`label -> period -> value`}
 }
 \value{
 A data.frame with columns: label, period, value
 }
 \description{
-Turns an object-of-{label -> {period -> value}} into a long/tidy data.frame
+Turns an object-of-`label -> period -> value` into a long/tidy data.frame
 }
 \examples{
 obj <- list(
@@ -22,5 +23,7 @@ obj <- list(
     "01-2016" = 29.62
   )
 )
+\dontrun{
 flatten_cde_json(obj)
+}
 }
