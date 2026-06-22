@@ -8,17 +8,18 @@ cde_path(type, level, offense = NULL)
 }
 \arguments{
 \item{type}{Character string with the endpoint type
-(e.g. \code{"summarized"}, \code{"arrest"}, \code{"nibrs"}, \code{"shr"}, \code{"pe"}).}
+(e.g. `"summarized"`, `"arrest"`, `"nibrs"`, `"shr"`, `"pe"`).}
 
 \item{level}{Character string with the geographic level. One of
-\code{"national"}, \code{"state/{ABBR}"}, or \code{"agency/{ORI}"}.}
+`"national"`, `"state/XX"` (replace XX with state abbreviation), or
+`"agency/XX"` (replace XX with ORI code).}
 
 \item{offense}{Optional character string with the offense identifier
-(e.g. \code{"V"} for violent crime, \code{"LARC"} for larceny). Defaults to \code{NULL}.}
+(e.g. `"V"` for violent crime, `"LARC"` for larceny). Defaults to `NULL`.}
 }
 \value{
 A character string with the API path, e.g.
-\code{"summarized/national/V"} or \code{"shr/state/CA"}.
+  `"summarized/national/V"` or `"shr/state/CA"`.
 }
 \description{
 Constructs the path portion of a CDE API endpoint URL from its components.

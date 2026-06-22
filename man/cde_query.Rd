@@ -8,22 +8,22 @@ cde_query(from, to, type = NULL, four_digit_year = FALSE)
 }
 \arguments{
 \item{from}{Character string or numeric with the start date/year.
-When \code{four_digit_year = FALSE} expects \code{"MM-YYYY"} format;
-when \code{TRUE} accepts \code{"YYYY"} or a 4-digit numeric.}
+When `four_digit_year = FALSE` expects `"MM-YYYY"` format;
+when `TRUE` accepts `"YYYY"` or a 4-digit numeric.}
 
 \item{to}{Character string or numeric with the end date/year.
-Same format rules as \code{from}.}
+Same format rules as `from`.}
 
 \item{type}{Optional character string with the query type
-(e.g. \code{"counts"}, \code{"rates"}, \code{"totals"}). Defaults to \code{NULL}.}
+(e.g. `"counts"`, `"rates"`, `"totals"`). Defaults to `NULL`.}
 
-\item{four_digit_year}{Logical; when \code{TRUE} formats years as
-4-digit \code{YYYY} (used for police employment \code{pe} endpoints).
-When \code{FALSE} (default) formats as \code{MM-YYYY}.}
+\item{four_digit_year}{Logical; when `TRUE` formats years as
+4-digit `YYYY` (used for police employment `pe` endpoints).
+When `FALSE` (default) formats as `MM-YYYY`.}
 }
 \value{
 A named list of query parameters, e.g.
-\code{list(from = "01-2015", to = "12-2020", type = "counts")}.
+  `list(from = "01-2015", to = "12-2020", type = "counts")`.
 }
 \description{
 Formats year values and assembles a named list of query parameters

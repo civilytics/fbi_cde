@@ -8,7 +8,7 @@
 A vector with 6 elements:
 }
 \source{
-\url{https://crime-data-explorer.fr.cloud.gov/api}
+\url{https://cde.ucr.cjis.gov/LATEST/}
 }
 \usage{
 regions

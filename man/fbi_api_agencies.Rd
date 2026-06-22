@@ -25,7 +25,7 @@ A data frame with 18459 rows and 13 variables:
 }
 }
 \source{
-\url{https://crime-data-explorer.fr.cloud.gov/api}
+\url{https://cde.ucr.cjis.gov/LATEST/}
 }
 \usage{
 fbi_api_agencies

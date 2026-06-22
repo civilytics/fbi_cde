@@ -2,25 +2,25 @@
 % Please edit documentation in R/ucr_crime.R
 \name{get_agency_crime}
 \alias{get_agency_crime}
-\title{Get agency-level crime data from the UCR's Offenses Known and Clearances by Arrest data set.}
+\title{Get agency-level crime data from the UCR Offenses Known and Clearances}
 \usage{
-get_agency_crime(
-  ori,
-  key = get_api_key(),
-  start_year = 1985,
-  end_year = make_year()
-)
+get_agency_crime(ori, from = "01-2015", to = "12-2020", offense = "V")
 }
 \arguments{
-\item{ori}{A string or vector of strings of the 9-character ORI code (unique agency ID) for the desired agency.}
+\item{ori}{A string of the 9-character ORI code for the desired agency.}
 
-\item{key}{A string containing your FBI's Crime Data Explorer API key}
+\item{from}{Start date in MM-YYYY format (default "01-2015").}
+
+\item{to}{End date in MM-YYYY format (default "12-2020").}
+
+\item{offense}{Offense code (default "V" for violent crime). See
+`get_offense_codes()` for available codes.}
 }
 \value{
-A data.frame with agency-level UCR crime data for selected agency.
+A data.frame with columns: geography, offense, period, count, rate
 }
 \description{
-Get agency-level crime data from the UCR's Offenses Known and Clearances by Arrest data set.
+Get agency-level crime data from the UCR Offenses Known and Clearances
 }
 \examples{
 \dontrun{
@@ -28,11 +28,11 @@ get_agency_crime("AK0010100")
 }
 }
 \seealso{
-Other UCR crime functions: 
-\code{\link{get_agency_participation}()},
-\code{\link{get_estimated_arson}()},
-\code{\link{get_estimated_crime}()},
-\code{\link{get_region_participation}()},
-\code{\link{get_state_participation}()}
+Other UCR crime functions:
+\code{\link[=get_agency_participation]{get_agency_participation()}},
+\code{\link[=get_estimated_arson]{get_estimated_arson()}},
+\code{\link[=get_estimated_crime]{get_estimated_crime()}},
+\code{\link[=get_region_participation]{get_region_participation()}},
+\code{\link[=get_state_participation]{get_state_participation()}}
 }
 \concept{UCR crime functions}

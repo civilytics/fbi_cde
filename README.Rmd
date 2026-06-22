@@ -12,30 +12,238 @@ knitr::opts_chunk$set(
   out.width = "100%"
 )
 ```
-# Overview
+
+# fbi: R Wrapper for the FBI Crime Data Explorer (CDE) API
 
 <!-- badges: start -->
-[![CRAN_Status_Badge](https://www.r-pkg.org/badges/version/fbi)](https://cran.r-project.org/package=fbi.png)
-[![Travis-CI Build Status](https://travis-ci.org/jacobkap/fbi.svg?branch=master)](https://travis-ci.org/jacobkap/fbi) 
-[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/jacobkap/fbi?branch=master&svg=true)](https://ci.appveyor.com/project/jacobkap/fbi) 
-[![](http://cranlogs.r-pkg.org/badges/grand-total/fbi?color=blue)](https://cran.r-project.org/package=fbi)
-[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
+[![R-CMD-check](https://github.com/Civilytics/fbi_cde/actions/workflows/R-CMD-check.yml/badge.svg)](https://github.com/Civilytics/fbi_cde/actions/workflows/R-CMD-check.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 <!-- badges: end -->
 
-The goal of `fbi` is to connect to the FBI's [Crime Data Explorer](crime-data-explorer.fr.cloud.gov/) to get crime data (UCR and NIBRS) from their API. 
+An R wrapper for the [FBI Crime Data Explorer (CDE) API](https://cde.ucr.cjis.gov/LATEST/) providing access to UCR and NIBRS crime data. The package offers a unified interface for querying summarized crime statistics, arrest demographics, NIBRS incident-level data, Supplemental Homicide Reports (SHR), and police employment statistics.
+
+All network requests go through `cde_request()`, the single network seam for the package. **No API key is required** for the current CDE host at `cde.ucr.cjis.gov`.
 
 ## Installation
 
-This package is not on CRAN yet.
+The package is not on CRAN. Install the development version from GitHub:
 
-You can install the development version from [GitHub](https://github.com/) with:
-
-``` r
-# install.packages("devtools")
-devtools::install_github("jacobkap/fbi")
+```r
+remotes::install_github("Civilytics/fbi_cde")
 ```
-## Usage
+
+## Quick Start
 
 ```{r example}
 library(fbi)
+
+# Get all states available in the API
+get_states()
+
+# Get offense codes
+get_offense_codes()
+
+# Get summarized crime data for a specific agency
+get_agency_crime("CA0010900")
+
+# Get arrest demographics for a state
+get_arrest_demographics(state_abb = "CA", offense = "murder")
 ```
+
+## Table of Contents
+
+- [Lookups](#lookups)
+- [Summarized Crime](#summarized-crime)
+- [Arrest](#arrest)
+- [NIBRS](#nibrs)
+- [SHR](#shr)
+- [Police Employment](#police-employment)
+- [Utilities](#utilities)
+
+---
+
+### Lookups
+
+Functions for retrieving reference data from the CDE API.
+
+| Function | Description |
+|---|---|
+| `get_agencies()` | Get all agencies from the CDE API |
+| `get_offense_codes()` | Get offense codes from the CDE API |
+| `get_states()` | Get state list from the CDE API |
+
+```{r, eval=FALSE}
+# List all states
+get_states()
+
+# List offense codes
+get_offense_codes()
+
+# Get all agencies (may take a moment)
+agencies <- get_agencies()
+```
+
+### Summarized Crime
+
+Functions for querying UCR Offenses Known and Clearances data.
+
+| Function | Description |
+|---|---|
+| `get_agency_crime()` | Get agency-level crime data |
+| `get_estimated_crime()` | Get state- or national-level estimated crime counts |
+| `get_estimated_arson()` | Get estimated arson data |
+
+```{r, eval=FALSE}
+# Agency-level crime data (violent crime)
+get_agency_crime("CA0010900")
+
+# State-level estimated crime
+get_estimated_crime("CA")
+
+# National-level estimated crime
+get_estimated_crime()
+
+# Estimated arson data for a state
+get_estimated_arson("CA")
+```
+
+### Arrest
+
+Functions for querying UCR arrest statistics.
+
+| Function | Description |
+|---|---|
+| `get_arrest_count()` | Get arrest offense counts |
+| `get_arrest_demographics()` | Get arrestee demographics |
+| `get_arrest_demographics_all()` | Get demographics for all UCR arrest offenses |
+| `list_ucr_arrest_offenses()` | List all UCR arrest offense codes |
+
+```{r, eval=FALSE}
+# Total arrests for an agency
+get_arrest_count(ori = "CA0010900")
+
+# Arrest demographics for a state
+get_arrest_demographics(state_abb = "CA", offense = "murder")
+
+# All arrest offenses
+list_ucr_arrest_offenses()
+```
+
+### NIBRS
+
+Functions for querying National Incident-Based Reporting System data.
+
+| Function | Description |
+|---|---|
+| `get_nibrs_victim()` | Get victim-level NIBRS data |
+| `get_nibrs_offender()` | Get offender-level NIBRS data |
+| `get_nibrs_offense()` | Get offense-level NIBRS data |
+| `list_nibrs_offenses()` | List all NIBRS offense codes |
+| `list_nibrs_victim_variables()` | List victim variable options |
+| `list_nibrs_offender_variables()` | List offender variable options |
+| `list_nibrs_offense_variables()` | List offense variable options |
+| `list_regions()` | List all region choices |
+
+```{r, eval=FALSE}
+# Victim demographics (race)
+get_nibrs_victim(ori = "CA0010900", variable = "race")
+
+# Offender demographics
+get_nibrs_offender(state_abb = "CA", offense = "murder", variable = "race")
+
+# Offense characteristics (weapons)
+get_nibrs_offense(state_abb = "CA", offense = "robbery", variable = "weapons")
+```
+
+### SHR
+
+Functions for querying Supplemental Homicide Reports data.
+
+| Function | Description |
+|---|---|
+| `get_shr()` | Get SHR homicide offense counts |
+
+```{r, eval=FALSE}
+# National-level SHR data
+get_shr()
+
+# California state-level SHR data
+get_shr(state_abb = "CA")
+```
+
+### Police Employment
+
+Functions for querying police staffing data.
+
+| Function | Description |
+|---|---|
+| `get_police_employment()` | Get police staffing data |
+
+```{r, eval=FALSE}
+# Oakland PD staffing
+get_police_employment("CA0010900")
+
+# California state-level staffing
+get_police_employment(state_abb = "CA")
+
+# National-level staffing
+get_police_employment()
+```
+
+### Utilities
+
+Helper functions for working with the CDE API.
+
+| Function | Description |
+|---|---|
+| `cde_base_url()` | Get the CDE API base URL |
+| `cde_path()` | Build a CDE API path string |
+| `cde_query()` | Build query parameters for CDE requests |
+| `is_valid_ori()` | Validate an ORI code |
+| `is_valid_state()` | Validate a state abbreviation |
+
+```{r, eval=FALSE}
+# Check the base URL
+cde_base_url()
+#> [1] "https://cde.ucr.cjis.gov/LATEST/"
+
+# Build a path
+cde_path("summarized", "national", "V")
+#> [1] "summarized/national/V"
+
+# Build query params
+cde_query("01-2015", "12-2020", type = "counts")
+#> $from
+#> [1] "01-2015"
+#> $to
+#> [1] "12-2020"
+#> $type
+#> [1] "counts"
+
+# Validate an ORI
+is_valid_ori("CA0010900")
+#> [1] TRUE
+
+# Validate a state
+is_valid_state("CA")
+#> [1] TRUE
+```
+
+## Architecture
+
+The package uses `cde_request()` as its single network seam. All API calls route through this function, which:
+
+1. Builds the full URL from `cde_base_url()` + `cde_path()` + `cde_query()`
+2. Performs the HTTP GET request via `httr::GET`
+3. Parses the JSON response via `jsonlite::fromJSON()`
+4. Returns a list for downstream parsing
+
+This design makes it straightforward to mock the API in tests by injecting a custom `get_fun` argument.
+
+## Data Sources
+
+All data is sourced from the FBI Crime Data Explorer API at <https://cde.ucr.cjis.gov/LATEST/>. No API key is required for the current host.
+
+## Documentation
+
+See the full package documentation for detailed function reference and parameter descriptions.

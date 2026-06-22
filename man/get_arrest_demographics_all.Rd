@@ -2,21 +2,30 @@
 % Please edit documentation in R/ucr_arrest.R
 \name{get_arrest_demographics_all}
 \alias{get_arrest_demographics_all}
-\title{Get arrest data by arrestee demographic from the UCR's Arrests by Age, Sex, and Race data set for all offenses.}
+\title{Get arrestee demographics for all UCR arrest offenses}
 \usage{
 get_arrest_demographics_all(...)
 }
 \arguments{
-\item{...}{all parameters valid for \link{get_arrest_demographics}}
+\item{...}{Additional arguments passed to `get_arrest_demographics()`.}
 }
 \value{
-A data.frame with the number of arrests by arrestee demographic for each crime-year in the jurisdiction.
+A data.frame with columns: geography, offense, period,
+  demographic_type, demographic_value, count
 }
 \description{
-Get arrest data by arrestee demographic from the UCR's Arrests by Age, Sex, and Race data set for all offenses.
+Calls `get_arrest_demographics()` for each offense in
+`list_ucr_arrest_offenses()` and combines the results.
 }
 \examples{
 \dontrun{
-get_arrest_demographics_all(region = "South")
+get_arrest_demographics_all(state_abb = "CA", offense = "murder")
 }
 }
+\seealso{
+Other UCR arrest functions:
+\code{\link[=get_arrest_count]{get_arrest_count()}},
+\code{\link[=get_arrest_demographics]{get_arrest_demographics()}},
+\code{\link[=list_ucr_arrest_offenses]{list_ucr_arrest_offenses()}}
+}
+\concept{UCR arrest functions}

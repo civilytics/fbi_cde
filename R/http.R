@@ -1,3 +1,57 @@
+#' Flatten CDE JSON response
+#'
+#' Turns an object-of-`label -> period -> value` into a long/tidy data.frame
+#'
+#' @param obj A nested list/object from the CDE API with structure
+#'   `label -> period -> value`
+#' @return A data.frame with columns: label, period, value
+#' @examples
+#' obj <- list(
+#'   "United States Offenses" = list(
+#'     "01-2015" = 27.6,
+#'     "01-2016" = 29.62
+#'   )
+#' )
+#' \dontrun{
+#' flatten_cde_json(obj)
+#' }
+flatten_cde_json <- function(obj) {
+  if (is.null(obj) || length(obj) == 0) {
+    return(data.frame(label = character(), period = character(), value = numeric(), stringsAsFactors = FALSE))
+  }
+
+  labels <- c()
+  periods <- c()
+  values <- c()
+
+  for (label in names(obj)) {
+    label_data <- obj[[label]]
+
+    if (is.null(label_data)) {
+      next
+    }
+
+    for (period in names(label_data)) {
+      value <- label_data[[period]]
+
+      if (is.null(value)) {
+        next
+      }
+
+      labels <- c(labels, label)
+      periods <- c(periods, period)
+      values <- c(values, value)
+    }
+  }
+
+  data.frame(
+    label = labels,
+    period = periods,
+    value = as.numeric(values),
+    stringsAsFactors = FALSE
+  )
+}
+
 #' Get the FBI CDE API base URL
 #'
 #' Returns the base URL for the FBI Crime Data Explorer API.
@@ -44,7 +98,7 @@ cde_request <- function(path, query = list(), get_fun = httr::GET) {
 
   useragent <- paste0(
     "Mozilla/5.0 (compatible; a bot using the R fbi",
-    " package; https://github.com/jacobkap/fbi/)"
+    " package; https://github.com/Civilytics/fbi_cde)"
   )
 
   response <- get_fun(full_url, httr::user_agent(useragent))
@@ -86,7 +140,8 @@ cde_request <- function(path, query = list(), get_fun = httr::GET) {
 #' @param type Character string with the endpoint type
 #'   (e.g. `"summarized"`, `"arrest"`, `"nibrs"`, `"shr"`, `"pe"`).
 #' @param level Character string with the geographic level. One of
-#'   `"national"`, `"state/{ABBR}"`, or `"agency/{ORI}"`.
+#'   `"national"`, `"state/XX"` (replace XX with state abbreviation), or
+#'   `"agency/XX"` (replace XX with ORI code).
 #' @param offense Optional character string with the offense identifier
 #'   (e.g. `"V"` for violent crime, `"LARC"` for larceny). Defaults to `NULL`.
 #'
@@ -147,4 +202,68 @@ cde_query <- function(from, to, type = NULL, four_digit_year = FALSE) {
     params$type <- type
   }
   params
+}
+
+#' Validate an ORI code
+#'
+#' Checks if an ORI (Organization Request Identifier) matches the expected
+#' 9-character format: 2 letters + 7 digits (e.g. "CA0010900").
+#'
+#' @param ori Character string or vector of ORI codes.
+#' @return Logical vector, TRUE for valid ORIs.
+#' @export
+#'
+#' @examples
+#' is_valid_ori("CA0010900")
+#' is_valid_ori("abc123")
+is_valid_ori <- function(ori) {
+  grepl("^[A-Z]{2}[0-9]{7}$", toupper(ori))
+}
+
+#' Validate a state abbreviation
+#'
+#' Checks if a state abbreviation is a valid US state or territory code.
+#'
+#' @param state_abb Character string or vector of state abbreviations.
+#' @return Logical vector, TRUE for valid state abbreviations.
+#' @export
+#'
+#' @examples
+#' is_valid_state("CA")
+#' is_valid_state("XX")
+is_valid_state <- function(state_abb) {
+  valid <- c(
+    "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
+    "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
+    "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
+    "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
+    "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY",
+    "DC", "PR", "GU", "VI", "AS", "CZ"
+  )
+  toupper(state_abb) %in% valid
+}
+
+#' Validate a date range
+#'
+#' Checks that from <= to for date ranges. Supports both MM-YYYY and YYYY formats.
+#'
+#' @param from Character string for the start date.
+#' @param to Character string for the end date.
+#' @param year_format Character string, either "mm-yyyy" or "yyyy".
+#' @keywords internal
+cde_validate_dates <- function(from, to, year_format = "mm-yyyy") {
+  if (year_format == "mm-yyyy") {
+    from_num <- as.numeric(gsub("([0-9]{2})-([0-9]{4})", "\\2\\1", from))
+    to_num <- as.numeric(gsub("([0-9]{2})-([0-9]{4})", "\\2\\1", to))
+  } else {
+    from_num <- as.numeric(from)
+    to_num <- as.numeric(to)
+  }
+  if (from_num > to_num) {
+    stop(
+      "Invalid date range: 'from' (", from, ") must be <= 'to' (", to, ")",
+      call. = FALSE
+    )
+  }
+  invisible(TRUE)
 }

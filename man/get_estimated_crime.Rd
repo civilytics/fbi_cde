@@ -2,29 +2,31 @@
 % Please edit documentation in R/ucr_crime.R
 \name{get_estimated_crime}
 \alias{get_estimated_crime}
-\title{Get state- or national-level estimated crime counts from the UCR's Offenses Known
-and Clearances by Arrest data set.}
+\title{Get state- or national-level estimated crime counts}
 \usage{
 get_estimated_crime(
   state_abb = NULL,
-  region_name = NULL,
-  key = get_api_key(),
-  start_year = 1979,
-  end_year = make_year()
+  from = "01-2015",
+  to = "12-2020",
+  offense = "V"
 )
 }
 \arguments{
-\item{state_abb}{String or vector of strings input for state abbreviation(s) to get data for.
-If NULL (default) returns national data.}
+\item{state_abb}{String for state abbreviation. If `NULL` (default) returns
+national data.}
 
-\item{key}{A string containing your FBI's Crime Data Explorer API key}
+\item{from}{Start date in MM-YYYY format (default "01-2015").}
+
+\item{to}{End date in MM-YYYY format (default "12-2020").}
+
+\item{offense}{Offense code (default "V" for violent crime). See
+`get_offense_codes()` for available codes.}
 }
 \value{
-A data.frame with state-level estimated UCR crime data for selected state
+A data.frame with columns: geography, offense, period, count, rate
 }
 \description{
-Get state- or national-level estimated crime counts from the UCR's Offenses Known
-and Clearances by Arrest data set.
+Get state- or national-level estimated crime counts
 }
 \examples{
 \dontrun{
@@ -32,11 +34,11 @@ get_estimated_crime("CA")
 }
 }
 \seealso{
-Other UCR crime functions: 
-\code{\link{get_agency_crime}()},
-\code{\link{get_agency_participation}()},
-\code{\link{get_estimated_arson}()},
-\code{\link{get_region_participation}()},
-\code{\link{get_state_participation}()}
+Other UCR crime functions:
+\code{\link[=get_agency_crime]{get_agency_crime()}},
+\code{\link[=get_agency_participation]{get_agency_participation()}},
+\code{\link[=get_estimated_arson]{get_estimated_arson()}},
+\code{\link[=get_region_participation]{get_region_participation()}},
+\code{\link[=get_state_participation]{get_state_participation()}}
 }
 \concept{UCR crime functions}

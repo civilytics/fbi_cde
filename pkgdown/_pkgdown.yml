@@ -1,0 +1,89 @@
+url: https://Civilytics.github.io/fbi_cde/
+
+template:
+  params:
+    ganalytics: G-XXXXXXXXXX
+
+navbar:
+  structure:
+    left:  [home, reference, articles, news]
+    right: [search]
+  components:
+    home: ~
+    reference:
+      text: Functions
+      href: reference/index.html
+    articles:
+      text: Articles
+      href: articles/index.html
+    news:
+      text: News
+      href: news/index.html
+
+reference:
+  - title: Lookups
+    desc: Functions for retrieving reference data from the CDE API
+    contents:
+      - get_agencies
+      - get_offense_codes
+      - get_states
+      - get_agency_info
+  - title: Summarized Crime
+    desc: Functions for querying UCR Offenses Known and Clearances data
+    contents:
+      - get_agency_crime
+      - get_estimated_crime
+      - get_estimated_arson
+      - get_state_participation
+      - get_region_participation
+      - get_agency_participation
+  - title: Arrest
+    desc: Functions for querying UCR arrest statistics
+    contents:
+      - get_arrest_count
+      - get_arrest_demographics
+      - get_arrest_demographics_all
+      - list_ucr_arrest_offenses
+  - title: NIBRS
+    desc: Functions for querying National Incident-Based Reporting System data
+    contents:
+      - get_nibrs_victim
+      - get_nibrs_offender
+      - get_nibrs_offense
+      - list_nibrs_offenses
+      - list_nibrs_victim_variables
+      - list_nibrs_offender_variables
+      - list_nibrs_offense_variables
+      - list_regions
+  - title: SHR
+    desc: Functions for querying Supplemental Homicide Reports data
+    contents:
+      - get_shr
+  - title: Police Employment
+    desc: Functions for querying police staffing data
+    contents:
+      - get_police_employment
+  - title: Utilities
+    desc: Helper functions for working with the CDE API
+    contents:
+      - cde_base_url
+      - cde_path
+      - cde_query
+      - flatten_cde_json
+      - is_valid_ori
+      - is_valid_state
+  - title: Data
+    desc: Built-in reference data and datasets
+    contents:
+      - fbi_api_agencies
+      - nibrs_offenses
+      - nibrs_victim_variables
+      - nibrs_offender_variables
+      - nibrs_offense_variables
+      - ucr_arrest_offenses
+      - regions
+  - title: API Key Management
+    desc: Functions for managing API keys (legacy)
+    contents:
+      - get_api_key
+      - set_api_key

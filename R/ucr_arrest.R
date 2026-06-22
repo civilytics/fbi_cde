@@ -1,206 +1,298 @@
-#' Get arrest data from the UCR's Arrests by Age, Sex, and Race data set.
+#' Get arrest offense counts from the UCR Crime Data Explorer
 #'
-#' @inheritParams get_agency_crime
-#' @inheritParams get_estimated_arson
+#' Retrieves arrest counts by offense for an agency, state, or nationally.
+#' Uses the CDE API endpoint `arrest/{level}/{offense}` with `type=counts`.
 #'
-#' @param monthly
-#' @param end_year = last year of the collection to get, defaults to the prior calendar year from today
-#' If TRUE (not default), returns data as monthly units. Otherwise returns annual data.
+#' @family UCR arrest functions
+#' @param ori A string of the 9-character ORI code for the desired agency.
+#' @param state_abb String for state abbreviation. If `NULL` (default) returns
+#'   national data.
+#' @param from Start date in MM-YYYY format (default "01-2015").
+#' @param to End date in MM-YYYY format (default "12-2020").
+#' @param offense Offense code (default "all" for total arrests). See
+#'   `list_ucr_arrest_offenses()` for available codes.
 #'
-#' @return
-#' A data.frame with the number of arrests for each crime-year in the jurisdiction.
+#' @return A data.frame with columns: geography, offense, period, count, rate
 #' @export
 #'
 #' @examples
 #' \dontrun{
 #' get_arrest_count(ori = "CA0010900")
+#' get_arrest_count(state_abb = "CA")
 #' get_arrest_count()
 #' }
 get_arrest_count <- function(ori = NULL,
-                             state_abb = NULL,
-                             region = NULL,
-                             monthly = FALSE,
-                             end_year = make_year(),
-                             key = get_api_key()) {
-
-  url_part <- "data/arrest"
-  if (is.null(ori) & is.null(state_abb) & is.null(region)) {
-    url_part <- "data/arrest"
-  }
-  url_section <- combine_url_section(url_part,
-                                     ori = ori,
-                                     state_abb = state_abb,
-                                     region_name = region)
-  if (monthly) {
-    start_year <- "monthly/1985"
-  } else {
-    start_year <- "all/1985"
+                              state_abb = NULL,
+                              from = "01-2015",
+                              to = "12-2020",
+                              offense = "all") {
+  if (!is.null(ori) && !is_valid_ori(ori)) {
+    stop(
+      "Invalid ORI code: ", ori,
+      ". Must match format: 2 letters + 7 digits (e.g., CA0010900)",
+      call. = FALSE
+    )
   }
 
-  if (end_year == make_year()) {
-    end_year <- make_year() - 2
+  if (!is.null(state_abb) && !is_valid_state(state_abb)) {
+    stop("Invalid state abbreviation: ", state_abb, call. = FALSE)
   }
 
-  url <- make_url(url_section, start_year = start_year,
-                  end_year = end_year,  key)
-  url <- gsub("offense/agencies", "offense", url)
-  url <- gsub("national", "national/offense", url)
-  url <- gsub("states", "states/offense", url)
-  url <- gsub("regions", "regions/offense", url)
-
-
-  data <- url_to_dataframe(url)
-  data <- clean_column_names(data)
-  stopifnot(is.data.frame(as.data.frame(data)))
+  cde_validate_dates(from, to, "mm-yyyy")
 
   if (!is.null(ori)) {
-    data$ori <- ori
-    data <- data[, c("ori", "year",
-                     names(data)[which(!names(data) %in% c("year", "ori"))])]
+    level <- paste0("agency/", ori)
+    geography <- ori
   } else if (!is.null(state_abb)) {
-    data$state_abb <- state_abb
-    data <- data[, c("state_abb", "year",
-                     names(data)[which(!names(data) %in% c("year", "state_abb"))])]
-  } else if (!is.null(region)) {
-    data <- data[, c("region_name", "year", "region_code",
-                     names(data)[which(!names(data) %in% c("region_name", "year", "region_code"))])]
+    level <- paste0("state/", toupper(state_abb))
+    geography <- toupper(state_abb)
+  } else {
+    level <- "national"
+    geography <- "US"
   }
 
-  data <- data[order(data$year, decreasing = TRUE), ]
-  rownames(data) <- 1:nrow(data)
-  return(data)
+  path <- cde_path("arrest", level, offense)
+  query <- list(from = from, to = to, type = "counts")
+
+  response <- cde_request(path, query)
+  parse_arrest_counts_response(response, geography)
 }
 
-
-#' Get arrest data by arrestee demographic from the UCR's Arrests by Age, Sex, and Race data set.
+#' Get arrestee demographics from the UCR Crime Data Explorer
 #'
-#' @inheritParams get_agency_crime
-#' @inheritParams get_estimated_arson
+#' Retrieves arrest counts broken down by demographic categories (sex, age,
+#' race) for a specific offense. Uses the CDE API endpoint
+#' `arrest/{level}/{offense}` with `type=totals`.
 #'
-#' @param offense
-#' A string or vector of strings with the offenses you want to scrape. If
-#' input is 'all' (default), returns data for all offenses. Please run `list_ucr_arrest_offenses()` to see all possible offenses.
+#' @family UCR arrest functions
+#' @inheritParams get_arrest_count
+#' @param offense Offense code (required for demographics). See
+#'   `list_ucr_arrest_offenses()` for available codes.
 #'
-#' @return
-#' A data.frame with the number of arrests by arrestee demographic for each crime-year in the jurisdiction.
+#' @return A data.frame with columns: geography, offense, period,
+#'   demographic_type, demographic_value, count
 #' @export
 #'
 #' @examples
 #' \dontrun{
 #' get_arrest_demographics(ori = "CA0010900", offense = "robbery")
-#' get_arrest_demographics(offense = "robbery")
+#' get_arrest_demographics(state_abb = "CA", offense = "murder")
 #' }
 get_arrest_demographics <- function(ori = NULL,
-                                    state_abb = NULL,
-                                    region = NULL,
-                                    offense = "all",
-                                    end_year = make_year(),
-                                    key = get_api_key()) {
-
-  # TODO: Fix API calls to get state and region accurately
-  if (end_year == make_year()) {
-    end_year <- make_year() - 2
+                                     state_abb = NULL,
+                                     from = "01-2015",
+                                     to = "12-2020",
+                                     offense) {
+  if (!is.null(ori) && !is_valid_ori(ori)) {
+    stop(
+      "Invalid ORI code: ", ori,
+      ". Must match format: 2 letters + 7 digits (e.g., CA0010900)",
+      call. = FALSE
+    )
   }
-  url_section <- combine_url_section("data/arrest",
-                                     ori = ori,
-                                     state_abb = state_abb,
-                                     region_name = region)
 
-  data <- data.frame()
-
-
-  for (arrest_variable in c("male", "female", "race")) {
-      url_section_temp <- paste0(url_section, "/", offense, "/", arrest_variable)
-      url <- make_url(url_section_temp, start_year = 1985, end_year = end_year, key)
-      if (!is.null(ori)) {
-        url <- gsub("offense/agencies", "offense", url)
-      }
-
-      temp <- url_to_dataframe(url)
-      temp <- clean_column_names(temp)
-
-      if(!is.null(state_abb)) {
-        temp$geog <- state_abb
-        temp$offense <- offense
-        temp$measure <- arrest_variable
-      } else if(!is.null(region)) {
-        temp$geog <- region
-        temp$offense <- offense
-        temp$measure <- arrest_variable
-      } else if(!is.null(ori)) {
-        temp$geog <- ori
-        temp$offense <- offense
-        temp$measure <- arrest_variable
-      }
-
-
-      names(temp) <- gsub("range_", "arrests.", names(temp))
-
-      if (arrest_variable == "race") {
-        temp <- reshape(temp, direction = "long",
-                        idvar = c("geog", "year", "offense", "measure"),
-                        varying = list(race = names(temp)[1:6]),
-                       v.names = "arrests",
-                       timevar = "submeasure",
-                       times = names(temp)[1:6])
-        row.names(temp) <- NULL
-      } else {
-        temp <- reshape(temp, direction = "long",
-                        idvar = c("geog", "year", "offense", "measure"),
-                        varying = names(temp)[1:22],
-                        timevar = "submeasure",
-                        sep = ".")
-        row.names(temp) <- NULL
-
-      }
-      if (nrow(data) == 0) {
-        data <- temp
-      } else {
-        data <- rbind(data, temp)
-      }
-
-    # https://api.usa.gov/crime/fbi/sapi/api/arrest/states/MT//race/1988/1995?API_KEY=iiHnOKfno2Mgkt5AynpvPpUQTEyxE77jo1RU8PIv
+  if (!is.null(state_abb) && !is_valid_state(state_abb)) {
+    stop("Invalid state abbreviation: ", state_abb, call. = FALSE)
   }
+
+  if (missing(offense)) {
+    stop("offense is required for get_arrest_demographics()", call. = FALSE)
+  }
+
+  cde_validate_dates(from, to, "mm-yyyy")
 
   if (!is.null(ori)) {
-    data$ori <- ori
-    data <- data[, c("ori", "year",
-                     names(data)[which(!names(data) %in% c("year", "ori"))])]
+    level <- paste0("agency/", ori)
+    geography <- ori
+  } else if (!is.null(state_abb)) {
+    level <- paste0("state/", toupper(state_abb))
+    geography <- toupper(state_abb)
+  } else {
+    level <- "national"
+    geography <- "US"
   }
-  data <- data[order(data$year, decreasing = TRUE), ]
-  rownames(data) <- 1:nrow(data)
-  return(data)
+
+  path <- cde_path("arrest", level, offense)
+  query <- list(from = from, to = to, type = "totals")
+
+  response <- cde_request(path, query)
+  parse_arrest_demographics_response(response, geography, offense)
 }
 
-#' Get arrest data by arrestee demographic from the UCR's Arrests by Age, Sex, and Race data set for all offenses.
+#' Get arrestee demographics for all UCR arrest offenses
 #'
+#' Calls `get_arrest_demographics()` for each offense in
+#' `list_ucr_arrest_offenses()` and combines the results.
+#'
+#' @family UCR arrest functions
 #' @inheritParams get_arrest_demographics
+#' @param ... Additional arguments passed to `get_arrest_demographics()`.
 #'
-#' @param ... all parameters valid for \link{get_arrest_demographics}
-#'
-#' @return
-#' A data.frame with the number of arrests by arrestee demographic for each crime-year in the jurisdiction.
+#' @return A data.frame with columns: geography, offense, period,
+#'   demographic_type, demographic_value, count
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' get_arrest_demographics_all(region = "South")
+#' get_arrest_demographics_all(state_abb = "CA", offense = "murder")
 #' }
 get_arrest_demographics_all <- function(...) {
-  data <- data.frame()
-  for(o in fbi:::ucr_arrest_offenses) {
+  offenses <- list_ucr_arrest_offenses()
+  results <- list()
 
-    temp <- tryCatch({
-      get_arrest_demographics(offense = o, ...)},
+  for (o in offenses) {
+    results[[o]] <- tryCatch(
+      get_arrest_demographics(offense = o, ...),
       error = function(e) data.frame()
     )
+  }
 
+  valid <- vapply(results, function(x) is.data.frame(x) && nrow(x) > 0, logical(1))
+  if (sum(valid) == 0) {
+    return(data.frame(
+      geography = character(),
+      offense = character(),
+      period = character(),
+      demographic_type = character(),
+      demographic_value = character(),
+      count = numeric(),
+      stringsAsFactors = FALSE
+    ))
+  }
 
-    if(nrow(data) == 0) {
-      data <- temp
-    } else if(nrow(temp) > 0) {
-      data <- rbind(data, temp)
+  data.table::rbindlist(results[valid], fill = TRUE)
+}
+
+# Internal: parse arrest counts response into a tidy data.frame
+#
+# Response shape:
+#   A list with `offenses` containing `counts` and `rates` sub-objects.
+parse_arrest_counts_response <- function(response, geography) {
+  offenses <- response$offenses
+
+  if (is.null(offenses) || length(offenses) == 0) {
+    return(data.frame(
+      geography = geography,
+      offense = character(),
+      period = character(),
+      count = numeric(),
+      rate = numeric(),
+      stringsAsFactors = FALSE
+    ))
+  }
+
+  counts_df <- data.frame(
+    offense = character(), period = character(), count = numeric(),
+    stringsAsFactors = FALSE
+  )
+  rates_df <- data.frame(
+    offense = character(), period = character(), rate = numeric(),
+    stringsAsFactors = FALSE
+  )
+
+  if (!is.null(offenses$counts) && length(offenses$counts) > 0) {
+    counts_df <- flatten_cde_json(offenses$counts)
+    names(counts_df) <- c("offense", "period", "count")
+  }
+
+  if (!is.null(offenses$rates) && length(offenses$rates) > 0) {
+    rates_df <- flatten_cde_json(offenses$rates)
+    names(rates_df) <- c("offense", "period", "rate")
+  }
+
+  result <- merge(counts_df, rates_df, by = c("offense", "period"), all = TRUE)
+  result$geography <- geography
+  result <- result[, c("geography", "offense", "period", "count", "rate")]
+  rownames(result) <- NULL
+  result
+}
+
+# Internal: parse arrest demographics response into a tidy data.frame
+#
+# Response shape:
+#   A list with `offenses` containing a `totals` sub-object mapping
+#   demographic categories to period-value pairs.
+parse_arrest_demographics_response <- function(response, geography, offense) {
+  offenses <- response$offenses
+
+  if (is.null(offenses) || length(offenses) == 0) {
+    return(data.frame(
+      geography = character(),
+      offense = character(),
+      period = character(),
+      demographic_type = character(),
+      demographic_value = character(),
+      count = numeric(),
+      stringsAsFactors = FALSE
+    ))
+  }
+
+  totals <- offenses$totals
+  if (is.null(totals) || length(totals) == 0) {
+    return(data.frame(
+      geography = character(),
+      offense = character(),
+      period = character(),
+      demographic_type = character(),
+      demographic_value = character(),
+      count = numeric(),
+      stringsAsFactors = FALSE
+    ))
+  }
+
+  labels <- c()
+  periods <- c()
+  demo_types <- c()
+  demo_values <- c()
+  counts <- c()
+
+  for (demo_type in names(totals)) {
+    demo_data <- totals[[demo_type]]
+    if (is.null(demo_data) || length(demo_data) == 0) next
+    for (demo_value in names(demo_data)) {
+      count <- demo_data[[demo_value]]
+      if (is.null(count)) next
+      labels <- c(labels, demo_type)
+      periods <- c(periods, demo_value)
+      demo_types <- c(demo_types, demo_type)
+      demo_values <- c(demo_values, demo_value)
+      counts <- c(counts, as.numeric(count))
     }
   }
-  return(data)
+
+  if (length(counts) == 0) {
+    return(data.frame(
+      geography = geography,
+      offense = offense,
+      period = character(),
+      demographic_type = character(),
+      demographic_value = character(),
+      count = numeric(),
+      stringsAsFactors = FALSE
+    ))
+  }
+
+  data.frame(
+    geography = rep(geography, length(counts)),
+    offense = rep(offense, length(counts)),
+    period = periods,
+    demographic_type = demo_types,
+    demographic_value = demo_values,
+    count = counts,
+    stringsAsFactors = FALSE
+  )
+}
+
+#' Return a vector of all offenses in the UCR Arrest data.
+#'
+#' @family UCR arrest functions
+#'
+#' @return
+#' A character vector of UCR arrest offense codes.
+#' @export
+#'
+#' @examples
+#' list_ucr_arrest_offenses()
+list_ucr_arrest_offenses <- function() {
+  fbi::ucr_arrest_offenses
 }

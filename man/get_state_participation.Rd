@@ -7,13 +7,14 @@
 get_state_participation(state_abb = NULL, key = get_api_key())
 }
 \arguments{
-\item{state_abb}{String or vector of strings input for state abbreviation(s) to get data for.
-If NULL (default) returns national data.}
+\item{state_abb}{String or vector of strings input for state abbreviation(s)
+to get data for. If NULL (default) returns national data.}
 
-\item{key}{A string containing your FBI's Crime Data Explorer API key}
+\item{key}{API key for the legacy FBI API (not needed for CDE API).}
 }
 \value{
-A data.frame with state-level NIBRS and UCR participation rates for selected state
+A data.frame with state-level NIBRS and UCR participation rates for
+  selected state
 }
 \description{
 Get state level UCR and NIBRS participation data
@@ -24,12 +25,12 @@ get_state_participation("MT")
 }
 }
 \seealso{
-Other UCR crime functions: 
-\code{\link{get_agency_crime}()},
-\code{\link{get_agency_participation}()},
-\code{\link{get_estimated_arson}()},
-\code{\link{get_estimated_crime}()},
-\code{\link{get_region_participation}()}
+Other UCR crime functions:
+\code{\link[=get_agency_crime]{get_agency_crime()}},
+\code{\link[=get_agency_participation]{get_agency_participation()}},
+\code{\link[=get_estimated_arson]{get_estimated_arson()}},
+\code{\link[=get_estimated_crime]{get_estimated_crime()}},
+\code{\link[=get_region_participation]{get_region_participation()}}
 }
 \author{
 Jared E. Knowles, Civilytics Consulting

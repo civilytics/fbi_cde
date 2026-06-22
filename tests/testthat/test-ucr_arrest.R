@@ -1,49 +1,118 @@
-test_that("Arrests total offense count works", {
-  skip_if_no_fbi_api()
-  expect_equal(get_arrest_count('CA0191900')[, arrest_matching_columns],
-               fix_arrest_test('CA0191900'))
-  expect_equal(get_arrest_count('CA0370900')[, arrest_matching_columns],
-               fix_arrest_test('CA0370900'))
-  expect_equal(get_arrest_count('IL0493600')[, arrest_matching_columns],
-               fix_arrest_test('IL0493600'))
-  expect_equal(get_arrest_count('KY0190700')[, arrest_matching_columns],
-               fix_arrest_test('KY0190700'))
-  expect_equal(get_arrest_count('MN0320200')[, arrest_matching_columns],
-               fix_arrest_test('MN0320200'))
-  expect_equal(get_arrest_count('MO0240500')[, arrest_matching_columns],
-               fix_arrest_test('MO0240500'))
-  expect_equal(get_arrest_count('NJ0081100')[, arrest_matching_columns],
-               fix_arrest_test('NJ0081100'))
-  expect_equal(get_arrest_count('NM0250100')[, arrest_matching_columns],
-               fix_arrest_test('NM0250100'))
-  expect_equal(get_arrest_count('OK0411500')[, arrest_matching_columns],
-               fix_arrest_test('OK0411500'))
-  expect_equal(get_arrest_count('OK0700200')[, arrest_matching_columns],
-               fix_arrest_test('OK0700200'))
-  expect_equal(get_arrest_count('OR0280000')[, arrest_matching_columns],
-               fix_arrest_test('OR0280000'))
-  expect_equal(get_arrest_count('OR0360100')[, arrest_matching_columns],
-               fix_arrest_test('OR0360100'))
-  expect_equal(get_arrest_count('PA0490400')[, arrest_matching_columns],
-               fix_arrest_test('PA0490400'))
-  expect_equal(get_arrest_count('SC0321600')[, arrest_matching_columns],
-               fix_arrest_test('SC0321600'))
+# Offline tests for arrest functions using fixtures.
+
+test_that("get_arrest_count parses agency-level counts response", {
+  local_fbi_fixture("arrest-agency-CA0010900-counts.json")
+  result <- get_arrest_count("CA0010900")
+
+  expect_s3_class(result, "data.frame")
+  expect_true("geography" %in% names(result))
+  expect_true("offense" %in% names(result))
+  expect_true("period" %in% names(result))
+  expect_true("count" %in% names(result))
+  expect_true("rate" %in% names(result))
+  expect_equal(result$geography[1], "CA0010900")
+  expect_true(nrow(result) > 0)
 })
 
-test_that("Arrests total offense count works", {
+test_that("get_arrest_count parses national-level counts response", {
+  local_fbi_fixture("arrest-national-all-counts.json")
+  result <- get_arrest_count()
+
+  expect_s3_class(result, "data.frame")
+  expect_true("geography" %in% names(result))
+  expect_equal(result$geography[1], "US")
+  expect_true(nrow(result) > 0)
+})
+
+test_that("get_arrest_demographics parses demographics response", {
+  local_fbi_fixture("arrest-agency-CA0010900-robbery-totals.json")
+  result <- get_arrest_demographics("CA0010900", offense = "robbery")
+
+  expect_s3_class(result, "data.frame")
+  expect_true("geography" %in% names(result))
+  expect_true("offense" %in% names(result))
+  expect_true("period" %in% names(result))
+  expect_true("demographic_type" %in% names(result))
+  expect_true("demographic_value" %in% names(result))
+  expect_true("count" %in% names(result))
+  expect_equal(result$geography[1], "CA0010900")
+  expect_equal(result$offense[1], "robbery")
+  expect_true(nrow(result) > 0)
+})
+
+test_that("get_arrest_demographics returns empty for no totals data", {
+  local_mocked_bindings(
+    cde_request = function(...) list(offenses = list()),
+    .package = "fbi"
+  )
+  result <- get_arrest_demographics("CA0010900", offense = "robbery")
+
+  expect_s3_class(result, "data.frame")
+  expect_equal(nrow(result), 0)
+})
+
+# Validation tests
+
+test_that("get_arrest_count validates ORI", {
+  expect_error(get_arrest_count("bad-ori"), "Invalid ORI code")
+})
+
+test_that("get_arrest_count validates state abbreviation", {
+  expect_error(get_arrest_count(state_abb = "XX"), "Invalid state abbreviation")
+})
+
+test_that("get_arrest_count rejects inverted date ranges", {
+  expect_error(
+    get_arrest_count(from = "12-2020", to = "01-2015"),
+    "Invalid date range"
+  )
+})
+
+test_that("get_arrest_demographics validates ORI", {
+  expect_error(
+    get_arrest_demographics("bad-ori", offense = "robbery"),
+    "Invalid ORI code"
+  )
+})
+
+test_that("get_arrest_demographics validates state abbreviation", {
+  expect_error(
+    get_arrest_demographics(state_abb = "XX", offense = "robbery"),
+    "Invalid state abbreviation"
+  )
+})
+
+test_that("get_arrest_demographics requires offense", {
+  expect_error(
+    get_arrest_demographics("CA0010900"),
+    "offense is required"
+  )
+})
+
+# Live tests
+
+test_that("get_arrest_count returns expected shape from live API", {
   skip_if_no_fbi_api()
-# TODO fix these tests
-  get_arrest_count(state_abb = "MT")
-  get_arrest_count(region = "South")
-  get_arrest_count(state_abb = "CA", region = "Midwest")
+  result <- get_arrest_count("CA0010900")
 
+  expect_s3_class(result, "data.frame")
+  expect_true(nrow(result) > 0)
+  expect_true("geography" %in% names(result))
+  expect_true("offense" %in% names(result))
+})
 
+test_that("get_arrest_demographics returns expected shape from live API", {
+  skip_if_no_fbi_api()
+  result <- get_arrest_demographics("CA0010900", offense = "robbery")
 
-  off1 <- get_arrest_demographics(state_abb = "MT", offense = sample(fbi:::ucr_arrest_offenses, 1))
-  off2 <- get_arrest_demographics(state_abb = "MT", offense = sample(fbi:::ucr_arrest_offenses, 1))
+  expect_s3_class(result, "data.frame")
+  expect_true(nrow(result) > 0)
+  expect_true("demographic_type" %in% names(result))
+  expect_true("demographic_value" %in% names(result))
+})
 
-  get_arrest_demographics(region = "South", offense = sample(fbi:::ucr_arrest_offenses, 1))
-  get_arrest_demographics_all(region = "South")
-
-
+test_that("list_ucr_arrest_offenses returns a character vector", {
+  result <- list_ucr_arrest_offenses()
+  expect_true(is.character(result))
+  expect_true(length(result) > 0)
 })
