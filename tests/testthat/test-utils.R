@@ -35,3 +35,30 @@ test_that("clean_column_names lowercases, renames, and drops csv_header", {
   )
   expect_named(cleaned, c("year", "motor_vehicle_theft"))
 })
+
+test_that("flatten_cde_json produces a tidy frame from fixture data", {
+  fixture <- jsonlite::fromJSON(readLines(testthat::test_path("fixtures/summarized-national-V.json"), warn = FALSE), simplifyVector = TRUE)
+  rates <- fixture$offenses$rates
+  result <- flatten_cde_json(rates)
+  
+  expect_s3_class(result, "data.frame")
+  expect_equal(names(result), c("label", "period", "value"))
+  expect_equal(nrow(result), 4)
+  expect_equal(result$label[1], "United States Offenses")
+  expect_equal(result$period[1], "01-2015")
+  expect_equal(result$value[1], 27.6)
+  expect_equal(result$value[4], 28.2)
+})
+
+test_that("flatten_cde_json handles empty input", {
+  result <- flatten_cde_json(list())
+  expect_s3_class(result, "data.frame")
+  expect_equal(nrow(result), 0)
+  expect_equal(names(result), c("label", "period", "value"))
+})
+
+test_that("flatten_cde_json handles NULL input", {
+  result <- flatten_cde_json(NULL)
+  expect_s3_class(result, "data.frame")
+  expect_equal(nrow(result), 0)
+})
