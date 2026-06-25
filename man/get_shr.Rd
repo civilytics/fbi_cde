@@ -21,7 +21,7 @@ A data.frame with columns: geography, period, count
 }
 \description{
 Retrieves homicide offense counts from the FBI's Supplemental Homicide Reports
-via the CDE API endpoint `shr/{level}` with `type=counts`.
+via the CDE API endpoint `shr/<level>` with `type=counts`.
 }
 \examples{
 \dontrun{

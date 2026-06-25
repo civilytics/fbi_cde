@@ -44,6 +44,16 @@ flatten_cde_json <- function(obj) {
     }
   }
 
+  # If every leaf was NULL/empty (e.g. counts suppressed at the national
+  # level), return the canonical empty frame so callers always see three
+  # columns rather than a degenerate zero-column data.frame.
+  if (length(values) == 0) {
+    return(data.frame(
+      label = character(), period = character(), value = numeric(),
+      stringsAsFactors = FALSE
+    ))
+  }
+
   data.frame(
     label = labels,
     period = periods,

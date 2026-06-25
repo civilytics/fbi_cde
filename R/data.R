@@ -97,54 +97,44 @@ nibrs_offense_variables <- sort(c("count",
                                   "bias"))
 
 
-ucr_arrest_offenses <- c("aggravated-assault",
-                         "all-other-offenses",
-                         "arson",
-                         "burglary",
-                         "curfew",
-                         "disorderly-conduct",
-                         "dui",
-                         "drug-grand-total",
-                         "drug-possession-marijuana",
-                         "drug-possession-opium",
-                         "drug-possession-other",
-                         "drug-possession-subtotal",
-                         "drug-possession-synthetic",
-                         "drug-sales-marijuana",
-                         "drug-sales-opium",
-                         "drug-sales-other",
-                         "drug-sales-subtotal",
-                         "drug-sales-synthetic",
-                         "drunkenness",
-                         "embezzlement",
-                         "forgery",
-                         "fraud",
-                         "gambling-all-other",
-                         "gambling-bookmaking",
-                         "gambling-numbers",
-                         "gambling-total",
-                         "human-trafficking-commercial",
-                         "human-trafficking-servitude",
-                         "larceny",
-                         "liqour-laws", # MISPELLED
-                         "manslaughter",
-                         "motor-vehcile-theft", # MISPELLED
-                         "murder",
-                         "offense-against-family",
-                         "prostitution",
-                         "prostitution-assisting",
-                         "prostitution-prostitution",
-                         "prostitution-purchasing",
-                         "rape",
-                         "robbery",
-                         "runaway",
-                         "sex-offenses",
-                         "simple-assault",
-                         "stolen-property",
-                         "suspicion",
-                         "vagrancy",
-                         "vandalism",
-                         "weapons")
+# Offense vocabulary taken verbatim from the live CDE API
+# `arrest/{level}/all?type=totals` "Offense Name" keys. The CDE arrest endpoint
+# no longer accepts a per-offense URL segment; these names are used as
+# response-side filter keys by `get_arrest_count()`.
+ucr_arrest_offenses <- c("Aggravated Assault",
+                         "All Other Offenses",
+                         "Arson",
+                         "Burglary",
+                         "Counterfeiting/Forgery",
+                         "Curfew and Loitering Law Violations",
+                         "Disorderly Conduct",
+                         "Drive Under the Influence",
+                         "Drug Abuse Violations",
+                         "Drug Possession",
+                         "Drug Sale/Manufacturing",
+                         "Drunkenness",
+                         "Embezzlement",
+                         "Fraud",
+                         "Gambling",
+                         "Human Trafficking",
+                         "Larceny",
+                         "Liquor Law Violations",
+                         "Manslaughter by Negligence",
+                         "Motor Vehicle Theft",
+                         "Murder and Nonnegligent Homicide",
+                         "Offenses Against the Family and Children",
+                         "Prostitution and Commercialized Vice",
+                         "Rape",
+                         "Rape (Legacy)",
+                         "Robbery",
+                         "Runaway",
+                         "Sex Offenses",
+                         "Simple Assault",
+                         "Stolen Property",
+                         "Suspicion",
+                         "Vagrancy",
+                         "Vandalism",
+                         "Weapons")
 
 regions <- c("U.S. Territories",
              "Northeast",
@@ -211,12 +201,14 @@ regions <- c("U.S. Territories",
 #' @source \url{https://cde.ucr.cjis.gov/LATEST/}
 "regions"
 
-#' All offenses available to get NIBRS data for.
+#' All offenses available to get UCR arrest counts for.
 #'
-#' This is a vector of strings with the names of every offense available
-#' to get arrest data for from the `get_arrest_demographics()` function.
+#' A vector of the offense names accepted by `get_arrest_count()`. These match
+#' the "Offense Name" keys returned by the live CDE arrest endpoint and are
+#' used as response-side filters (the API no longer supports a per-offense
+#' URL segment).
 #'
-#' @format A vector with 47 elements:
+#' @format A character vector with 34 elements.
 #' @source \url{https://cde.ucr.cjis.gov/LATEST/}
 "ucr_arrest_offenses"
 

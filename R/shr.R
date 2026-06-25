@@ -31,7 +31,7 @@ parse_shr_response <- function(response, geography) {
 #' Get Supplemental Homicide Reports (SHR) offense counts
 #'
 #' Retrieves homicide offense counts from the FBI's Supplemental Homicide Reports
-#' via the CDE API endpoint `shr/{level}` with `type=counts`.
+#' via the CDE API endpoint `shr/<level>` with `type=counts`.
 #'
 #' @family SHR functions
 #' @param ori A string of the 9-character ORI code for the desired agency.

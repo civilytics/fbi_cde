@@ -37,7 +37,7 @@ A data.frame with columns: geography, offense, period,
 }
 \description{
 Retrieves offender demographics (age, count, ethnicity, race, sex) from the
-CDE API endpoint `nibrs/{level}/{offense}` with `type=totals`.
+CDE API endpoint `nibrs/<level>/<offense>` with `type=totals`.
 }
 \examples{
 \dontrun{

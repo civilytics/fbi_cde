@@ -40,7 +40,7 @@ A data.frame with columns: geography, offense, period,
 \description{
 Retrieves offense characteristics (count, weapons, linkedoffense,
 suspectusing, criminal_activity, property_recovered, property_stolen, bias)
-from the CDE API endpoint `nibrs/{level}/{offense}` with `type=totals`.
+from the CDE API endpoint `nibrs/<level>/<offense>` with `type=totals`.
 }
 \examples{
 \dontrun{

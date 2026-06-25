@@ -1,3 +1,10 @@
+# Null-coalescing helper: return `x` unless it is NULL/empty, else `y`.
+# Defined locally because the package targets R (>= 3.5.0); base `%||%`
+# only exists from R 4.4.0 and the package does not import rlang.
+`%||%` <- function(x, y) {
+  if (is.null(x) || length(x) == 0) y else x
+}
+
 make_state <- function(state_abb) {
   state <- datasets::state.name[match(tolower(state_abb),
                                       tolower(datasets::state.abb))]

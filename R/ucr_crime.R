@@ -2,9 +2,13 @@
 parse_summarized_response <- function(response, geography) {
   offenses <- response$offenses
 
+  # The CDE API renamed the count payload from `counts` to `actuals`; accept
+  # either so the parser is resilient to that drift.
+  counts_obj <- offenses$actuals %||% offenses$counts
+
   # Flatten counts if present
-  if (!is.null(offenses$counts) && length(offenses$counts) > 0) {
-    counts_df <- flatten_cde_json(offenses$counts)
+  if (!is.null(counts_obj) && length(counts_obj) > 0) {
+    counts_df <- flatten_cde_json(counts_obj)
     names(counts_df) <- c("offense", "period", "count")
   } else {
     counts_df <- data.frame(
@@ -133,6 +137,6 @@ get_estimated_arson <- function(state_abb = NULL,
     state_abb = state_abb,
     from = from,
     to = to,
-    offense = "AR"
+    offense = "ARS"
   )
 }

@@ -3,9 +3,9 @@
 \docType{data}
 \name{ucr_arrest_offenses}
 \alias{ucr_arrest_offenses}
-\title{All offenses available to get NIBRS data for.}
+\title{All offenses available to get UCR arrest counts for.}
 \format{
-A vector with 47 elements:
+A character vector with 34 elements.
 }
 \source{
 \url{https://cde.ucr.cjis.gov/LATEST/}
@@ -14,7 +14,9 @@ A vector with 47 elements:
 ucr_arrest_offenses
 }
 \description{
-This is a vector of strings with the names of every offense available
-to get arrest data for from the `get_arrest_demographics()` function.
+A vector of the offense names accepted by `get_arrest_count()`. These match
+the "Offense Name" keys returned by the live CDE arrest endpoint and are
+used as response-side filters (the API no longer supports a per-offense
+URL segment).
 }
 \keyword{datasets}

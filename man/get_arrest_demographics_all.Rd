@@ -2,24 +2,28 @@
 % Please edit documentation in R/ucr_arrest.R
 \name{get_arrest_demographics_all}
 \alias{get_arrest_demographics_all}
-\title{Get arrestee demographics for all UCR arrest offenses}
+\title{Get arrestee demographics (all offenses)}
 \usage{
 get_arrest_demographics_all(...)
 }
 \arguments{
-\item{...}{Additional arguments passed to `get_arrest_demographics()`.}
+\item{...}{Arguments passed to `get_arrest_demographics()` (e.g. `ori`,
+`state_abb`, `from`, `to`). Any `offense` argument is ignored.}
 }
 \value{
 A data.frame with columns: geography, offense, period,
   demographic_type, demographic_value, count
 }
 \description{
-Calls `get_arrest_demographics()` for each offense in
-`list_ucr_arrest_offenses()` and combines the results.
+**Deprecated.** Per-offense arrest demographics are no
+longer available from the CDE API, which only provides demographics
+aggregated across all offenses. This function now returns the same result as
+`get_arrest_demographics()` and emits a warning. It is retained for backward
+compatibility and may be removed in a future release.
 }
 \examples{
 \dontrun{
-get_arrest_demographics_all(state_abb = "CA", offense = "murder")
+get_arrest_demographics_all(state_abb = "CA")
 }
 }
 \seealso{

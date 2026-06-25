@@ -9,7 +9,7 @@ get_arrest_demographics(
   state_abb = NULL,
   from = "01-2015",
   to = "12-2020",
-  offense
+  offense = "all"
 )
 }
 \arguments{
@@ -22,8 +22,9 @@ national data.}
 
 \item{to}{End date in MM-YYYY format (default "12-2020").}
 
-\item{offense}{Offense code (required for demographics). See
-`list_ucr_arrest_offenses()` for available codes.}
+\item{offense}{Must be `"all"` (the default). The CDE API only provides
+arrest demographics aggregated across all offenses; it does not break
+demographics down by offense, so any other value raises an error.}
 }
 \value{
 A data.frame with columns: geography, offense, period,
@@ -32,12 +33,12 @@ A data.frame with columns: geography, offense, period,
 \description{
 Retrieves arrest counts broken down by demographic categories (sex, age,
 race) for a specific offense. Uses the CDE API endpoint
-`arrest/{level}/{offense}` with `type=totals`.
+`arrest/<level>/<offense>` with `type=totals`.
 }
 \examples{
 \dontrun{
-get_arrest_demographics(ori = "CA0010900", offense = "robbery")
-get_arrest_demographics(state_abb = "CA", offense = "murder")
+get_arrest_demographics(ori = "CA0010900")
+get_arrest_demographics(state_abb = "CA")
 }
 }
 \seealso{

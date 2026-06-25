@@ -25,8 +25,8 @@ test_that("get_arrest_count parses national-level counts response", {
 })
 
 test_that("get_arrest_demographics parses demographics response", {
-  local_fbi_fixture("arrest-agency-CA0010900-robbery-totals.json")
-  result <- get_arrest_demographics("CA0010900", offense = "robbery")
+  local_fbi_fixture("arrest-national-all-totals.json")
+  result <- get_arrest_demographics()
 
   expect_s3_class(result, "data.frame")
   expect_true("geography" %in% names(result))
@@ -35,20 +35,58 @@ test_that("get_arrest_demographics parses demographics response", {
   expect_true("demographic_type" %in% names(result))
   expect_true("demographic_value" %in% names(result))
   expect_true("count" %in% names(result))
-  expect_equal(result$geography[1], "CA0010900")
-  expect_equal(result$offense[1], "robbery")
+  expect_equal(result$geography[1], "US")
   expect_true(nrow(result) > 0)
+  # demographics are aggregated across all offenses
+  expect_true(all(result$demographic_type %in%
+    c("Arrestee Sex", "Arrestee Race",
+      "Male Arrests By Age", "Female Arrests By Age")))
+})
+
+test_that("get_arrest_demographics rejects a specific offense", {
+  expect_error(
+    get_arrest_demographics("CA0010900", offense = "Robbery"),
+    "Only offense .* is supported"
+  )
 })
 
 test_that("get_arrest_demographics returns empty for no totals data", {
   local_mocked_bindings(
-    cde_request = function(...) list(offenses = list()),
+    cde_request = function(...) list(cde_properties = list()),
     .package = "fbi"
   )
-  result <- get_arrest_demographics("CA0010900", offense = "robbery")
+  result <- get_arrest_demographics("CA0010900")
 
   expect_s3_class(result, "data.frame")
   expect_equal(nrow(result), 0)
+})
+
+test_that("get_arrest_count recovers a specific offense from the all response", {
+  local_fbi_fixture("arrest-national-all-totals.json")
+  result <- get_arrest_count(offense = "Robbery")
+
+  expect_s3_class(result, "data.frame")
+  expect_equal(nrow(result), 1)
+  expect_equal(result$offense[1], "Robbery")
+  expect_equal(result$geography[1], "US")
+  expect_true(is.na(result$period[1]))
+  expect_true(is.na(result$rate[1]))
+  expect_true(result$count[1] > 0)
+})
+
+test_that("get_arrest_count is case-insensitive for offense names", {
+  local_fbi_fixture("arrest-national-all-totals.json")
+  result <- get_arrest_count(offense = "robbery")
+
+  expect_equal(nrow(result), 1)
+  expect_equal(result$offense[1], "Robbery")
+})
+
+test_that("get_arrest_count rejects an unknown offense", {
+  expect_error(
+    get_arrest_count(offense = "jaywalking"),
+    "Invalid arrest offense"
+  )
 })
 
 # Validation tests
@@ -82,11 +120,10 @@ test_that("get_arrest_demographics validates state abbreviation", {
   )
 })
 
-test_that("get_arrest_demographics requires offense", {
-  expect_error(
-    get_arrest_demographics("CA0010900"),
-    "offense is required"
-  )
+test_that("get_arrest_demographics defaults to offense = all", {
+  local_fbi_fixture("arrest-national-all-totals.json")
+  expect_silent(result <- get_arrest_demographics("CA0010900"))
+  expect_s3_class(result, "data.frame")
 })
 
 # Live tests
@@ -103,12 +140,22 @@ test_that("get_arrest_count returns expected shape from live API", {
 
 test_that("get_arrest_demographics returns expected shape from live API", {
   skip_if_no_fbi_api()
-  result <- get_arrest_demographics("CA0010900", offense = "robbery")
+  result <- get_arrest_demographics("CA0010900")
 
   expect_s3_class(result, "data.frame")
   expect_true(nrow(result) > 0)
   expect_true("demographic_type" %in% names(result))
   expect_true("demographic_value" %in% names(result))
+})
+
+test_that("get_arrest_count recovers a specific offense from live API", {
+  skip_if_no_fbi_api()
+  result <- get_arrest_count(state_abb = "CA", offense = "Robbery")
+
+  expect_s3_class(result, "data.frame")
+  expect_equal(nrow(result), 1)
+  expect_equal(result$offense[1], "Robbery")
+  expect_true(result$count[1] > 0)
 })
 
 test_that("list_ucr_arrest_offenses returns a character vector", {

@@ -22,21 +22,27 @@ national data.}
 
 \item{to}{End date in MM-YYYY format (default "12-2020").}
 
-\item{offense}{Offense code (default "all" for total arrests). See
-`list_ucr_arrest_offenses()` for available codes.}
+\item{offense}{Offense name (default "all" for total arrests). With "all" the
+result is a monthly time series. For a specific offense the CDE API only
+exposes an aggregate count over the whole `from`-`to` range (the endpoint no
+longer accepts a per-offense URL segment, so the offense is selected from
+the all-offenses response). See `list_ucr_arrest_offenses()` for valid names.}
 }
 \value{
-A data.frame with columns: geography, offense, period, count, rate
+A data.frame with columns: geography, offense, period, count, rate.
+  For a specific offense, `period` and `rate` are `NA` and a single aggregate
+  `count` row is returned.
 }
 \description{
 Retrieves arrest counts by offense for an agency, state, or nationally.
-Uses the CDE API endpoint `arrest/{level}/{offense}` with `type=counts`.
+Uses the CDE API endpoint `arrest/<level>/<offense>` with `type=counts`.
 }
 \examples{
 \dontrun{
 get_arrest_count(ori = "CA0010900")
 get_arrest_count(state_abb = "CA")
 get_arrest_count()
+get_arrest_count(state_abb = "CA", offense = "Robbery")
 }
 }
 \seealso{

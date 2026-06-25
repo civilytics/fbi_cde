@@ -88,8 +88,13 @@ parse_police_employment_response <- function(response, geography) {
     ))
   }
 
+  # The CDE pe endpoint nests the staffing categories under `actuals`
+  # ({category -> {year -> value}}); older responses placed them at the top
+  # level. Flatten whichever container holds the category breakdown.
+  flat_src <- response$actuals %||% response
+
   # Flatten the response: {label -> {period -> value}} -> long data.frame
-  flat <- flatten_cde_json(response)
+  flat <- flatten_cde_json(flat_src)
   names(flat) <- c("category", "period", "value")
 
   # Get all unique years from periods
