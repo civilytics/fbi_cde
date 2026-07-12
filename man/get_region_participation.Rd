@@ -2,21 +2,27 @@
 % Please edit documentation in R/ucr_participation.R
 \name{get_region_participation}
 \alias{get_region_participation}
-\title{Get regional level UCR and NIBRS participation data}
+\title{Get region-level NIBRS participation rate}
 \usage{
-get_region_participation(region_name = NULL, key = get_api_key())
+get_region_participation(region_name, key = get_api_key())
 }
 \arguments{
-\item{region_name}{String or vector of strings for region to get data for}
+\item{region_name}{String for the census region to get data for. See
+[regions] for valid values.}
 
 \item{key}{API key for the legacy FBI API (not needed for CDE API).}
 }
 \value{
-A data.frame with regional NIBRS and UCR participation rates for
-  selected state
+A one-row data.frame with columns: region, total_agencies,
+  nibrs_agencies, participation_rate.
 }
 \description{
-Get regional level UCR and NIBRS participation data
+Aggregates [get_state_participation()] across every state in
+`region_name`. Census region membership is taken from the bundled
+[fbi_api_agencies] dataset -- a fixed geography, not live crime data --
+while each state's participation counts are fetched live. See
+[get_agency_participation()] for why this is a modernized reimplementation
+rather than the retired year-by-year SRS/NIBRS participation series.
 }
 \examples{
 \dontrun{
@@ -29,6 +35,8 @@ Other UCR crime functions:
 \code{\link[=get_agency_participation]{get_agency_participation()}},
 \code{\link[=get_estimated_arson]{get_estimated_arson()}},
 \code{\link[=get_estimated_crime]{get_estimated_crime()}},
+\code{\link[=get_leoka]{get_leoka()}},
+\code{\link[=get_leoka_monthly]{get_leoka_monthly()}},
 \code{\link[=get_state_participation]{get_state_participation()}}
 }
 \author{

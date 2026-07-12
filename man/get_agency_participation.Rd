@@ -2,7 +2,7 @@
 % Please edit documentation in R/ucr_participation.R
 \name{get_agency_participation}
 \alias{get_agency_participation}
-\title{Get agency level UCR and NIBRS participation data}
+\title{Get agency-level NIBRS participation status}
 \usage{
 get_agency_participation(ori, key = get_api_key())
 }
@@ -12,15 +12,25 @@ get_agency_participation(ori, key = get_api_key())
 \item{key}{API key for the legacy FBI API (not needed for CDE API).}
 }
 \value{
-A data.frame with regional NIBRS and UCR participation rates for
-  selected agency
+A one-row data.frame with columns: ori, agency_name,
+  agency_type_name, state_abbr, state_name, county, is_nibrs,
+  nibrs_start_date.
 }
 \description{
-Get agency level UCR and NIBRS participation data
+The current CDE API has no dedicated participation-*rate* endpoint: the
+legacy `participation/...` paths this function used to call return 404,
+and the `participation/*` namespace still present in the current API is
+scoped to Use-of-Force agency reporting, not general UCR/NIBRS
+participation (confirmed by inspecting the CDE web app's client bundle and
+probing the live API -- see Issue #1). This is a modernized
+reimplementation: it reports whether `ori` currently reports to NIBRS,
+sourced live from `agency/byStateAbbr/` (state derived from the first two
+characters of `ori`), in place of the retired year-by-year
+SRS/NIBRS participation series.
 }
 \examples{
 \dontrun{
-get_agency_participation("AK0010100")
+get_agency_participation("CA0010900")
 }
 }
 \seealso{
@@ -28,6 +38,8 @@ Other UCR crime functions:
 \code{\link[=get_agency_crime]{get_agency_crime()}},
 \code{\link[=get_estimated_arson]{get_estimated_arson()}},
 \code{\link[=get_estimated_crime]{get_estimated_crime()}},
+\code{\link[=get_leoka]{get_leoka()}},
+\code{\link[=get_leoka_monthly]{get_leoka_monthly()}},
 \code{\link[=get_region_participation]{get_region_participation()}},
 \code{\link[=get_state_participation]{get_state_participation()}}
 }

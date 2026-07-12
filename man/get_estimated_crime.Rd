@@ -38,6 +38,8 @@ Other UCR crime functions:
 \code{\link[=get_agency_crime]{get_agency_crime()}},
 \code{\link[=get_agency_participation]{get_agency_participation()}},
 \code{\link[=get_estimated_arson]{get_estimated_arson()}},
+\code{\link[=get_leoka]{get_leoka()}},
+\code{\link[=get_leoka_monthly]{get_leoka_monthly()}},
 \code{\link[=get_region_participation]{get_region_participation()}},
 \code{\link[=get_state_participation]{get_state_participation()}}
 }
