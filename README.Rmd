@@ -34,7 +34,7 @@ remotes::install_github("Civilytics/fbi_cde")
 
 ## Quick Start
 
-```{r example}
+```{r example, eval=FALSE}
 library(fbi)
 
 # Get all states available in the API
