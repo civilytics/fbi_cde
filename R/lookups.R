@@ -45,7 +45,9 @@ get_agencies <- function() {
 #'
 #' Retrieves valid offense codes from the CDE lookup endpoint.
 #'
-#' @param type Character string for the offense type (e.g. "crime-trend", "nibrs").
+#' @param type Character string for the offense type (e.g. "crime-trend",
+#'   "arrest", "hate-crime", "nibrs"). "nibrs" currently returns no codes
+#'   live (`crimeGroups: null`).
 #' @return A data.frame with offense codes and labels.
 #' @export
 #'
@@ -59,18 +61,47 @@ get_offense_codes <- function(type = "crime-trend") {
   query <- list(type = type)
   response <- cde_request(path, query)
 
-  if (is.null(response) || length(response) == 0) {
-    return(data.frame(code = character(), label = character(), stringsAsFactors = FALSE))
+  empty <- data.frame(code = character(), label = character(), stringsAsFactors = FALSE)
+
+  groups <- response$crimeGroups
+  if (is.null(groups) || length(groups) == 0) {
+    return(empty)
   }
 
-  codes <- names(response)
-  labels <- unlist(response, use.names = FALSE)
+  # `crimeGroups` is a list of `{label, crimes}` groups, where `crimes` is a
+  # list of `{label, value}` offense entries. With `simplifyVector = TRUE`
+  # (offline fixture reads) `crimeGroups` simplifies to a data.frame whose
+  # `crimes` column holds one nested data.frame per group; with
+  # `simplifyVector = FALSE` (live `cde_request()`) it stays a list of lists.
+  # Both shapes are handled below.
+  crimes_list <- if (is.data.frame(groups)) groups$crimes else lapply(groups, function(g) g$crimes)
 
-  data.frame(
-    code = codes,
-    label = as.character(labels),
-    stringsAsFactors = FALSE
-  )
+  rows <- lapply(crimes_list, function(crimes) {
+    if (is.null(crimes) || length(crimes) == 0) {
+      return(NULL)
+    }
+    if (is.data.frame(crimes)) {
+      data.frame(
+        code = as.character(crimes$value),
+        label = as.character(crimes$label),
+        stringsAsFactors = FALSE
+      )
+    } else {
+      data.frame(
+        code = vapply(crimes, function(c) as.character(c$value %||% NA), character(1)),
+        label = vapply(crimes, function(c) as.character(c$label %||% NA), character(1)),
+        stringsAsFactors = FALSE
+      )
+    }
+  })
+
+  rows <- rows[!vapply(rows, is.null, logical(1))]
+  if (length(rows) == 0) {
+    return(empty)
+  }
+
+  result <- data.table::rbindlist(rows)
+  as.data.frame(result)
 }
 
 #' Get state list from the CDE API

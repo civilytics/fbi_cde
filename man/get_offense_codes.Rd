@@ -7,7 +7,9 @@
 get_offense_codes(type = "crime-trend")
 }
 \arguments{
-\item{type}{Character string for the offense type (e.g. "crime-trend", "nibrs").}
+\item{type}{Character string for the offense type (e.g. "crime-trend",
+"arrest", "hate-crime", "nibrs"). "nibrs" currently returns no codes
+live (`crimeGroups: null`).}
 }
 \value{
 A data.frame with offense codes and labels.

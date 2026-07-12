@@ -1,1 +1,307 @@
-{"ASSAULT":"Assault offenses","BUR":"Burglary","HOM":"Homicide","LARC":"Larceny-theft","ROB":"Robbery","RPE":"Residential property offenses","V":"Violent crimes","VAND":"Vandalism"}
+{
+    "crimeGroups": [
+        {
+            "label": "Violent Offenses",
+            "crimes": [
+                {
+                    "label": "Aggravated Assault",
+                    "value": "ASS"
+                },
+                {
+                    "label": "Homicide",
+                    "value": "HOM"
+                },
+                {
+                    "label": "Rape",
+                    "value": "RPE"
+                },
+                {
+                    "label": "Robbery",
+                    "value": "ROB"
+                }
+            ]
+        },
+        {
+            "label": "Property Offenses",
+            "crimes": [
+                {
+                    "label": "Arson",
+                    "value": "ARS"
+                },
+                {
+                    "label": "Burglary",
+                    "value": "BUR"
+                },
+                {
+                    "label": "Larceny-theft",
+                    "value": "LAR"
+                },
+                {
+                    "label": "Motor Vehicle Theft",
+                    "value": "MVT"
+                }
+            ]
+        },
+        {
+            "label": "Individual Offenses",
+            "crimes": [
+                {
+                    "label": "All Other Larceny",
+                    "value": "23H"
+                },
+                {
+                    "label": "Animal Cruelty",
+                    "value": "720"
+                },
+                {
+                    "label": "Assisting or Promoting Prostitution",
+                    "value": "40B"
+                },
+                {
+                    "label": "Betting/Wagering",
+                    "value": "39A"
+                },
+                {
+                    "label": "Bribery",
+                    "value": "510"
+                },
+                {
+                    "label": "Counterfeiting/Forgery",
+                    "value": "250"
+                },
+                {
+                    "label": "Credit Card/Automated Teller Machine Fraud",
+                    "value": "26B"
+                },
+                {
+                    "label": "Criminal Sexual Contact",
+                    "value": "11D"
+                },
+                {
+                    "label": "Destruction/Damage/Vandalism of Property",
+                    "value": "290"
+                },
+                {
+                    "label": "Drug Equipment Violations",
+                    "value": "35B"
+                },
+                {
+                    "label": "Drug/Narcotic Violations",
+                    "value": "35A"
+                },
+                {
+                    "label": "Embezzlement",
+                    "value": "270"
+                },
+                {
+                    "label": "Espionage",
+                    "value": "103"
+                },
+                {
+                    "label": "Explosives Violation",
+                    "value": "526"
+                },
+                {
+                    "label": "Export Violations",
+                    "value": "58B"
+                },
+                {
+                    "label": "Extortion/Blackmail",
+                    "value": "210"
+                },
+                {
+                    "label": "Failure to Register as a Sex Offender",
+                    "value": "360"
+                },
+                {
+                    "label": "False Citizenship",
+                    "value": "30B"
+                },
+                {
+                    "label": "False Pretenses/Swindle/Confidence Game",
+                    "value": "26A"
+                },
+                {
+                    "label": "Federal Liquor Offenses",
+                    "value": "61A"
+                },
+                {
+                    "label": "Federal Tobacco Offenses",
+                    "value": "61B"
+                },
+                {
+                    "label": "Flight to Avoid Deportation",
+                    "value": "49C"
+                },
+                {
+                    "label": "Flight to Avoid Prosecution",
+                    "value": "49B"
+                },
+                {
+                    "label": "Gambling Equipment Violation",
+                    "value": "39C"
+                },
+                {
+                    "label": "Hacking/Computer Invasion",
+                    "value": "26G"
+                },
+                {
+                    "label": "Harboring Escapee/Concealing from Arrest",
+                    "value": "49A"
+                },
+                {
+                    "label": "Human Trafficking, Commercial Sex Acts",
+                    "value": "64A"
+                },
+                {
+                    "label": "Human Trafficking, Involuntary Servitude",
+                    "value": "64B"
+                },
+                {
+                    "label": "Identity Theft",
+                    "value": "26F"
+                },
+                {
+                    "label": "Illegal Entry into the United States",
+                    "value": "30A"
+                },
+                {
+                    "label": "Impersonation",
+                    "value": "26C"
+                },
+                {
+                    "label": "Import Violations",
+                    "value": "58A"
+                },
+                {
+                    "label": "Incest",
+                    "value": "36A"
+                },
+                {
+                    "label": "Intimidation",
+                    "value": "13C"
+                },
+                {
+                    "label": "Justifiable Homicide",
+                    "value": "09C"
+                },
+                {
+                    "label": "Kidnapping/Abduction",
+                    "value": "100"
+                },
+                {
+                    "label": "Money Laundering",
+                    "value": "26H"
+                },
+                {
+                    "label": "Murder and Nonnegligent Manslaughter",
+                    "value": "09A"
+                },
+                {
+                    "label": "Negligent Manslaughter",
+                    "value": "09B"
+                },
+                {
+                    "label": "Not Specified",
+                    "value": "23*"
+                },
+                {
+                    "label": "Operating/Promoting/Assisting Gambling",
+                    "value": "39B"
+                },
+                {
+                    "label": "Pocket-picking",
+                    "value": "23A"
+                },
+                {
+                    "label": "Pornography/Obscene Material",
+                    "value": "370"
+                },
+                {
+                    "label": "Prostitution",
+                    "value": "40A"
+                },
+                {
+                    "label": "Purchasing Prostitution",
+                    "value": "40C"
+                },
+                {
+                    "label": "Purse-snatching",
+                    "value": "23B"
+                },
+                {
+                    "label": "Re-entry after Deportation",
+                    "value": "30D"
+                },
+                {
+                    "label": "Shoplifting",
+                    "value": "23C"
+                },
+                {
+                    "label": "Simple Assault",
+                    "value": "13B"
+                },
+                {
+                    "label": "Smuggling Aliens",
+                    "value": "30C"
+                },
+                {
+                    "label": "Sports Tampering",
+                    "value": "39D"
+                },
+                {
+                    "label": "Statutory Rape",
+                    "value": "36B"
+                },
+                {
+                    "label": "Stolen Property Offenses",
+                    "value": "280"
+                },
+                {
+                    "label": "Theft From Building",
+                    "value": "23D"
+                },
+                {
+                    "label": "Theft From Coin-Operated Machine or Device",
+                    "value": "23E"
+                },
+                {
+                    "label": "Theft From Motor Vehicle",
+                    "value": "23F"
+                },
+                {
+                    "label": "Theft of Motor Vehicle Parts or Accessories",
+                    "value": "23G"
+                },
+                {
+                    "label": "Treason",
+                    "value": "101"
+                },
+                {
+                    "label": "Violation of National Firearm Act of 1934",
+                    "value": "521"
+                },
+                {
+                    "label": "Weapon Law Violations",
+                    "value": "520"
+                },
+                {
+                    "label": "Weapons of Mass Destruction",
+                    "value": "522"
+                },
+                {
+                    "label": "Welfare Fraud",
+                    "value": "26D"
+                },
+                {
+                    "label": "Wildlife Trafficking",
+                    "value": "620"
+                },
+                {
+                    "label": "Wire Fraud",
+                    "value": "26E"
+                }
+            ]
+        }
+    ]
+}
