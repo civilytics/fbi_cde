@@ -1,1 +1,110 @@
-{"offenses":{"counts":{"Oakland PD Offenses":{"01-2015":5000,"01-2016":5200,"01-2017":4800}},"rates":{"Oakland PD Offenses":{"01-2015":15.2,"01-2016":15.8,"01-2017":14.6}}}}
+{
+    "offenses": {
+        "rates": {
+            "California Offenses": {
+                "01-2019": 34.38,
+                "02-2019": 30.66,
+                "03-2019": 35.95
+            },
+            "California Clearances": {
+                "01-2019": 16.12,
+                "02-2019": 14.63,
+                "03-2019": 16.12
+            },
+            "United States Offenses": {
+                "01-2019": 27.84,
+                "02-2019": 24.11,
+                "03-2019": 27.66
+            },
+            "United States Clearances": {
+                "01-2019": 12.2,
+                "02-2019": 10.89,
+                "03-2019": 12.14
+            },
+            "Oakland Police Department Offenses": {
+                "01-2019": 108.75,
+                "02-2019": 84.79,
+                "03-2019": 100.91
+            },
+            "Oakland Police Department Clearances": {
+                "01-2019": 24.42,
+                "02-2019": 9.22,
+                "03-2019": 8.52
+            }
+        },
+        "actuals": {
+            "Oakland Police Department Offenses": {
+                "01-2019": 472,
+                "02-2019": 368,
+                "03-2019": 438
+            },
+            "Oakland Police Department Clearances": {
+                "01-2019": 106,
+                "02-2019": 40,
+                "03-2019": 37
+            }
+        }
+    },
+    "tooltips": {
+        "leftYAxisHeaders": {
+            "yAxisHeaderRates": "Offenses per 100,000 people",
+            "yAxisHeaderActual": "Offenses"
+        },
+        "Percent of Population Coverage": {
+            "California": {
+                "01-2019": 99.98,
+                "02-2019": 99.98,
+                "03-2019": 99.98
+            },
+            "United States": {
+                "01-2019": 96.95,
+                "02-2019": 96.82,
+                "03-2019": 96.88
+            }
+        }
+    },
+    "populations": {
+        "population": {
+            "California": {
+                "01-2019": 39512223,
+                "02-2019": 39512223,
+                "03-2019": 39512223
+            },
+            "United States": {
+                "01-2019": 331433049,
+                "02-2019": 331433049,
+                "03-2019": 331433049
+            },
+            "Oakland Police Department": {
+                "01-2019": 434036,
+                "02-2019": 434036,
+                "03-2019": 434036
+            }
+        },
+        "participated_population": {
+            "California": {
+                "01-2019": 39502561,
+                "02-2019": 39502561,
+                "03-2019": 39502561
+            },
+            "United States": {
+                "01-2019": 321317228,
+                "02-2019": 320909276,
+                "03-2019": 321078383
+            },
+            "Oakland Police Department": {
+                "01-2019": 434036,
+                "02-2019": 434036,
+                "03-2019": 434036
+            }
+        }
+    },
+    "cde_properties": {
+        "max_data_date": {
+            "UCR": "06/2026"
+        },
+        "last_refresh_date": {
+            "UCR": "06/15/2026"
+        }
+    }
+}

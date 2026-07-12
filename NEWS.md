@@ -35,6 +35,13 @@
 - Confirmed live that `actuals` (employee counts) are suppressed upstream at every geography except agency-level -- not just national as previously documented; state- and region-level `get_police_employment()` correctly return 0 rows, now covered by an offline fixture (`pe-state-CA.json`) and a live test
 - Removed the now-unreferenced `prep_ucr_crime_test()` helper and the 123 `*_police-employment-breakout.csv` golden files it read
 
+## Test Suite (Issue #30)
+
+- Re-recorded the summarized, arrest-counts, and police-employment offline fixtures from the live current CDE API (`summarized-agency-CA0010900-V.json`, `summarized-state-CA-V.json`, `summarized-national-V.json`, `summarized-national-ARS.json` -- renamed from `summarized-national-AR.json`, the real offense code is `ARS`, `arrest-agency-CA0010900-counts.json`, `arrest-national-all-counts.json`, `pe-agency-CA0010900.json`, `pe-national.json`); all previously encoded a synthetic/legacy shape and exercised only the package's `%||%` back-compat fallback path, not the real current API shape
+- Discovered in the process that agency- and state-level `summarized`/`arrest` responses include comparison rows (state/national rates alongside the geography's own counts), which a full outer join surfaces as extra rows with a real `rate` but `NA` `count` -- documented in the relevant offline tests and reflected in updated `nrow`/value assertions
+- Confirmed `pe-national.json`'s employee-count suppression matches the live API (see Issue #29) and updated its offline test accordingly, replacing the old non-suppressed synthetic fixture
+- Did not switch `read_fixture()` to `simplifyVector = FALSE`: still blocked on the lookups parser, which turns out to have a live bug of its own -- `lookup/offenses?type=crime-trend` now returns a nested `crimeGroups` structure that `get_offense_codes()` does not handle (confirmed live; needs its own issue)
+
 ## Architecture
 
 - `cde_request()` established as the single network seam for all API calls

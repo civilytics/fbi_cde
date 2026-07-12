@@ -1,22 +1,34 @@
 {
-    "rates": {
-        "United States Arrests": {
-            "01-2019": 251.34,
-            "02-2019": 236.27,
-            "03-2019": 269.73
-        }
-    },
-    "actuals": {
-        "United States Arrests": {
-            "01-2019": 807594,
-            "02-2019": 758199,
-            "03-2019": 866055
+    "offenses": {
+        "rates": {
+            "United States Offenses": {
+                "01-2019": 0.81,
+                "02-2019": 0.69,
+                "03-2019": 0.86
+            },
+            "United States Clearances": {
+                "01-2019": 0.18,
+                "02-2019": 0.15,
+                "03-2019": 0.21
+            }
+        },
+        "actuals": {
+            "United States Offenses": {
+                "01-2019": 2598,
+                "02-2019": 2217,
+                "03-2019": 2771
+            },
+            "United States Clearances": {
+                "01-2019": 572,
+                "02-2019": 486,
+                "03-2019": 684
+            }
         }
     },
     "tooltips": {
         "leftYAxisHeaders": {
-            "yAxisHeaderRates": "Arrests per 100,000 people",
-            "yAxisHeaderActual": "Arrests"
+            "yAxisHeaderRates": "Offenses per 100,000 people",
+            "yAxisHeaderActual": "Offenses"
         },
         "Percent of Population Coverage": {
             "United States": {

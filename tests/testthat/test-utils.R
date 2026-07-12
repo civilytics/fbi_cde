@@ -68,11 +68,11 @@ test_that("flatten_cde_json produces a tidy frame from fixture data", {
   
   expect_s3_class(result, "data.frame")
   expect_equal(names(result), c("label", "period", "value"))
-  expect_equal(nrow(result), 4)
+  expect_equal(nrow(result), 6)
   expect_equal(result$label[1], "United States Offenses")
-  expect_equal(result$period[1], "01-2015")
-  expect_equal(result$value[1], 27.6)
-  expect_equal(result$value[4], 28.2)
+  expect_equal(result$period[1], "01-2019")
+  expect_equal(result$value[1], 27.84)
+  expect_equal(result$value[4], 12.20)
 })
 
 test_that("flatten_cde_json handles empty input", {

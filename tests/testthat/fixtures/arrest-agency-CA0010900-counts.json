@@ -1,1 +1,89 @@
-{"offenses": {"counts": {"Oakland PD Offenses": {"01-2015": 1200, "01-2016": 1250, "01-2017": 1180, "01-2018": 1100, "01-2019": 1050}}, "rates": {"Oakland PD Offenses": {"01-2015": 3.6, "01-2016": 3.75, "01-2017": 3.54, "01-2018": 3.3, "01-2019": 3.15}}}}
+{
+    "rates": {
+        "California Arrests": {
+            "01-2019": 313.34,
+            "02-2019": 276.81,
+            "03-2019": 327.73
+        },
+        "United States Arrests": {
+            "01-2019": 251.34,
+            "02-2019": 236.27,
+            "03-2019": 269.73
+        },
+        "Oakland Police Department Arrests": {
+            "01-2019": 189.62,
+            "02-2019": 178.33,
+            "03-2019": 175.56
+        }
+    },
+    "actuals": {
+        "Oakland Police Department Arrests": {
+            "01-2019": 823,
+            "02-2019": 774,
+            "03-2019": 762
+        }
+    },
+    "tooltips": {
+        "leftYAxisHeaders": {
+            "yAxisHeaderRates": "Arrests per 100,000 people",
+            "yAxisHeaderActual": "Arrests"
+        },
+        "Percent of Population Coverage": {
+            "California": {
+                "01-2019": 99.98,
+                "02-2019": 99.98,
+                "03-2019": 99.98
+            },
+            "United States": {
+                "01-2019": 96.95,
+                "02-2019": 96.82,
+                "03-2019": 96.88
+            },
+            "Oakland Police Department": null
+        }
+    },
+    "populations": {
+        "population": {
+            "California": {
+                "01-2019": 39512223,
+                "02-2019": 39512223,
+                "03-2019": 39512223
+            },
+            "United States": {
+                "01-2019": 331433049,
+                "02-2019": 331433049,
+                "03-2019": 331433049
+            },
+            "Oakland Police Department": {
+                "01-2019": 434036,
+                "02-2019": 434036,
+                "03-2019": 434036
+            }
+        },
+        "participated_population": {
+            "California": {
+                "01-2019": 39502561,
+                "02-2019": 39502561,
+                "03-2019": 39502561
+            },
+            "United States": {
+                "01-2019": 321317228,
+                "02-2019": 320909276,
+                "03-2019": 321078383
+            },
+            "Oakland Police Department": {
+                "01-2019": 434036,
+                "02-2019": 434036,
+                "03-2019": 434036
+            }
+        }
+    },
+    "cde_properties": {
+        "max_data_date": {
+            "UCR": "06/2026"
+        },
+        "last_refresh_date": {
+            "UCR": "06/15/2026"
+        }
+    }
+}

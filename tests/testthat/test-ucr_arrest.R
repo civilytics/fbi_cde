@@ -1,8 +1,14 @@
 # Offline tests for arrest functions using fixtures.
+#
+# Fixtures recorded live from arrest/{level}/all?type=counts for
+# 01-2019..03-2019 (see tests/testthat/fixtures/README.md). At agency level
+# the response includes state/national comparison rows alongside the
+# agency's own counts -- see test-ucr_crime.R for the same pattern on
+# summarized crime.
 
 test_that("get_arrest_count parses agency-level counts response", {
   local_fbi_fixture("arrest-agency-CA0010900-counts.json")
-  result <- get_arrest_count("CA0010900")
+  result <- get_arrest_count("CA0010900", from = "01-2019", to = "03-2019")
 
   expect_s3_class(result, "data.frame")
   expect_true("geography" %in% names(result))
@@ -10,18 +16,22 @@ test_that("get_arrest_count parses agency-level counts response", {
   expect_true("period" %in% names(result))
   expect_true("count" %in% names(result))
   expect_true("rate" %in% names(result))
-  expect_equal(result$geography[1], "CA0010900")
-  expect_true(nrow(result) > 0)
+  expect_equal(unique(result$geography), "CA0010900")
+  expect_equal(nrow(result), 9)
+
+  agency_rows <- result[result$offense == "Oakland Police Department Arrests", ]
+  expect_equal(agency_rows$count, c(823, 774, 762))
 })
 
 test_that("get_arrest_count parses national-level counts response", {
   local_fbi_fixture("arrest-national-all-counts.json")
-  result <- get_arrest_count()
+  result <- get_arrest_count(from = "01-2019", to = "03-2019")
 
   expect_s3_class(result, "data.frame")
   expect_true("geography" %in% names(result))
-  expect_equal(result$geography[1], "US")
-  expect_true(nrow(result) > 0)
+  expect_equal(unique(result$geography), "US")
+  expect_equal(nrow(result), 3)
+  expect_equal(result$count, c(807594, 758199, 866055))
 })
 
 test_that("get_arrest_demographics parses demographics response", {

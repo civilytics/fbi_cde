@@ -1,1 +1,90 @@
-{"offenses":{"counts":{"California Offenses":{"01-2015":100000,"01-2016":105000,"01-2017":102000}},"rates":{"California Offenses":{"01-2015":25.0,"01-2016":26.0,"01-2017":25.3}}}}
+{
+    "offenses": {
+        "rates": {
+            "California Offenses": {
+                "01-2019": 34.38,
+                "02-2019": 30.66,
+                "03-2019": 35.95
+            },
+            "California Clearances": {
+                "01-2019": 16.12,
+                "02-2019": 14.63,
+                "03-2019": 16.12
+            },
+            "United States Offenses": {
+                "01-2019": 27.84,
+                "02-2019": 24.11,
+                "03-2019": 27.66
+            },
+            "United States Clearances": {
+                "01-2019": 12.2,
+                "02-2019": 10.89,
+                "03-2019": 12.14
+            }
+        },
+        "actuals": {
+            "California Offenses": {
+                "01-2019": 13582,
+                "02-2019": 12113,
+                "03-2019": 14201
+            },
+            "California Clearances": {
+                "01-2019": 6367,
+                "02-2019": 5778,
+                "03-2019": 6369
+            }
+        }
+    },
+    "tooltips": {
+        "leftYAxisHeaders": {
+            "yAxisHeaderRates": "Offenses per 100,000 people",
+            "yAxisHeaderActual": "Offenses"
+        },
+        "Percent of Population Coverage": {
+            "California": {
+                "01-2019": 99.98,
+                "02-2019": 99.98,
+                "03-2019": 99.98
+            },
+            "United States": {
+                "01-2019": 96.95,
+                "02-2019": 96.82,
+                "03-2019": 96.88
+            }
+        }
+    },
+    "populations": {
+        "population": {
+            "California": {
+                "01-2019": 39512223,
+                "02-2019": 39512223,
+                "03-2019": 39512223
+            },
+            "United States": {
+                "01-2019": 331433049,
+                "02-2019": 331433049,
+                "03-2019": 331433049
+            }
+        },
+        "participated_population": {
+            "California": {
+                "01-2019": 39502561,
+                "02-2019": 39502561,
+                "03-2019": 39502561
+            },
+            "United States": {
+                "01-2019": 321317228,
+                "02-2019": 320909276,
+                "03-2019": 321078383
+            }
+        }
+    },
+    "cde_properties": {
+        "max_data_date": {
+            "UCR": "06/2026"
+        },
+        "last_refresh_date": {
+            "UCR": "06/15/2026"
+        }
+    }
+}

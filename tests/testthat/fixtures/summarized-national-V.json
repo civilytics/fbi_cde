@@ -1,1 +1,65 @@
-{"offenses":{"rates":{"United States Offenses":{"01-2015":27.6,"01-2016":29.62,"01-2017":29.0,"01-2018":28.2}}}}
+{
+    "offenses": {
+        "rates": {
+            "United States Offenses": {
+                "01-2019": 27.84,
+                "02-2019": 24.11,
+                "03-2019": 27.66
+            },
+            "United States Clearances": {
+                "01-2019": 12.2,
+                "02-2019": 10.89,
+                "03-2019": 12.14
+            }
+        },
+        "actuals": {
+            "United States Offenses": {
+                "01-2019": 89470,
+                "02-2019": 77385,
+                "03-2019": 88801
+            },
+            "United States Clearances": {
+                "01-2019": 39196,
+                "02-2019": 34934,
+                "03-2019": 38975
+            }
+        }
+    },
+    "tooltips": {
+        "leftYAxisHeaders": {
+            "yAxisHeaderRates": "Offenses per 100,000 people",
+            "yAxisHeaderActual": "Offenses"
+        },
+        "Percent of Population Coverage": {
+            "United States": {
+                "01-2019": 96.95,
+                "02-2019": 96.82,
+                "03-2019": 96.88
+            }
+        }
+    },
+    "populations": {
+        "population": {
+            "United States": {
+                "01-2019": 331433049,
+                "02-2019": 331433049,
+                "03-2019": 331433049
+            }
+        },
+        "participated_population": {
+            "United States": {
+                "01-2019": 321317228,
+                "02-2019": 320909276,
+                "03-2019": 321078383
+            }
+        }
+    },
+    "cde_properties": {
+        "max_data_date": {
+            "UCR": "06/2026"
+        },
+        "last_refresh_date": {
+            "UCR": "06/15/2026"
+        }
+    }
+}
