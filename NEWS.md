@@ -1,5 +1,13 @@
 # fbi 0.1.0.9000 (development version)
 
+## Provenance (Issue #26)
+
+- Package authorship and maintainer updated to Jared E. Knowles (Civilytics)
+- Jacob Kaplan has stepped down as author/maintainer per his request
+- License year and copyright holder updated to 2026 / Civilytics
+- Repository URL updated to gitea.civilytics.org
+- Package description now acknowledges the original fbi package by Jacob Kaplan
+
 ## Documentation Overhaul (Issue #13)
 
 - Complete rewrite of README.Rmd with current API host, badges, usage examples, and function table of contents

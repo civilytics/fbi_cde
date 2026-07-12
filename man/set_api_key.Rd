@@ -7,14 +7,19 @@
 set_api_key(key)
 }
 \arguments{
-\item{key}{A character string with the API key.}
+\item{key}{A character string with the API key (ignored).}
 }
 \value{
-A string with the FBI's Crime Data Explorer API key
+`NULL`. A deprecation message is printed on first call.
 }
 \description{
-Sets the FBI's Crime Data Explorer API key
+**Deprecated.** The current CDE API (`cde.ucr.cjis.gov/LATEST/`) does not
+require an API key. This function is retained only for backward compatibility
+with code that previously used the legacy `api.data.gov`-hosted API.
+`FBI_API_KEY` is kept as an opt-in switch for live integration tests.
 }
 \examples{
+\dontrun{
 set_api_key("abc123")
+}
 }

@@ -1,11 +1,12 @@
 #' Returns the FBI's Crime Data Explorer API key
 #'
-#' Returns the FBI's Crime Data Explorer API is one is set. If the key is not
-#' set then it will ask you to enter the key in the console and set the key
-#' for you.
+#' @description
+#' **Deprecated.** The current CDE API (`cde.ucr.cjis.gov/LATEST/`) does not
+#' require an API key. This function is retained only for backward compatibility
+#' with code that previously used the legacy `api.data.gov`-hosted API.
 #'
 #' @return
-#' A string with the FBI's Crime Data Explorer API key
+#' `NULL`. A deprecation message is printed on first call.
 #' @export
 #'
 #' @examples
@@ -13,36 +14,29 @@
 #' get_api_key()
 #' }
 get_api_key <- function() {
-  env <- Sys.getenv("FBI_API_KEY")
-  if (env != "") {
-    return(env)
-  }
-
-  if (!interactive()) {
-    stop("Please set the environment variable FBI_API_KEY to your FBI API key. Keys can be acquired at https://api.data.gov/signup/",
-         call. = FALSE)
-  }
-  message("Please enter your FBI API key and press enter:")
-  key <- readline(": ")
-  fbi::set_api_key(key)
-  return(key)
+  message("get_api_key() is deprecated. The current CDE API (cde.ucr.cjis.gov) does not require an API key.")
+  NULL
 }
 
 #' Sets the FBI's Crime Data Explorer API key
 #'
-#' @param key A character string with the API key.
+#' @description
+#' **Deprecated.** The current CDE API (`cde.ucr.cjis.gov/LATEST/`) does not
+#' require an API key. This function is retained only for backward compatibility
+#' with code that previously used the legacy `api.data.gov`-hosted API.
+#' `FBI_API_KEY` is kept as an opt-in switch for live integration tests.
 #'
-#' @return A string with the FBI's Crime Data Explorer API key
+#' @param key A character string with the API key (ignored).
+#'
+#' @return
+#' `NULL`. A deprecation message is printed on first call.
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' set_api_key("abc123")
+#' }
 set_api_key <- function(key) {
-  if (key %in% c("", NA, NULL) || length(key) != 1 || !is.character(key)) {
-    message("Incorrect key. Please enter the API key you received from https://api.data.gov/signup/ and press enter:")
-    key <- readline(": ")
-  }
-  Sys.setenv(FBI_API_KEY = key)
-  message(paste0("FBI API key set to: '", key, "'."))
-  return(key)
+  message("set_api_key() is deprecated. The current CDE API does not require an API key. FBI_API_KEY is retained only for opt-in live integration tests.")
+  NULL
 }

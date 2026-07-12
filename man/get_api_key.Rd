@@ -7,12 +7,12 @@
 get_api_key()
 }
 \value{
-A string with the FBI's Crime Data Explorer API key
+`NULL`. A deprecation message is printed on first call.
 }
 \description{
-Returns the FBI's Crime Data Explorer API is one is set. If the key is not
-set then it will ask you to enter the key in the console and set the key
-for you.
+**Deprecated.** The current CDE API (`cde.ucr.cjis.gov/LATEST/`) does not
+require an API key. This function is retained only for backward compatibility
+with code that previously used the legacy `api.data.gov`-hosted API.
 }
 \examples{
 \dontrun{
