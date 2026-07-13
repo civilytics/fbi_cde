@@ -5,6 +5,24 @@
   if (is.null(x) || length(x) == 0) y else x
 }
 
+# Stack a list of data.frames with differing columns (base-R replacement for
+# data.table::rbindlist(fill = TRUE)). NULL entries are dropped; the union of
+# all columns is used, with missing cells filled NA and rows kept in order.
+rbind_fill <- function(dfs) {
+  dfs <- dfs[!vapply(dfs, is.null, logical(1))]
+  if (length(dfs) == 0) {
+    return(data.frame())
+  }
+  all_cols <- unique(unlist(lapply(dfs, names)))
+  dfs <- lapply(dfs, function(df) {
+    for (col in setdiff(all_cols, names(df))) {
+      df[[col]] <- NA
+    }
+    df[all_cols]
+  })
+  do.call(rbind, dfs)
+}
+
 make_state <- function(state_abb) {
   state <- datasets::state.name[match(tolower(state_abb),
                                       tolower(datasets::state.abb))]

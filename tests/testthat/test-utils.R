@@ -94,3 +94,20 @@ test_that("flatten_cde_json handles NULL input", {
   expect_s3_class(result, "data.frame")
   expect_equal(nrow(result), 0)
 })
+
+test_that("rbind_fill unions columns and fills missing with NA", {
+  a <- data.frame(x = 1L, y = "a", stringsAsFactors = FALSE)
+  b <- data.frame(x = 2L, z = TRUE, stringsAsFactors = FALSE)
+  out <- rbind_fill(list(a, NULL, b))
+  expect_s3_class(out, "data.frame")
+  expect_equal(nrow(out), 2L)
+  expect_setequal(names(out), c("x", "y", "z"))
+  expect_equal(out$x, c(1L, 2L))
+  expect_true(is.na(out$z[1]))   # a had no z
+  expect_true(is.na(out$y[2]))   # b had no y
+})
+
+test_that("rbind_fill returns empty frame for empty or all-NULL input", {
+  expect_equal(nrow(rbind_fill(list())), 0L)
+  expect_equal(nrow(rbind_fill(list(NULL, NULL))), 0L)
+})
