@@ -22,15 +22,22 @@ test_that("combine_url_section builds geography paths", {
   )
 })
 
-test_that("is_valid_ori checks ORI format (2 letters + 7 digits)", {
+test_that("is_valid_ori checks ORI format (2 letters + 7 alphanumerics)", {
   expect_true(is_valid_ori("CA0010900"))
   expect_true(is_valid_ori("NY1234567"))
+  # Letter-bearing ORIs are valid: contract cities, state, tribal, campus.
+  expect_true(is_valid_ori("CA001300X"))   # Dublin PD (Alameda)
+  expect_true(is_valid_ori("CA0191H0X"))   # West Hollywood PD (LASD contract)
+  expect_true(is_valid_ori("ARASP0000"))   # Arkansas State Police
   expect_false(is_valid_ori("not-an-ori"))
-  expect_false(is_valid_ori("ABC123"))
-  expect_false(is_valid_ori("A0010900"))
-  # case-insensitive
+  expect_false(is_valid_ori("ABC123"))     # too short
+  expect_false(is_valid_ori("A0010900"))   # only 1 leading letter
+  expect_false(is_valid_ori("CA010900"))   # 8 chars
+  expect_false(is_valid_ori("CA00109!0"))  # illegal char
+  # Case-insensitive.
   expect_true(is_valid_ori("ca0010900"))
-  # vectorised
+  expect_true(is_valid_ori("ca001300x"))
+  # Vectorized.
   expect_equal(is_valid_ori(c("CA0010900", "not-an-ori")), c(TRUE, FALSE))
 })
 

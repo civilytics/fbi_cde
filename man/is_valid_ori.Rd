@@ -14,9 +14,11 @@ Logical vector, TRUE for valid ORIs.
 }
 \description{
 Checks if an ORI (Organization Request Identifier) matches the expected
-9-character format: 2 letters + 7 digits (e.g. "CA0010900").
+9-character format: 2 letters followed by 7 alphanumerics (letters allowed
+for state, tribal, campus, and some city ORIs) (e.g. "CA0010900").
 }
 \examples{
 is_valid_ori("CA0010900")
+is_valid_ori("CA001300X")
 is_valid_ori("abc123")
 }
