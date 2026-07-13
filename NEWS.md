@@ -46,6 +46,10 @@
 
 - `get_offense_codes()` fixed to parse the current `lookup/offenses` response shape -- `{crimeGroups: [{label, crimes: [{label, value}]}]}` -- instead of the retired flat `{code: label}` dict. The old parser silently returned garbage against the live API (every row had `code = "crimeGroups"` with group/crime labels and codes jumbled into one column via `unlist()`). Verified across `type = "crime-trend"` (72 codes), `"arrest"` (48 codes), `"hate-crime"` (35 codes), and `"nibrs"` (empty, `crimeGroups: null`). `lookup-offenses.json` re-recorded from the live current shape.
 
+## Known Issue (Issue #33)
+
+- `get_nibrs_victim()`/`get_nibrs_offender()`/`get_nibrs_offense()` currently return no data from the live API -- confirmed not a parsing bug (the parser matches the documented contract exactly, and offline fixture tests with real synthetic data parse correctly), but `nibrs/{level}/{offense}?type=totals` returns an all-null payload for every offense/level/date-range tried, including nonsense offense strings, while the identical mechanism works fine for `get_arrest_demographics()`. These functions now emit a `message()` whenever they return 0 rows, pointing at Issue #33, so an empty result isn't mistaken for a genuine zero count while this is unresolved.
+
 ## Architecture
 
 - `cde_request()` established as the single network seam for all API calls

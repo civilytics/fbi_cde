@@ -9,35 +9,46 @@
 #
 # Returns a long data.frame with columns:
 #   geography, offense, period, demographic_type, demographic_value, count
+#
+# As of 2026-07, the live nibrs/{level}/{offense}?type=totals endpoint returns
+# an all-null payload for every input tried (see Issue #33) -- this is not a
+# parsing bug, the shape matches the documented contract exactly (offline
+# fixture tests with real synthetic data parse correctly). Since a genuinely
+# empty result is indistinguishable from "the live endpoint has no data right
+# now" without out-of-band context, nibrs_empty_result() emits a message()
+# pointing at Issue #33 whenever it returns a 0-row frame, so callers don't
+# mistake API breakage for "zero matching incidents."
+nibrs_empty_result <- function() {
+  message(
+    "get_nibrs_*() returned no data for this query. As of this package ",
+    "version, the live CDE nibrs/{level}/{offense}?type=totals endpoint has ",
+    "returned no data for every combination of agency/offense/date range ",
+    "tested -- this may indicate an upstream API issue rather than a ",
+    "genuine zero count. See https://gitea.civilytics.org/Civilytics/",
+    "fbi_cde/issues/33 for tracking."
+  )
+  data.frame(
+    geography = character(),
+    offense = character(),
+    period = character(),
+    demographic_type = character(),
+    demographic_value = character(),
+    count = numeric(),
+    stringsAsFactors = FALSE
+  )
+}
+
 parse_nibrs_response <- function(response, geography, offense, section, variable) {
   section_data <- response[[section]]
 
   if (is.null(section_data) || length(section_data) == 0) {
-    n <- 0
-    return(data.frame(
-      geography = rep(geography, n),
-      offense = rep(offense, n),
-      period = character(),
-      demographic_type = character(),
-      demographic_value = character(),
-      count = numeric(),
-      stringsAsFactors = FALSE
-    ))
+    return(nibrs_empty_result())
   }
 
   var_data <- section_data[[variable]]
 
   if (is.null(var_data) || length(var_data) == 0) {
-    n <- 0
-    return(data.frame(
-      geography = rep(geography, n),
-      offense = rep(offense, n),
-      period = character(),
-      demographic_type = character(),
-      demographic_value = character(),
-      count = numeric(),
-      stringsAsFactors = FALSE
-    ))
+    return(nibrs_empty_result())
   }
 
   demo_values <- c()
@@ -51,16 +62,7 @@ parse_nibrs_response <- function(response, geography, offense, section, variable
   }
 
   if (length(counts) == 0) {
-    n <- 0
-    return(data.frame(
-      geography = rep(geography, n),
-      offense = rep(offense, n),
-      period = character(),
-      demographic_type = character(),
-      demographic_value = character(),
-      count = numeric(),
-      stringsAsFactors = FALSE
-    ))
+    return(nibrs_empty_result())
   }
 
   data.frame(
@@ -79,6 +81,12 @@ parse_nibrs_response <- function(response, geography, offense, section, variable
 #'
 #' Retrieves victim demographics (age, race, sex, ethnicity, relationship, location)
 #' from the CDE API endpoint `nibrs/<level>/<offense>` with `type=totals`.
+#'
+#' @description
+#' **Known issue:** as of this package version, the live endpoint returns no
+#' data for any input tested (see
+#' <https://gitea.civilytics.org/Civilytics/fbi_cde/issues/33>). A message is
+#' emitted whenever the result is empty.
 #'
 #' @family NIBRS functions
 #' @param ori A string of the 9-character ORI code for the desired agency.
@@ -146,6 +154,12 @@ get_nibrs_victim <- function(ori = NULL,
 #' Retrieves offender demographics (age, count, ethnicity, race, sex) from the
 #' CDE API endpoint `nibrs/<level>/<offense>` with `type=totals`.
 #'
+#' @description
+#' **Known issue:** as of this package version, the live endpoint returns no
+#' data for any input tested (see
+#' <https://gitea.civilytics.org/Civilytics/fbi_cde/issues/33>). A message is
+#' emitted whenever the result is empty.
+#'
 #' @family NIBRS functions
 #' @inheritParams get_nibrs_victim
 #' @param variable A string with the demographic variable to return. Selects
@@ -206,6 +220,12 @@ get_nibrs_offender <- function(ori = NULL,
 #' Retrieves offense characteristics (count, weapons, linkedoffense,
 #' suspectusing, criminal_activity, property_recovered, property_stolen, bias)
 #' from the CDE API endpoint `nibrs/<level>/<offense>` with `type=totals`.
+#'
+#' @description
+#' **Known issue:** as of this package version, the live endpoint returns no
+#' data for any input tested (see
+#' <https://gitea.civilytics.org/Civilytics/fbi_cde/issues/33>). A message is
+#' emitted whenever the result is empty.
 #'
 #' @family NIBRS functions
 #' @inheritParams get_nibrs_victim

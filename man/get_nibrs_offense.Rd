@@ -38,6 +38,12 @@ A data.frame with columns: geography, offense, period,
   demographic_type, demographic_value, count
 }
 \description{
+**Known issue:** as of this package version, the live endpoint returns no
+data for any input tested (see
+<https://gitea.civilytics.org/Civilytics/fbi_cde/issues/33>). A message is
+emitted whenever the result is empty.
+}
+\details{
 Retrieves offense characteristics (count, weapons, linkedoffense,
 suspectusing, criminal_activity, property_recovered, property_stolen, bias)
 from the CDE API endpoint `nibrs/<level>/<offense>` with `type=totals`.
