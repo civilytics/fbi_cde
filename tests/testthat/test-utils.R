@@ -22,15 +22,22 @@ test_that("combine_url_section builds geography paths", {
   )
 })
 
-test_that("is_valid_ori checks ORI format (2 letters + 7 digits)", {
+test_that("is_valid_ori checks ORI format (2 letters + 7 alphanumerics)", {
   expect_true(is_valid_ori("CA0010900"))
   expect_true(is_valid_ori("NY1234567"))
+  # Letter-bearing ORIs are valid: contract cities, state, tribal, campus.
+  expect_true(is_valid_ori("CA001300X"))   # Dublin PD (Alameda)
+  expect_true(is_valid_ori("CA0191H0X"))   # West Hollywood PD (LASD contract)
+  expect_true(is_valid_ori("ARASP0000"))   # Arkansas State Police
   expect_false(is_valid_ori("not-an-ori"))
-  expect_false(is_valid_ori("ABC123"))
-  expect_false(is_valid_ori("A0010900"))
-  # case-insensitive
+  expect_false(is_valid_ori("ABC123"))     # too short
+  expect_false(is_valid_ori("A0010900"))   # only 1 leading letter
+  expect_false(is_valid_ori("CA010900"))   # 8 chars
+  expect_false(is_valid_ori("CA00109!0"))  # illegal char
+  # Case-insensitive.
   expect_true(is_valid_ori("ca0010900"))
-  # vectorised
+  expect_true(is_valid_ori("ca001300x"))
+  # Vectorized.
   expect_equal(is_valid_ori(c("CA0010900", "not-an-ori")), c(TRUE, FALSE))
 })
 
@@ -86,4 +93,43 @@ test_that("flatten_cde_json handles NULL input", {
   result <- flatten_cde_json(NULL)
   expect_s3_class(result, "data.frame")
   expect_equal(nrow(result), 0)
+})
+
+test_that("rbind_fill unions columns and fills missing with NA", {
+  a <- data.frame(x = 1L, y = "a", stringsAsFactors = FALSE)
+  b <- data.frame(x = 2L, z = TRUE, stringsAsFactors = FALSE)
+  out <- rbind_fill(list(a, NULL, b))
+  expect_s3_class(out, "data.frame")
+  expect_equal(nrow(out), 2L)
+  expect_setequal(names(out), c("x", "y", "z"))
+  expect_equal(out$x, c(1L, 2L))
+  expect_true(is.na(out$z[1]))   # a had no z
+  expect_true(is.na(out$y[2]))   # b had no y
+})
+
+test_that("rbind_fill returns empty frame for empty or all-NULL input", {
+  expect_equal(nrow(rbind_fill(list())), 0L)
+  expect_equal(nrow(rbind_fill(list(NULL, NULL))), 0L)
+})
+
+test_that("rbind_fill handles a zero-row input missing a column present elsewhere", {
+  e1 <- data.frame(x = integer(0), y = character(0))
+  e2 <- data.frame(x = 1L, z = 2L)
+
+  out <- rbind_fill(list(e1, e2))
+  expect_s3_class(out, "data.frame")
+  expect_equal(nrow(out), 1L)
+  expect_setequal(names(out), c("x", "y", "z"))
+  expect_equal(out$x, 1L)
+  expect_true(is.na(out$y))
+  expect_equal(out$z, 2L)
+
+  # Reverse order should give the same unioned result.
+  out_rev <- rbind_fill(list(e2, e1))
+  expect_s3_class(out_rev, "data.frame")
+  expect_equal(nrow(out_rev), 1L)
+  expect_setequal(names(out_rev), c("x", "y", "z"))
+  expect_equal(out_rev$x, 1L)
+  expect_true(is.na(out_rev$y))
+  expect_equal(out_rev$z, 2L)
 })

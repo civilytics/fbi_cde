@@ -47,10 +47,10 @@ parse_agency_participation_response <- function(response) {
         stringsAsFactors = FALSE
       )
     })
-    data.table::rbindlist(agency_rows)
+    do.call(rbind, agency_rows)
   })
 
-  result <- data.table::rbindlist(rows, fill = TRUE)
+  result <- rbind_fill(rows)
   as.data.frame(result)
 }
 
@@ -85,7 +85,8 @@ get_agency_participation <- function(ori, key = get_api_key()) {
   if (!is_valid_ori(ori)) {
     stop(
       "Invalid ORI code: ", ori,
-      ". Must match format: 2 letters + 7 digits (e.g., CA0010900)",
+      ". Must be 9 characters: 2 letters followed by 7 alphanumerics",
+      " (e.g., CA0010900 or CA001300X)",
       call. = FALSE
     )
   }
@@ -191,7 +192,7 @@ get_region_participation <- function(region_name, key = get_api_key()) {
   state_results <- lapply(states_in_region, function(s) {
     get_state_participation(s, key = key)
   })
-  combined <- data.table::rbindlist(state_results)
+  combined <- do.call(rbind, state_results)
 
   total <- sum(combined$total_agencies)
   nibrs <- sum(combined$nibrs_agencies)

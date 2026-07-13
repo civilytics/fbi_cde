@@ -31,7 +31,6 @@ Suggests:
 Imports:
     httr,
     jsonlite,
-    data.table,
     datasets,
     utils
 Language: en-US

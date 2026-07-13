@@ -217,7 +217,8 @@ cde_query <- function(from, to, type = NULL, four_digit_year = FALSE) {
 #' Validate an ORI code
 #'
 #' Checks if an ORI (Organization Request Identifier) matches the expected
-#' 9-character format: 2 letters + 7 digits (e.g. "CA0010900").
+#' 9-character format: 2 letters followed by 7 alphanumerics (letters allowed
+#' for state, tribal, campus, and some city ORIs) (e.g. "CA0010900").
 #'
 #' @param ori Character string or vector of ORI codes.
 #' @return Logical vector, TRUE for valid ORIs.
@@ -225,9 +226,10 @@ cde_query <- function(from, to, type = NULL, four_digit_year = FALSE) {
 #'
 #' @examples
 #' is_valid_ori("CA0010900")
+#' is_valid_ori("CA001300X")
 #' is_valid_ori("abc123")
 is_valid_ori <- function(ori) {
-  grepl("^[A-Z]{2}[0-9]{7}$", toupper(ori))
+  grepl("^[A-Z]{2}[A-Z0-9]{7}$", toupper(ori))
 }
 
 #' Validate a state abbreviation

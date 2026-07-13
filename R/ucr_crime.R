@@ -62,7 +62,8 @@ get_agency_crime <- function(ori,
   if (!is_valid_ori(ori)) {
     stop(
       "Invalid ORI code: ", ori,
-      ". Must match format: 2 letters + 7 digits (e.g., CA0010900)",
+      ". Must be 9 characters: 2 letters followed by 7 alphanumerics",
+      " (e.g., CA0010900 or CA001300X)",
       call. = FALSE
     )
   }

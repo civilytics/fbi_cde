@@ -84,7 +84,7 @@ get_leoka <- function(from = 2020, to = 2024) {
     parse_leoka_totals(response, year = y)
   })
 
-  result <- data.table::rbindlist(rows)
+  result <- do.call(rbind, rows)
   as.data.frame(result)
 }
 

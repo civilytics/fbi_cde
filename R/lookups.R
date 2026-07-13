@@ -28,16 +28,13 @@ get_agencies <- function() {
   }
 
   # Combine all agency lists into a single data.frame
-  combined <- data.table::rbindlist(lapply(all_agencies, function(x) {
-    if (is.list(x) && !is.data.frame(x)) {
-      as.data.frame(x, stringsAsFactors = FALSE)
-    } else {
-      as.data.frame(x, stringsAsFactors = FALSE)
-    }
-  }), fill = TRUE)
+  combined <- rbind_fill(lapply(all_agencies, function(x) {
+    as.data.frame(x, stringsAsFactors = FALSE)
+  }))
 
-  combined <- data.table::setorder(combined, "ori")
+  combined <- combined[order(combined$ori), , drop = FALSE]
   combined[] <- lapply(combined, as.character)
+  rownames(combined) <- NULL
   combined
 }
 
@@ -100,7 +97,7 @@ get_offense_codes <- function(type = "crime-trend") {
     return(empty)
   }
 
-  result <- data.table::rbindlist(rows)
+  result <- do.call(rbind, rows)
   as.data.frame(result)
 }
 

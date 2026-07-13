@@ -37,6 +37,12 @@ reference:
       - get_state_participation
       - get_region_participation
       - get_agency_participation
+  - title: Geography
+    desc: County-level membership and itemized detail
+    contents:
+      - county_agencies
+      - get_county_crime_detail
+      - get_county_agency_crime
   - title: Arrest
     desc: Functions for querying UCR arrest statistics
     contents:
