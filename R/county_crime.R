@@ -106,6 +106,11 @@ parse_agency_detail <- function(response, ori, offense, from, to) {
 #' @param progress If `TRUE`, print a simple progress line per agency.
 #' @return A data.frame (columns listed in Details). Agencies whose request or
 #'   parse fails are dropped with a warning and recorded in `attr(x, "dropped")`.
+#'   Agencies classed `state` (e.g. Highway Patrol) or `tribal` are attributed
+#'   to a county by HQ location, not jurisdiction; their figures reflect
+#'   statewide/jurisdiction-wide totals, not county-specific crime. They are
+#'   excluded by default (`default_member` is `FALSE` for both classes) and
+#'   should be interpreted with care if opted in via `agency_class`.
 #' @export
 #' @examples
 #' \dontrun{

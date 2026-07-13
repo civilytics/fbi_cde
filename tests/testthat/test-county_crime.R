@@ -47,6 +47,41 @@ test_that("parse_agency_detail builds per-period rows with reported flag", {
   expect_false(any(grepl("California", as.character(unlist(out)))))
 })
 
+test_that("parse_agency_detail distinguishes explicit-0 from missing periods", {
+  # 02-2021 is present with an actual value of 0 (agency reported and had zero
+  # offenses); 03-2021 is absent entirely (agency did not report). These must
+  # not collapse to the same thing: reported-0 is `count = 0, reported = TRUE`;
+  # missing is `count = NA, reported = FALSE`. This is the flag that lets
+  # callers detect e.g. the 2021 California reporting collapse.
+  response <- list(
+    offenses = list(
+      actuals = list(
+        "Testville PD Offenses" = list("01-2021" = 10, "02-2021" = 0)
+      )
+    ),
+    populations = list(
+      population = list(
+        "Testville PD" = list("01-2021" = 20000, "02-2021" = 20000,
+                              "03-2021" = 20000)
+      ),
+      participated_population = list(
+        "Testville PD" = list("01-2021" = 20000, "02-2021" = 20000,
+                              "03-2021" = 20000)
+      )
+    )
+  )
+
+  out <- parse_agency_detail(response, ori = "CA9999999", offense = "V",
+                             from = "01-2021", to = "03-2021")
+
+  expect_equal(out$period, c("01-2021", "02-2021", "03-2021"))
+  expect_equal(out$count, c(10, 0, NA))
+  expect_equal(out$reported, c(TRUE, TRUE, FALSE))
+  # Explicit 0 with a positive participated_population yields rate = 0, not NA.
+  expect_equal(out$rate[2], 0)
+  expect_true(is.na(out$rate[3]))
+})
+
 # Helper: a minimal one-agency response for the inline fan-out mock. `counts` is
 # a named numeric vector, e.g. c("01-2021" = 10, "02-2021" = 12).
 make_agency_response <- function(name, counts, pop = 20000) {

@@ -46,6 +46,7 @@ county_agencies <- function(county, state) {
 
   keep <- toupper(trimws(ag$county_name)) == county_key &
     toupper(trimws(ag$state_abbr)) == state_key
+  keep[is.na(keep)] <- FALSE
   sel <- ag[keep, , drop = FALSE]
 
   if (nrow(sel) == 0) {

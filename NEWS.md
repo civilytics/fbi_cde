@@ -19,6 +19,10 @@
   recorded in `attr(x, "dropped")`.
 - Added `get_county_agency_crime()` — the county's own primary agency
   (sheriff/parish) series, disambiguating it from the county-wide detail.
+- Caveat: agencies classed `state` or `tribal` (excluded by default) are
+  attributed to a county by HQ location; when opted in via `agency_class`,
+  their figures are statewide/jurisdiction-wide, not county-specific, and
+  should be interpreted accordingly.
 
 ## Provenance (Issue #26)
 

@@ -36,6 +36,11 @@ get_county_crime_detail(
 \value{
 A data.frame (columns listed in Details). Agencies whose request or
   parse fails are dropped with a warning and recorded in `attr(x, "dropped")`.
+  Agencies classed `state` (e.g. Highway Patrol) or `tribal` are attributed
+  to a county by HQ location, not jurisdiction; their figures reflect
+  statewide/jurisdiction-wide totals, not county-specific crime. They are
+  excluded by default (`default_member` is `FALSE` for both classes) and
+  should be interpreted with care if opted in via `agency_class`.
 }
 \description{
 Fans out one request per member agency and returns their crime series

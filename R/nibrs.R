@@ -119,7 +119,8 @@ get_nibrs_victim <- function(ori = NULL,
   if (!is.null(ori) && !is_valid_ori(ori)) {
     stop(
       "Invalid ORI code: ", ori,
-      ". Must match format: 2 letters + 7 digits (e.g., CA0010900)",
+      ". Must be 9 characters: 2 letters followed by 7 alphanumerics",
+      " (e.g., CA0010900 or CA001300X)",
       call. = FALSE
     )
   }
@@ -185,7 +186,8 @@ get_nibrs_offender <- function(ori = NULL,
   if (!is.null(ori) && !is_valid_ori(ori)) {
     stop(
       "Invalid ORI code: ", ori,
-      ". Must match format: 2 letters + 7 digits (e.g., CA0010900)",
+      ". Must be 9 characters: 2 letters followed by 7 alphanumerics",
+      " (e.g., CA0010900 or CA001300X)",
       call. = FALSE
     )
   }
@@ -254,7 +256,8 @@ get_nibrs_offense <- function(ori = NULL,
   if (!is.null(ori) && !is_valid_ori(ori)) {
     stop(
       "Invalid ORI code: ", ori,
-      ". Must match format: 2 letters + 7 digits (e.g., CA0010900)",
+      ". Must be 9 characters: 2 letters followed by 7 alphanumerics",
+      " (e.g., CA0010900 or CA001300X)",
       call. = FALSE
     )
   }
