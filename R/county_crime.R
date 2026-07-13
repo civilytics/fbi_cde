@@ -74,6 +74,16 @@ parse_agency_detail <- function(response, ori, offense, from, to) {
   "population", "participated_population", "rate", "reported"
 )
 
+# A 0-row, .DETAIL_COLS-shaped data.frame, used whenever there is no agency
+# data to return (no agencies matched, or every agency's request failed).
+.empty_detail_frame <- function() {
+  as.data.frame(
+    matrix(nrow = 0, ncol = length(.DETAIL_COLS),
+           dimnames = list(NULL, .DETAIL_COLS)),
+    stringsAsFactors = FALSE
+  )
+}
+
 #' Itemized crime detail for every agency attributed to a county
 #'
 #' Fans out one request per member agency and returns their crime series
@@ -117,12 +127,7 @@ get_county_crime_detail <- function(county, state, offense = "V",
   if (nrow(agencies) == 0) {
     warning("No agencies to query for '", county, "', ", state,
             " after filtering", call. = FALSE)
-    empty <- as.data.frame(
-      matrix(nrow = 0, ncol = length(.DETAIL_COLS),
-             dimnames = list(NULL, .DETAIL_COLS)),
-      stringsAsFactors = FALSE
-    )
-    return(empty)
+    return(.empty_detail_frame())
   }
 
   dropped <- character(0)
@@ -155,6 +160,10 @@ get_county_crime_detail <- function(county, state, offense = "V",
   out <- rbind_fill(parts)
   out <- out[, intersect(.DETAIL_COLS, names(out)), drop = FALSE]
   rownames(out) <- NULL
+
+  if (nrow(out) == 0 || ncol(out) == 0) {
+    out <- .empty_detail_frame()
+  }
 
   if (length(dropped) > 0) {
     warning("Dropped ", length(dropped),

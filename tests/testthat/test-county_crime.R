@@ -92,8 +92,11 @@ test_that("get_county_crime_detail fans out, filters, and reports drops", {
     .package = "fbi"
   )
 
-  out <- get_county_crime_detail("Testonia", "CA", offense = "V",
-                                 from = "01-2021", to = "02-2021")
+  expect_warning(
+    out <- get_county_crime_detail("Testonia", "CA", offense = "V",
+                                   from = "01-2021", to = "02-2021"),
+    "Dropped 1 agenc"
+  )
 
   expect_s3_class(out, "data.frame")
   # 2 successful agencies x 2 periods = 4 rows; campus errored and was dropped.
@@ -102,6 +105,37 @@ test_that("get_county_crime_detail fans out, filters, and reports drops", {
   expect_equal(attr(out, "dropped"), "CA0000002")
   expect_true(all(c("agency_class", "count", "population", "rate",
                     "reported") %in% names(out)))
+})
+
+test_that("get_county_crime_detail returns .DETAIL_COLS-shaped empty frame when all agencies fail", {
+  agencies <- data.frame(
+    ori = c("CA0000001", "CA0000002"),
+    agency_name = c("Alpha PD", "Beta University"),
+    agency_type_name = c("City", "University or College"),
+    agency_class = c("municipal", "campus"),
+    default_member = c(TRUE, FALSE),
+    county_name = "TESTONIA", state_abbr = "CA",
+    latitude = 0, longitude = 0, stringsAsFactors = FALSE
+  )
+
+  testthat::local_mocked_bindings(
+    county_agencies = function(county, state) agencies,
+    cde_request = function(path, query = list(), ...) {
+      stop("simulated total outage")
+    },
+    .package = "fbi"
+  )
+
+  expect_warning(
+    out <- get_county_crime_detail("Testonia", "CA", offense = "V",
+                                   from = "01-2021", to = "02-2021"),
+    "Dropped 2 agenc"
+  )
+
+  expect_s3_class(out, "data.frame")
+  expect_equal(names(out), .DETAIL_COLS)
+  expect_equal(nrow(out), 0L)
+  expect_setequal(attr(out, "dropped"), c("CA0000001", "CA0000002"))
 })
 
 test_that("get_county_crime_detail default_only keeps only default members", {
