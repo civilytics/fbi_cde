@@ -1,5 +1,25 @@
 # fbi 0.1.0.9000 (development version)
 
+## Geography-first querying (v0.2)
+
+- Removed the `data.table` dependency; the package is now base-R only (dead
+  `srs_long_to_wide()`/`make_url()` reshape helpers deleted).
+- `is_valid_ori()` now accepts letter-bearing ORIs (`^[A-Z]{2}[A-Z0-9]{7}$`),
+  which unblocks `get_agency_crime()` for state, tribal, campus, and
+  contract-city agencies (~10% of the agency universe were wrongly rejected).
+- Added `county_agencies()` — a pure membership resolver that classifies every
+  agency attributed to a county into `agency_class` (`county_primary`,
+  `municipal`, `campus`, `state`, `tribal`, `special`) with a conservative
+  `default_member` flag (county_primary + municipal).
+- Added `get_county_crime_detail()` — itemized, **unsummed** county crime, one
+  row per agency-period, carrying `agency_class`, `population`,
+  `participated_population`, a per-agency `rate`, and a `reported` flag that
+  distinguishes "reported zero" from "did not report". Filter with
+  `agency_class`/`default_only`; failed agencies are dropped with a warning and
+  recorded in `attr(x, "dropped")`.
+- Added `get_county_agency_crime()` — the county's own primary agency
+  (sheriff/parish) series, disambiguating it from the county-wide detail.
+
 ## Provenance (Issue #26)
 
 - Package authorship and maintainer updated to Jared E. Knowles (Civilytics)
