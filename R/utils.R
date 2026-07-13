@@ -5,9 +5,10 @@
   if (is.null(x) || length(x) == 0) y else x
 }
 
-# Stack a list of data.frames with differing columns (base-R replacement for
-# data.table::rbindlist(fill = TRUE)). NULL entries are dropped; the union of
-# all columns is used, with missing cells filled NA and rows kept in order.
+# Stack a list of data.frames with differing columns (base-R rbind that fills
+# missing columns, rather than requiring identical columns). NULL entries are
+# dropped; the union of all columns is used, with missing cells filled NA and
+# rows kept in order.
 rbind_fill <- function(dfs) {
   dfs <- dfs[!vapply(dfs, is.null, logical(1))]
   if (length(dfs) == 0) {
@@ -95,33 +96,3 @@ combine_url_section <- function(data_type, ori, region_name, state_abb) {
   return(url_section)
 }
 
-
-make_url <- function(url_section,
-                     start_year,
-                     end_year = NULL,
-                     key = NULL) {
-
-  url <- paste0("https://api.usa.gov/crime/fbi/sapi/api/",
-                url_section,
-                "/",
-                start_year,
-                "/",
-                end_year,
-                "?API_KEY=",
-                key)
-  return(url)
-}
-
-
-srs_long_to_wide <- function(.data) {
-  .data <- data.table::melt(.data, id = c("ori",
-                                          "state_abbr",
-                                          "data_year",
-                                          "offense"))
-  .data <- data.table::dcast(.data,
-                             formula = ori + state_abbr + data_year ~ offense + variable,
-                             measure.var = c("value"),
-                             fun.aggregate = mean,
-                             fill = NA)
-  return(.data)
-}
