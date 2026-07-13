@@ -3,6 +3,7 @@
 export(cde_base_url)
 export(cde_path)
 export(cde_query)
+export(county_agencies)
 export(get_agencies)
 export(get_agency_crime)
 export(get_agency_info)
