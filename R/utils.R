@@ -16,7 +16,7 @@ rbind_fill <- function(dfs) {
   all_cols <- unique(unlist(lapply(dfs, names)))
   dfs <- lapply(dfs, function(df) {
     for (col in setdiff(all_cols, names(df))) {
-      df[[col]] <- NA
+      df[[col]] <- rep(NA, nrow(df))
     }
     df[all_cols]
   })

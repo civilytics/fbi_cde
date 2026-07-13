@@ -111,3 +111,25 @@ test_that("rbind_fill returns empty frame for empty or all-NULL input", {
   expect_equal(nrow(rbind_fill(list())), 0L)
   expect_equal(nrow(rbind_fill(list(NULL, NULL))), 0L)
 })
+
+test_that("rbind_fill handles a zero-row input missing a column present elsewhere", {
+  e1 <- data.frame(x = integer(0), y = character(0))
+  e2 <- data.frame(x = 1L, z = 2L)
+
+  out <- rbind_fill(list(e1, e2))
+  expect_s3_class(out, "data.frame")
+  expect_equal(nrow(out), 1L)
+  expect_setequal(names(out), c("x", "y", "z"))
+  expect_equal(out$x, 1L)
+  expect_true(is.na(out$y))
+  expect_equal(out$z, 2L)
+
+  # Reverse order should give the same unioned result.
+  out_rev <- rbind_fill(list(e2, e1))
+  expect_s3_class(out_rev, "data.frame")
+  expect_equal(nrow(out_rev), 1L)
+  expect_setequal(names(out_rev), c("x", "y", "z"))
+  expect_equal(out_rev$x, 1L)
+  expect_true(is.na(out_rev$y))
+  expect_equal(out_rev$z, 2L)
+})
