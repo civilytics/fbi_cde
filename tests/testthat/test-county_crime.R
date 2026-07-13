@@ -179,3 +179,41 @@ test_that("get_county_crime_detail works live for a small county", {
   # Oakland PD is a default member of Alameda County.
   expect_true("CA0010900" %in% out$ori)
 })
+
+test_that("get_county_agency_crime resolves the county_primary ORI", {
+  agencies <- data.frame(
+    ori = c("CA0000001", "CA0000009"),
+    agency_name = c("Alpha PD", "Testonia County Sheriff"),
+    agency_type_name = c("City", "County"),
+    agency_class = c("municipal", "county_primary"),
+    default_member = c(TRUE, TRUE),
+    county_name = "TESTONIA", state_abbr = "CA",
+    latitude = 0, longitude = 0, stringsAsFactors = FALSE
+  )
+  called <- new.env()
+  testthat::local_mocked_bindings(
+    county_agencies = function(county, state) agencies,
+    get_agency_crime = function(ori, ...) {
+      called$ori <- ori
+      data.frame(geography = ori, offense = "x", period = "01-2021",
+                 count = 1, rate = 1, stringsAsFactors = FALSE)
+    },
+    .package = "fbi"
+  )
+  out <- get_county_agency_crime("Testonia", "CA")
+  expect_equal(called$ori, "CA0000009")   # the sheriff, not the city
+  expect_s3_class(out, "data.frame")
+})
+
+test_that("get_county_agency_crime errors when no county_primary exists", {
+  agencies <- data.frame(
+    ori = "CA0000001", agency_name = "Alpha PD",
+    agency_type_name = "City", agency_class = "municipal",
+    default_member = TRUE, county_name = "TESTONIA", state_abbr = "CA",
+    latitude = 0, longitude = 0, stringsAsFactors = FALSE
+  )
+  testthat::local_mocked_bindings(
+    county_agencies = function(county, state) agencies, .package = "fbi")
+  expect_error(get_county_agency_crime("Testonia", "CA"),
+               "No county-primary")
+})

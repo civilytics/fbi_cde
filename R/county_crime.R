@@ -174,3 +174,33 @@ get_county_crime_detail <- function(county, state, offense = "V",
   }
   out
 }
+
+#' Crime reported by a county's own primary agency (sheriff/parish)
+#'
+#' Resolves the single `county_primary` ORI for a county and returns its own
+#' `get_agency_crime()` series. This disambiguates "the county sheriff's own
+#' reported crime" from "crime aggregated across the county"
+#' (`get_county_crime_detail()`).
+#'
+#' @inheritParams get_county_crime_detail
+#' @return The `get_agency_crime()` data.frame for the county's primary agency.
+#' @export
+#' @examples
+#' \dontrun{
+#' get_county_agency_crime("Alameda", "CA")
+#' }
+get_county_agency_crime <- function(county, state, offense = "V",
+                                    from = "01-2015", to = "12-2020") {
+  agencies <- county_agencies(county, state)
+  prim <- agencies[agencies$agency_class == "county_primary", , drop = FALSE]
+
+  if (nrow(prim) == 0) {
+    stop("No county-primary (sheriff/parish) agency found for '", county,
+         "', ", state, call. = FALSE)
+  }
+  if (nrow(prim) > 1) {
+    warning("Multiple county-primary agencies for '", county, "', ", state,
+            "; using ", prim$ori[1], call. = FALSE)
+  }
+  get_agency_crime(prim$ori[1], from = from, to = to, offense = offense)
+}
