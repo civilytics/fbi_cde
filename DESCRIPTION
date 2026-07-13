@@ -25,7 +25,9 @@ Depends:
 Suggests:
     testthat (>= 3.1.7),
     covr,
-    withr
+    withr,
+    knitr,
+    rmarkdown
 Imports:
     httr,
     jsonlite,
@@ -35,3 +37,4 @@ Imports:
 Language: en-US
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.0.0
+VignetteBuilder: knitr

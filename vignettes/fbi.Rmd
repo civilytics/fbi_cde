@@ -1,0 +1,377 @@
+---
+title: "Getting Started with fbi"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting Started with fbi}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+
+
+The `fbi` package wraps the FBI's Crime Data Explorer (CDE) API
+(<https://cde.ucr.cjis.gov/LATEST/>), giving R users direct access to Uniform
+Crime Reporting (UCR) and National Incident-Based Reporting System (NIBRS)
+data: crime counts and rates, arrests, incident-level NIBRS detail,
+Supplemental Homicide Reports (SHR), police employment, and NIBRS
+participation.
+
+No API key is required for the current CDE host. (`get_api_key()` and
+`set_api_key()` are retained only for backward compatibility with the
+package's legacy `api.data.gov`-hosted predecessor and are no-ops today.)
+
+This vignette works through the package's main functions using real example
+agencies drawn from several different states, so you can see the shape of
+the data at the agency, state, and national level.
+
+
+``` r
+library(fbi)
+```
+
+## Lookups
+
+Before requesting crime data you often need to look up a state abbreviation,
+a valid offense code, or an agency's ORI (the 9-character identifier the CDE
+API uses for law enforcement agencies).
+
+
+``` r
+states <- get_states()
+head(states)
+#>   stateAbbreviation  stateName
+#> 1                AL    Alabama
+#> 2                AK     Alaska
+#> 3                AZ    Arizona
+#> 4                AR   Arkansas
+#> 5                CA California
+#> 6                CO   Colorado
+```
+
+
+``` r
+offenses <- get_offense_codes("crime-trend")
+head(offenses)
+#>   code              label
+#> 1  ASS Aggravated Assault
+#> 2  HOM           Homicide
+#> 3  RPE               Rape
+#> 4  ROB            Robbery
+#> 5  ARS              Arson
+#> 6  BUR           Burglary
+```
+
+`get_offense_codes()` also accepts `"arrest"` and `"hate-crime"` for their
+respective offense vocabularies.
+
+`get_agency_info()` looks up agencies by name from the package's bundled
+agency table (`fbi_api_agencies`) -- no network call required:
+
+
+``` r
+get_agency_info("Oakland Police Department", state = "california", ori_only = TRUE)
+#>                   agency_name       ori
+#> 905 Oakland Police Department CA0010900
+```
+
+Throughout the rest of this vignette we use six agencies spread across six
+states, all validated live against the current API:
+
+| ORI | Agency | State |
+|---|---|---|
+| `CA0010900` | Oakland Police Department | California |
+| `TX0050100` | Archer City Police Department | Texas |
+| `NY0112000` | Homer Village Police Department | New York |
+| `WA0271300` | Orting Police Department | Washington |
+| `FL0010100` | Gainesville Police Department | Florida |
+| `MA0092900` | Maynard Police Department | Massachusetts |
+
+## Summarized Crime
+
+`get_agency_crime()`, `get_estimated_crime()`, and `get_estimated_arson()`
+wrap the CDE's `summarized/{level}/{offense}` endpoint at the agency, state,
+and national level respectively. ("Estimated" here just means state/national
+level -- there is no separate estimates endpoint.)
+
+
+``` r
+oakland_crime <- get_agency_crime("CA0010900", from = "01-2019", to = "03-2019")
+oakland_crime
+#>    geography                              offense  period count   rate
+#> 1  CA0010900                California Clearances 01-2019    NA  16.12
+#> 2  CA0010900                California Clearances 02-2019    NA  14.63
+#> 3  CA0010900                California Clearances 03-2019    NA  16.12
+#> 4  CA0010900                  California Offenses 01-2019    NA  34.38
+#> 5  CA0010900                  California Offenses 02-2019    NA  30.66
+#> 6  CA0010900                  California Offenses 03-2019    NA  35.95
+#> 7  CA0010900 Oakland Police Department Clearances 01-2019   106  24.42
+#> 8  CA0010900 Oakland Police Department Clearances 02-2019    40   9.22
+#> 9  CA0010900 Oakland Police Department Clearances 03-2019    37   8.52
+#> 10 CA0010900   Oakland Police Department Offenses 01-2019   472 108.75
+#> 11 CA0010900   Oakland Police Department Offenses 02-2019   368  84.79
+#> 12 CA0010900   Oakland Police Department Offenses 03-2019   438 100.91
+#> 13 CA0010900             United States Clearances 01-2019    NA  12.20
+#> 14 CA0010900             United States Clearances 02-2019    NA  10.89
+#> 15 CA0010900             United States Clearances 03-2019    NA  12.14
+#> 16 CA0010900               United States Offenses 01-2019    NA  27.84
+#> 17 CA0010900               United States Offenses 02-2019    NA  24.11
+#> 18 CA0010900               United States Offenses 03-2019    NA  27.66
+```
+
+Agency- and state-level responses include comparison rows (state and
+national rates alongside the agency's own), so a query for one agency
+returns more than just that agency's offense categories -- rows for
+"California Offenses" or "United States Offenses" carry a real `rate` but no
+agency-specific `count`.
+
+
+``` r
+texas_crime <- get_estimated_crime("TX", from = "01-2019", to = "03-2019")
+texas_crime
+#>    geography                  offense  period count  rate
+#> 1         TX         Texas Clearances 01-2019  3425 11.89
+#> 2         TX         Texas Clearances 02-2019  3083 10.70
+#> 3         TX         Texas Clearances 03-2019  3266 11.33
+#> 4         TX           Texas Offenses 01-2019  9688 33.63
+#> 5         TX           Texas Offenses 02-2019  8553 29.68
+#> 6         TX           Texas Offenses 03-2019  9770 33.90
+#> 7         TX United States Clearances 01-2019    NA 12.20
+#> 8         TX United States Clearances 02-2019    NA 10.89
+#> 9         TX United States Clearances 03-2019    NA 12.14
+#> 10        TX   United States Offenses 01-2019    NA 27.84
+#> 11        TX   United States Offenses 02-2019    NA 24.11
+#> 12        TX   United States Offenses 03-2019    NA 27.66
+```
+
+
+``` r
+national_crime <- get_estimated_crime(from = "01-2019", to = "03-2019")
+national_crime
+#>   geography                  offense  period count  rate
+#> 1        US United States Clearances 01-2019 39196 12.20
+#> 2        US United States Clearances 02-2019 34934 10.89
+#> 3        US United States Clearances 03-2019 38975 12.14
+#> 4        US   United States Offenses 01-2019 89470 27.84
+#> 5        US   United States Offenses 02-2019 77385 24.11
+#> 6        US   United States Offenses 03-2019 88801 27.66
+```
+
+
+``` r
+national_arson <- get_estimated_arson(from = "01-2019", to = "03-2019")
+national_arson
+#>   geography                  offense  period count rate
+#> 1        US United States Clearances 01-2019   572 0.18
+#> 2        US United States Clearances 02-2019   486 0.15
+#> 3        US United States Clearances 03-2019   684 0.21
+#> 4        US   United States Offenses 01-2019  2598 0.81
+#> 5        US   United States Offenses 02-2019  2217 0.69
+#> 6        US   United States Offenses 03-2019  2771 0.86
+```
+
+## Arrests
+
+`get_arrest_count()` wraps `arrest/{level}/all?type=counts`. With the default
+`offense = "all"` it returns a monthly time series; requesting a specific
+offense returns a single aggregated total for the whole date range instead,
+since the CDE API no longer exposes a per-offense monthly breakdown.
+
+
+``` r
+ny_arrests <- get_arrest_count("NY0112000", from = "01-2019", to = "03-2019")
+ny_arrests
+#>   geography                                 offense  period count   rate
+#> 1 NY0112000 Homer Village Police Department Arrests 01-2019     2  64.52
+#> 2 NY0112000 Homer Village Police Department Arrests 02-2019     2  64.52
+#> 3 NY0112000 Homer Village Police Department Arrests 03-2019     2  64.52
+#> 4 NY0112000                        New York Arrests 01-2019    NA 160.79
+#> 5 NY0112000                        New York Arrests 02-2019    NA 150.39
+#> 6 NY0112000                        New York Arrests 03-2019    NA 176.87
+#> 7 NY0112000                   United States Arrests 01-2019    NA 251.34
+#> 8 NY0112000                   United States Arrests 02-2019    NA 236.27
+#> 9 NY0112000                   United States Arrests 03-2019    NA 269.73
+```
+
+
+``` r
+get_arrest_count("NY0112000", from = "01-2019", to = "03-2019", offense = "Robbery")
+#>   geography offense period count rate
+#> 1 NY0112000 Robbery   <NA>     0   NA
+```
+
+`get_arrest_demographics()` returns arrestee sex/race/age breakdowns.
+
+**Limitation:** demographics are only available aggregated across *all*
+offenses -- the CDE API does not break demographics down by offense.
+`get_arrest_demographics_all()` (a name kept for backward compatibility)
+always warns and ignores any offense you pass it, falling back to
+`offense = "all"`.
+
+
+``` r
+wa_arrest_demographics <- get_arrest_demographics(state_abb = "WA", from = "01-2019", to = "03-2019")
+head(wa_arrest_demographics)
+#>   geography offense period demographic_type demographic_value count
+#> 1        WA     all   <NA>     Arrestee Sex              Male 29698
+#> 2        WA     all   <NA>     Arrestee Sex            Female 11208
+#> 3        WA     all   <NA>    Arrestee Race             Asian  1403
+#> 4        WA     all   <NA>    Arrestee Race             White 30517
+#> 5        WA     all   <NA>    Arrestee Race           Unknown  1201
+#> 6        WA     all   <NA>    Arrestee Race          Multiple     0
+```
+
+## NIBRS
+
+`get_nibrs_victim()`, `get_nibrs_offender()`, and `get_nibrs_offense()` wrap
+`nibrs/{level}/{offense}?type=totals`, returning victim, offender, and
+offense-characteristic demographic breakdowns.
+
+
+``` r
+get_nibrs_victim("CA0010900", offense = "robbery", variable = "race")
+```
+
+As of this package version, the live NIBRS demographic-detail endpoint
+returns no data for any agency, offense, or date range -- this is a known,
+tracked upstream issue
+(<https://gitea.civilytics.org/Civilytics/fbi_cde/issues/33>), not a bug in
+this package. Calling these functions today will emit a message saying so
+and return a 0-row data frame; the chunk above is not evaluated in this
+vignette for that reason. Use `list_nibrs_offenses()`,
+`list_nibrs_victim_variables()`, `list_nibrs_offender_variables()`, and
+`list_nibrs_offense_variables()` to see the valid `offense`/`variable`
+arguments once the endpoint is working again.
+
+## Supplemental Homicide Reports (SHR)
+
+`get_shr()` wraps `shr/{level}` for expanded homicide data at the agency,
+state, or national level.
+
+
+``` r
+fl_shr <- get_shr(ori = "FL0010100", from = "01-2019", to = "12-2019")
+head(fl_shr)
+#>   geography  period count
+#> 1 FL0010100 01-2019     0
+#> 2 FL0010100 02-2019     0
+#> 3 FL0010100 03-2019     0
+#> 4 FL0010100 04-2019     0
+#> 5 FL0010100 05-2019     0
+#> 6 FL0010100 06-2019     0
+```
+
+
+``` r
+ma_shr <- get_shr(state_abb = "MA", from = "01-2019", to = "12-2019")
+head(ma_shr)
+#>   geography  period count
+#> 1        MA 01-2019    11
+#> 2        MA 02-2019    11
+#> 3        MA 03-2019     8
+#> 4        MA 04-2019     3
+#> 5        MA 05-2019    14
+#> 6        MA 06-2019    14
+```
+
+
+``` r
+national_shr <- get_shr(from = "01-2019", to = "12-2019")
+head(national_shr)
+#>   geography  period count
+#> 1        US 01-2019  1192
+#> 2        US 02-2019  1065
+#> 3        US 03-2019  1156
+#> 4        US 04-2019  1139
+#> 5        US 05-2019  1315
+#> 6        US 06-2019  1306
+```
+
+## Police Employment
+
+`get_police_employment()` wraps `pe/{level}`, using 4-digit years rather than
+`MM-YYYY`.
+
+
+``` r
+oakland_pe <- get_police_employment("CA0010900", from = "2018", to = "2020")
+oakland_pe
+#>   year male_officers female_officers male_civilians female_civilians       ori
+#> 1 2018           633              98             60              219 CA0010900
+#> 2 2019           636             104             63              220 CA0010900
+#> 3 2020           632             108             83              233 CA0010900
+#>   male_total female_total civilians_total officers_total employees_total
+#> 1        693          317             279            731            1010
+#> 2        699          324             283            740            1023
+#> 3        715          341             316            740            1056
+```
+
+**Limitation:** employee *counts* (`actuals`) are suppressed by the CDE API
+above the agency level -- state and national queries only return `rates`
+upstream, so `get_police_employment()` correctly returns 0 rows for them:
+
+
+``` r
+texas_pe <- get_police_employment(state_abb = "TX", from = "2018", to = "2020")
+nrow(texas_pe)
+#> [1] 0
+```
+
+## NIBRS Participation
+
+`get_agency_participation()`, `get_state_participation()`, and
+`get_region_participation()` report whether agencies currently report to
+NIBRS, sourced from the live agency directory. This replaces the retired
+year-by-year SRS/NIBRS participation series, which has no live equivalent in
+the current API -- these functions report a live NIBRS-reporting snapshot
+rather than a historical time series.
+
+
+``` r
+get_agency_participation("NY0112000")
+#>         ori                     agency_name agency_type_name state_abbr
+#> 1 NY0112000 Homer Village Police Department             City         NY
+#>   state_name   county is_nibrs nibrs_start_date
+#> 1   New York CORTLAND     TRUE       2021-05-01
+```
+
+
+``` r
+get_state_participation("WA")
+#>   state_abbr total_agencies nibrs_agencies participation_rate
+#> 1         WA            270            270                  1
+```
+
+
+``` r
+get_region_participation("South")
+#>   region total_agencies nibrs_agencies participation_rate
+#> 1  South           8097           7059          0.8718044
+```
+
+## LEOKA
+
+`get_leoka()` and `get_leoka_monthly()` wrap `leoka/ytd` and `leoka/monthly`,
+reporting on law enforcement officers killed or assaulted. These are
+**national only** -- the live endpoint ignores state/agency query
+parameters -- and data is only available from 2020 onward.
+
+
+``` r
+leoka <- get_leoka(2020, 2021)
+leoka
+#>   year month total_officers total_incidents total_officers_dod
+#> 1 2020    NA             46              44                  2
+#> 2 2021    NA             73              68                  4
+#>   total_officers_doi total_incidents_dod total_incidents_doi
+#> 1                 44                   2                  42
+#> 2                 69                   4                  64
+```
+
+
+``` r
+get_leoka_monthly(2020, 1)
+#>   year month total_officers total_incidents total_officers_dod
+#> 1 2020     1              4               3                  0
+#>   total_officers_doi total_incidents_dod total_incidents_doi
+#> 1                  4                   0                   3
+```

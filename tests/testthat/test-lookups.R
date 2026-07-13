@@ -27,18 +27,32 @@ test_that("get_offense_codes returns empty data.frame when crimeGroups is null",
 })
 
 test_that("get_states parses state lookup response", {
+  # lookup-states.json recorded live from lookup/states -- a nested
+  # {get_states: {cde_states_query: {states: [{abbr, name}]}}} shape.
   local_fbi_fixture("lookup-states.json")
   result <- get_states()
 
   expect_s3_class(result, "data.frame")
-  expect_true("stateAbbreviation" %in% names(result))
-  expect_true("stateName" %in% names(result))
-  expect_true(nrow(result) > 0)
+  expect_equal(names(result), c("stateAbbreviation", "stateName"))
+  expect_equal(nrow(result), 51)
   expect_true("CA" %in% result$stateAbbreviation)
+  expect_equal(result$stateName[result$stateAbbreviation == "CA"], "California")
 })
 
 test_that("get_agencies parses agency lookup response by state", {
-  local_fbi_fixture("agency-byStateAbbr-CA.json")
+  # get_agencies() calls get_states() first (to enumerate which per-state
+  # lookups to make), then cde_request() once per state -- a single fixed
+  # fixture can't answer both correctly, so route by path.
+  testthat::local_mocked_bindings(
+    cde_request = function(path, ...) {
+      if (identical(path, "lookup/states")) {
+        read_fixture("lookup-states.json")
+      } else {
+        read_fixture("agency-byStateAbbr-CA.json")
+      }
+    },
+    .package = "fbi"
+  )
   result <- get_agencies()
 
   expect_s3_class(result, "data.frame")
@@ -59,4 +73,14 @@ test_that("get_offense_codes returns expected shape from live API", {
     expect_true(nrow(result) > 0)
     expect_false(any(result$code == "crimeGroups"))
   }
+})
+
+test_that("get_states returns expected shape from live API", {
+  skip_if_no_fbi_api()
+  result <- get_states()
+
+  expect_s3_class(result, "data.frame")
+  expect_equal(names(result), c("stateAbbreviation", "stateName"))
+  expect_true(nrow(result) > 0)
+  expect_true("CA" %in% result$stateAbbreviation)
 })

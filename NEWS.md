@@ -50,6 +50,16 @@
 
 - `get_nibrs_victim()`/`get_nibrs_offender()`/`get_nibrs_offense()` currently return no data from the live API -- confirmed not a parsing bug (the parser matches the documented contract exactly, and offline fixture tests with real synthetic data parse correctly), but `nibrs/{level}/{offense}?type=totals` returns an all-null payload for every offense/level/date-range tried, including nonsense offense strings, while the identical mechanism works fine for `get_arrest_demographics()`. These functions now emit a `message()` whenever they return 0 rows, pointing at Issue #33, so an empty result isn't mistaken for a genuine zero count while this is unresolved.
 
+## Bug Fix (Issue #34)
+
+- `get_states()` fixed to parse the current `lookup/states` response shape -- `{get_states: {cde_states_query: {states: [{abbr, name}]}}}` -- instead of the retired flat `{ABBR: "Name"}` dict. Discovered while dry-running the getting-started vignette; the old parser produced garbage rows (a literal `"get_states"` string and a run timestamp mixed in with real state data). `lookup-states.json` re-recorded from the live current shape; added a live-guarded test (previously `get_states()` had none).
+
+## Vignette (Issue #31)
+
+- Added `vignettes/fbi.Rmd` (source: `fbi.Rmd.orig`, rendered with live data and committed per the pre-rendered-vignette pattern used by `httr2`/`gargle`, so CRAN/CI never need network access to build it) covering lookups, summarized crime, arrests (including the offense-count vs. all-offenses-only demographics distinction), NIBRS (documented as currently non-functional, see Issue #33), SHR, police employment (including the counts-suppressed-above-agency-level limitation), NIBRS participation, and LEOKA
+- Examples span six agencies across six states (CA, TX, NY, WA, FL, MA) to show real coverage rather than repeating a single agency
+- Added `knitr`/`rmarkdown` to `Suggests` and `VignetteBuilder: knitr` to DESCRIPTION
+
 ## Architecture
 
 - `cde_request()` established as the single network seam for all API calls

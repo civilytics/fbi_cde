@@ -120,21 +120,28 @@ get_states <- function() {
   path <- "lookup/states"
   response <- cde_request(path)
 
-  if (is.null(response) || length(response) == 0) {
+  empty <- data.frame(stateAbbreviation = character(), stateName = character(), stringsAsFactors = FALSE)
+
+  states <- response$get_states$cde_states_query$states
+  if (is.null(states) || length(states) == 0) {
+    return(empty)
+  }
+
+  # `states` is an array of `{abbr, name}` objects. With
+  # `simplifyVector = TRUE` (offline fixture reads) it simplifies to a
+  # data.frame directly; with `simplifyVector = FALSE` (live
+  # `cde_request()`) it stays a list of per-state lists.
+  if (is.data.frame(states)) {
     return(data.frame(
-      stateAbbreviation = character(),
-      stateName = character(),
+      stateAbbreviation = as.character(states$abbr),
+      stateName = as.character(states$name),
       stringsAsFactors = FALSE
     ))
   }
 
-  # The response is a named list where names are abbreviations and values are names
-  state_abbr <- names(response)
-  state_name <- unlist(response, use.names = FALSE)
-
   data.frame(
-    stateAbbreviation = state_abbr,
-    stateName = as.character(state_name),
+    stateAbbreviation = vapply(states, function(s) as.character(s$abbr %||% NA), character(1)),
+    stateName = vapply(states, function(s) as.character(s$name %||% NA), character(1)),
     stringsAsFactors = FALSE
   )
 }
