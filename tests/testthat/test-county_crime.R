@@ -205,6 +205,33 @@ test_that("get_county_agency_crime resolves the county_primary ORI", {
   expect_s3_class(out, "data.frame")
 })
 
+test_that("get_county_agency_crime warns and uses the first ORI when multiple county_primary agencies exist", {
+  agencies <- data.frame(
+    ori = c("CA0000001", "CA0000009", "CA0000008"),
+    agency_name = c("Alpha PD", "Testonia County Sheriff",
+                    "Testonia County Police Department"),
+    agency_type_name = c("City", "County", "County"),
+    agency_class = c("municipal", "county_primary", "county_primary"),
+    default_member = c(TRUE, TRUE, TRUE),
+    county_name = "TESTONIA", state_abbr = "CA",
+    latitude = 0, longitude = 0, stringsAsFactors = FALSE
+  )
+  called <- new.env()
+  testthat::local_mocked_bindings(
+    county_agencies = function(county, state) agencies,
+    get_agency_crime = function(ori, ...) {
+      called$ori <- ori
+      data.frame(geography = ori, offense = "x", period = "01-2021",
+                 count = 1, rate = 1, stringsAsFactors = FALSE)
+    },
+    .package = "fbi"
+  )
+  expect_warning(out <- get_county_agency_crime("Testonia", "CA"),
+                 "Multiple county-primary")
+  expect_equal(called$ori, "CA0000009")   # prim$ori[1]: the first county_primary row
+  expect_s3_class(out, "data.frame")
+})
+
 test_that("get_county_agency_crime errors when no county_primary exists", {
   agencies <- data.frame(
     ori = "CA0000001", agency_name = "Alpha PD",
