@@ -17,3 +17,8 @@
 ^\.playwright-mcp$
 ^\.\.Rcheck$
 ^pkgdown$
+^\.opencode$
+^README\.html$
+^\.superpowers$
+^\.claude$
+^CLAUDE\.md$
