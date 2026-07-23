@@ -178,7 +178,7 @@ counties_with_fips <- function() {
 .fips_tigris_lookup <- NULL
 
 .build_fips_lookups <- function() {
-  load(system.file("data", "county_fips.rda", package = "fbi"))
+  # crosswalk is loaded from R/sysdata.rda (internal package data)
 
   # Build simple lookup from crosswalk: state_abbr|county_name → county_fips
   # The crosswalk already has the final FIPS codes, so we can use a direct lookup.
