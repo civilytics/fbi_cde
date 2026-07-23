@@ -14,7 +14,7 @@ agencies_table <- function() {
 
 .COUNTY_AGENCY_COLS <- c(
   "ori", "agency_name", "agency_type_name", "agency_class", "default_member",
-  "county_name", "state_abbr", "latitude", "longitude"
+  "county_name", "state_abbr", "county_fips", "latitude", "longitude"
 )
 
 #' List the law-enforcement agencies attributed to a county
@@ -27,9 +27,11 @@ agencies_table <- function() {
 #' @param county County name (case-insensitive; e.g. `"Alameda"`).
 #' @param state Two-letter state abbreviation (e.g. `"CA"`).
 #' @return A data.frame with columns `ori`, `agency_name`, `agency_type_name`,
-#'   `agency_class`, `default_member`, `county_name`, `state_abbr`, `latitude`,
-#'   `longitude`. `default_member` is `TRUE` for `county_primary` and `municipal`
-#'   agencies. Returns a zero-row frame (with a warning) if no agencies match.
+#'   `agency_class`, `default_member`, `county_name`, `state_abbr`, `county_fips`,
+#'   `latitude`, `longitude`. `county_fips` is the 5-digit county FIPS code
+#'   (character, preserving leading zeros). `default_member` is `TRUE` for
+#'   `county_primary` and `municipal` agencies. Returns a zero-row frame
+#'   (with a warning) if no agencies match.
 #' @export
 #' @examples
 #' \dontrun{
@@ -58,11 +60,15 @@ county_agencies <- function(county, state) {
       stringsAsFactors = FALSE
     )
     empty$default_member <- logical(0)
+    empty$county_fips <- character(0)
     return(empty)
   }
 
   sel$agency_class <- classify_agency(sel$agency_type_name)
   sel$default_member <- sel$agency_class %in% DEFAULT_MEMBER_CLASSES
+
+  # Derive county FIPS for the county (all agencies share the same county FIPS)
+  sel$county_fips <- county_to_fips(sel$state_abbr[[1]], sel$county_name[[1]])
 
   out <- sel[, .COUNTY_AGENCY_COLS, drop = FALSE]
   rownames(out) <- NULL

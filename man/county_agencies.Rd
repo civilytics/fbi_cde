@@ -13,9 +13,11 @@ county_agencies(county, state)
 }
 \value{
 A data.frame with columns `ori`, `agency_name`, `agency_type_name`,
-  `agency_class`, `default_member`, `county_name`, `state_abbr`, `latitude`,
-  `longitude`. `default_member` is `TRUE` for `county_primary` and `municipal`
-  agencies. Returns a zero-row frame (with a warning) if no agencies match.
+  `agency_class`, `default_member`, `county_name`, `state_abbr`, `county_fips`,
+  `latitude`, `longitude`. `county_fips` is the 5-digit county FIPS code
+  (character, preserving leading zeros). `default_member` is `TRUE` for
+  `county_primary` and `municipal` agencies. Returns a zero-row frame
+  (with a warning) if no agencies match.
 }
 \description{
 Returns every agency in the bundled agency table whose county and state match,

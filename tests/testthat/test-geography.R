@@ -23,7 +23,7 @@ test_that("county_agencies resolves and classifies a county (Alameda, CA)", {
   out <- county_agencies("Alameda", "CA")
   expect_s3_class(out, "data.frame")
   expect_equal(nrow(out), 21L)
-  expect_true(all(c("agency_class", "default_member") %in% names(out)))
+  expect_true(all(c("agency_class", "default_member", "county_fips") %in% names(out)))
 
   cls <- setNames(out$agency_class, out$ori)
   expect_equal(cls[["CA0010000"]], "county_primary")  # Alameda County Sheriff
@@ -38,6 +38,27 @@ test_that("county_agencies resolves and classifies a county (Alameda, CA)", {
   dm <- setNames(out$default_member, out$ori)
   expect_true(dm[["CA0010900"]])
   expect_false(dm[["CA0012100"]])
+})
+
+test_that("county_agencies includes county_fips column (Alameda, CA)", {
+  out <- county_agencies("Alameda", "CA")
+  # county_fips is a character column (preserves leading zero)
+  expect_true(is.character(out$county_fips))
+  # All rows share the same county FIPS
+  expect_true(all(out$county_fips == "06001"))
+  # Column order: county_fips appears right after state_abbr
+  expect_equal(names(out),
+               c("ori", "agency_name", "agency_type_name", "agency_class",
+                 "default_member", "county_name", "state_abbr", "county_fips",
+                 "latitude", "longitude"))
+})
+
+test_that("county_agencies zero-row branch includes county_fips", {
+  expect_warning(res <- county_agencies("Nowhere", "CA"), "No agencies")
+  expect_equal(nrow(res), 0L)
+  expect_true("county_fips" %in% names(res))
+  expect_true(is.character(res$county_fips))
+  expect_equal(length(res$county_fips), 0L)
 })
 
 test_that("county_agencies is case-insensitive on county and state", {
