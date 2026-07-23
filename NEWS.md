@@ -1,5 +1,14 @@
 # fbi 0.1.0.9000 (development version)
 
+## Reporting-gap imputation (v0.2b, Issue #38)
+
+- Added `impute_reporting_gaps()` — an opt-in, standalone transform that fills
+  within-agency temporal holes in detail data. Operates on `rate` (so a drifting
+  denominator is respected), then scales by each period's own
+  `participated_population`. Every filled value is flagged with `imputed = TRUE`
+  and `impute_method`. Agencies that never report in the window are left
+  unchanged. Off by default — call explicitly when continuous series are needed.
+
 ## Geography-first querying (v0.2)
 
 - Removed the `data.table` dependency; the package is now base-R only (dead
