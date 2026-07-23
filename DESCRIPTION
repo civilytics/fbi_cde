@@ -27,7 +27,8 @@ Suggests:
     covr,
     withr,
     knitr,
-    rmarkdown
+    rmarkdown,
+    censusapi
 Imports:
     httr,
     jsonlite,

@@ -1,5 +1,31 @@
 # fbi 0.1.0.9000 (development version)
 
+## County aggregate and Census join (v0.3, Issues #36-#37)
+
+- Added `get_county_crime()` — Layer 2 aggregate that sums itemized detail from
+  [get_county_crime_detail()] into a county-wide series. Never emits a bare rate:
+  every row carries the denominator value (`population`), which denominator was
+  used (`denominator_type`: `"jurisdiction_pop"`, `"participated_pop"`, or
+  `"census_pop"`), and a `coverage_fraction` (`participated_population /
+  population`). The default `"jurisdiction_pop"` denominator sums each agency's
+  own population column — empirically coherent with CDE semantics (sheriff =
+  unincorporated remainder; contract cities report separately).
+- Added `join_census_pop()` — optional Census ACS population join keyed by
+  county FIPS. Requires `censusapi` (in Suggests) and a free Census API key
+  (`CENSUS_KEY` env var). Returns detail with `census_population` column for use
+  with `get_county_crime(detail, denominator = "census_pop")`.
+- Added `county_fips` column to [county_agencies()] output, derived from the
+  bundled FIPS crosswalk (98.6% match rate; see [county_to_fips()]).
+- Added `county_to_fips()` and `counties_with_fips()` — public FIPS lookup
+  functions backed by a tigris-derived crosswalk + hand-maintained patch table.
+
+## Bug fixes
+
+- Fixed `.onLoad` namespace error: `setNames()` is in `stats`, not `base`.
+- Moved FIPS crosswalk from `data/county_fips.rda` to internal `R/sysdata.rda`
+  (was triggering "undocumented data set" warning).
+- Fixed non-ASCII character in patch table (CRAN WARNING).
+
 ## Reporting-gap imputation (v0.2b, Issue #38)
 
 - Added `impute_reporting_gaps()` — an opt-in, standalone transform that fills

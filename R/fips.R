@@ -120,8 +120,9 @@ county_to_fips <- function(state, county) {
 #' @rdname county_to_fips
 #' @export
 counties_with_fips <- function() {
-  load(system.file("data", "county_fips.rda", package = "fbi"))
-  as.data.frame(crosswalk)
+  # crosswalk is internal data (R/sysdata.rda); return a copy so users can
+  # modify the result without affecting package state.
+  crosswalk[NULL, , drop = FALSE]
 }
 
 # ---- Internal helpers ----
@@ -183,10 +184,8 @@ counties_with_fips <- function() {
   # Build simple lookup from crosswalk: state_abbr|county_name → county_fips
   # The crosswalk already has the final FIPS codes, so we can use a direct lookup.
   # This handles all cases including duplicates (Baltimore city/county, St. Louis city/county).
-  .fips_tigris_lookup <<- setNames(
-    crosswalk$county_fips,
-    paste(crosswalk$state_abbr, crosswalk$county_name, sep = "|")
-  )
+  keys <- paste(crosswalk$state_abbr, crosswalk$county_name, sep = "|")
+  .fips_tigris_lookup <<- base::`names<-`(crosswalk$county_fips, keys)
 
   # Patch table (same as in data-raw script)
   .fips_patch_table <<- c(
@@ -338,7 +337,7 @@ counties_with_fips <- function() {
     "LA SALLE"               = "LaSalle",    # LA parish (no space, no period)
     "DEWITT"                 = "De Witt",    # IL county (space, not capital W)
     "LA PORTE"               = "LaPorte",    # IN county (no space, no period)
-    "DONA ANA"               = "Doña Ana",   # NM county (with ñ)
+    "DONA ANA"               = "Do\u00f1a Ana",   # NM county (with \u00f1)
 
     # ---- State-specific patches (key format: "STATEFP__COUNTY") ----
     # These override the general patch table when the state matches.

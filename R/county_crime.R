@@ -209,3 +209,151 @@ get_county_agency_crime <- function(county, state, offense = "V",
   }
   get_agency_crime(prim$ori[1], from = from, to = to, offense = offense)
 }
+
+# ---- Layer 2: county aggregate (v0.3) ------------------------------------
+
+.AGGREGATE_COLS <- c(
+  "county_name", "state_abbr", "offense", "period",
+  "count", "population", "participated_population",
+  "rate", "denominator_type", "coverage_fraction"
+)
+
+#' Aggregate county crime detail into a coverage-transparent rollup
+#'
+#' Sums itemized agency-level detail (from [get_county_crime_detail()]) into a
+#' single county-wide series. Unlike the FBI's published county rate, this
+#' function **never emits a bare rate**: every row carries the chosen denominator
+#' value, which denominator was used (`denominator_type`), and a
+#' `coverage_fraction` (participated / total population) so the user can see
+#' exactly how much of the county is covered by reporting agencies.
+#'
+#' The default denominator (`"jurisdiction_pop"`) sums each agency's own
+#' `population` column. Empirical probes confirm this is coherent: a sheriff's
+#' population is the *unincorporated remainder* it polices, and contract cities
+#' report under their own ORI — so `Σ jurisdiction_pop` ≈ the full county with
+#' no double-count. Use `denominator = "participated_pop"` for a coverage-
+#' consistent rate (drops uncovered months), or `denominator = "census_pop"`
+#' to supply an external Census population (requires the `county_fips` column
+#' from [county_agencies()] and a Census join).
+#'
+#' @param detail A data.frame as returned by [get_county_crime_detail()], with at
+#'   least the columns: `offense`, `period`, `count`, `population`,
+#'   `participated_population`, `reported`.
+#' @param denominator Denominator strategy. One of:
+#\itemize{
+#  \code{"jurisdiction_pop"} — sum of agency `population` columns (default;
+#    coherent with CDE population semantics).
+#  \code{"participated_pop"} — sum of agency `participated_population` columns
+#    (coverage-consistent; rate reflects only reporting coverage).
+#  \code{"census_pop"} — use a single external population value per period.
+#    Requires `detail` to have a `census_population` column (e.g. from
+#    [join_census_pop()]).
+#}
+#' @return A data.frame with columns: `county_name`, `state_abbr`, `offense`,
+#'   `period`, `count` (sum of reported counts), `population` (the denominator
+#'   value used), `participated_population` (sum of participated populations),
+#'   `rate` (`count / population * 1e5`), `denominator_type` (which strategy was
+#'   used), and `coverage_fraction` (`participated_population / population`).
+#'   Returns a zero-row frame with correct columns if `detail` is empty.
+#' @export
+#\examples{
+#\dontrun{
+#  detail <- get_county_crime_detail("Alameda", "CA",
+#                                    from = "01-2019", to = "12-2019",
+#                                    default_only = TRUE)
+#  get_county_crime(detail)
+#}
+#}
+get_county_crime <- function(detail, denominator = "jurisdiction_pop") {
+  if (!inherits(detail, "data.frame")) {
+    stop("'detail' must be a data.frame", call. = FALSE)
+  }
+
+  required_cols <- c("offense", "period", "count", "population",
+                     "participated_population")
+  missing_cols <- setdiff(required_cols, names(detail))
+  if (length(missing_cols) > 0) {
+    stop("'detail' is missing required columns: ",
+         paste(missing_cols, collapse = ", "), call. = FALSE)
+  }
+
+  if (!denominator %in% c("jurisdiction_pop", "participated_pop",
+                          "census_pop")) {
+    stop("'denominator' must be one of 'jurisdiction_pop',
+         'participated_pop', or 'census_pop'", call. = FALSE)
+  }
+
+  if (denominator == "census_pop" &&
+      !"census_population" %in% names(detail)) {
+    stop("denominator = 'census_pop' requires a 'census_population'
+         column in detail (e.g. from join_census_pop())", call. = FALSE)
+  }
+
+  # Handle empty input.
+  if (nrow(detail) == 0L) {
+    out <- as.data.frame(
+      matrix(nrow = 0, ncol = length(.AGGREGATE_COLS),
+             dimnames = list(NULL, .AGGREGATE_COLS)),
+      stringsAsFactors = FALSE
+    )
+    out$denominator_type <- character(0)
+    return(out)
+  }
+
+  # Group by (county_name, state_abbr, offense, period) and aggregate.
+  groups <- split(seq_len(nrow(detail)),
+                  interaction(
+                    detail$county_name,
+                    detail$state_abbr,
+                    detail$offense,
+                    detail$period,
+                    drop = TRUE
+                  ),
+                  drop = TRUE)
+
+  agg_rows <- lapply(groups, function(idx) {
+    sub <- detail[idx[1], , drop = FALSE]  # take first row for metadata
+    vals <- detail[idx, , drop = FALSE]
+
+    # Sum counts (NA = did not report; only sum reported values).
+    total_count <- sum(vals$count, na.rm = TRUE)
+
+    # Sum participated populations.
+    total_participated <- sum(vals$participated_population, na.rm = TRUE)
+
+    # Choose denominator.
+    if (denominator == "jurisdiction_pop") {
+      denom <- sum(vals$population, na.rm = TRUE)
+    } else if (denominator == "participated_pop") {
+      denom <- total_participated
+    } else {
+      # census_pop: take the unique value (all rows in a county share it).
+      denom <- vals$census_population[1]
+    }
+
+    # Rate and coverage fraction.
+    rate <- if (!is.na(denom) && denom > 0)
+      total_count / denom * 1e5 else NA_real_
+    coverage <- if (!is.na(denom) && denom > 0)
+      total_participated / denom else NA_real_
+
+    data.frame(
+      county_name = sub$county_name,
+      state_abbr = sub$state_abbr,
+      offense = sub$offense,
+      period = sub$period,
+      count = total_count,
+      population = denom,
+      participated_population = total_participated,
+      rate = rate,
+      denominator_type = denominator,
+      coverage_fraction = coverage,
+      stringsAsFactors = FALSE
+    )
+  })
+
+  out <- do.call(rbind, agg_rows)
+  rownames(out) <- NULL
+  out[, .AGGREGATE_COLS, drop = FALSE]
+}
+
