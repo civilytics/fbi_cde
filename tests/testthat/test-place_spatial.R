@@ -21,6 +21,39 @@ test_that("add_place_spatial_members returns input unchanged when sf is absent",
   expect_message(out <- add_place_spatial_members(x), "sf")
   expect_equal(nrow(out), nrow(x))
   expect_equal(out$ori, x$ori)
+  # Blocker 2: the degradation path must still carry place_type/place_fips,
+  # so downstream code like out[!is.na(out$place_type), ] behaves the same
+  # whether or not sf/tigris are installed.
+  expect_true(all(c("place_type", "place_fips") %in% names(out)))
+  expect_true(all(is.na(out$place_type)))
+  expect_true(all(is.na(out$place_fips)))
+})
+
+test_that("add_place_spatial_members is idempotent", {
+  x <- place_agencies("Lufkin", "TX")
+  once <- x
+  once$place_type <- NA_character_
+  once$place_fips <- NA_character_
+  once$attribution <- "point_in_polygon"
+
+  expect_message(twice <- add_place_spatial_members(once),
+                 "already has spatially-attributed members")
+  expect_equal(twice, once)
+})
+
+test_that("add_place_spatial_members widens the required-columns check to catch a get_place_crime_detail() result", {
+  # A get_place_crime_detail()-shaped frame carries agency_class etc. but not
+  # latitude/longitude, so it should fail the *validation* with a clear
+  # message rather than dying later with a cryptic subscript error.
+  bad <- data.frame(
+    ori = "TX1234567", agency_name = "x", agency_type_name = "City",
+    agency_class = "place_primary", default_member = TRUE,
+    place_name = "Lufkin", county_name = "ANGELINA", state_abbr = "TX",
+    attribution = "name_identity",
+    offense = "V", period = "01-2021", count = 1,
+    stringsAsFactors = FALSE
+  )
+  expect_error(add_place_spatial_members(bad), "missing required columns")
 })
 
 # ---- Point-in-polygon (needs sf; tigris replaced by the seam) --------------
@@ -252,4 +285,54 @@ test_that("add_place_spatial_members leaves name_identity rows with NA place_fip
   expect_equal(nrow(primary), 1L)
   expect_true(is.na(primary$place_fips))
   expect_true(is.na(primary$place_type))
+})
+
+# ---- Defensiveness: polygon frame is not trusted blindly ------------------
+
+test_that("add_place_spatial_members errors clearly when the polygon frame is missing required columns", {
+  x <- place_agencies("Lufkin", "TX")
+  bad_polys <- data.frame(NAME = "Lufkin", stringsAsFactors = FALSE)  # no GEOID/CLASSFP
+
+  expect_error(
+    add_place_spatial_members(x, places_fun = function(state, vintage) bad_polys),
+    "missing required columns.*GEOID.*CLASSFP"
+  )
+})
+
+test_that("add_place_spatial_members errors clearly when places_fun does not return a data.frame", {
+  x <- place_agencies("Lufkin", "TX")
+
+  expect_error(
+    add_place_spatial_members(x, places_fun = function(state, vintage) "not a frame"),
+    "must return a data.frame"
+  )
+})
+
+test_that("add_place_spatial_members does not produce a phantom match from an NA place NAME", {
+  skip_if_not_installed("sf")
+
+  x <- place_agencies("Lufkin", "TX")
+  polys_with_na <- fixture_places()
+  polys_with_na$NAME[1] <- NA_character_  # was "Lufkin" — the very name being matched
+
+  fake_agencies <- data.frame(
+    ori = "TX1234567",
+    agency_name = "Angelina College",
+    agency_type_name = "University or College",
+    state_abbr = "TX",
+    county_name = x$county_name,
+    latitude = 31.3,
+    longitude = -94.7,
+    stringsAsFactors = FALSE
+  )
+  testthat::local_mocked_bindings(
+    agencies_table = function() fake_agencies,
+    .package = "fbi"
+  )
+
+  expect_warning(
+    out <- add_place_spatial_members(x, places_fun = function(state, vintage) polys_with_na),
+    "No Census place polygon named"
+  )
+  expect_equal(nrow(out), nrow(x))
 })

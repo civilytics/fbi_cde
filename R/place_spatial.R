@@ -79,12 +79,29 @@ add_place_spatial_members <- function(x, vintage = NULL, places_fun = NULL) {
   if (!inherits(x, "data.frame")) {
     stop("'x' must be a data.frame", call. = FALSE)
   }
-  required <- c("ori", "place_name", "state_abbr", "county_name", "attribution")
-  missing_cols <- setdiff(required, names(x))
+  missing_cols <- setdiff(.PLACE_AGENCY_COLS, names(x))
   if (length(missing_cols) > 0) {
     stop("'x' is missing required columns: ",
          paste(missing_cols, collapse = ", "), call. = FALSE)
   }
+
+  # Idempotency: if spatial members are already present, adding them again
+  # would duplicate ORIs and reset the first application's place_fips to NA
+  # (since the pre-existing point_in_polygon rows don't carry latitude/
+  # longitude the second pass expects). Central invariant of this package is
+  # "no double-count", so refuse rather than silently corrupt.
+  if (any(x$attribution == "point_in_polygon", na.rm = TRUE)) {
+    message("'x' already has spatially-attributed members (attribution == ",
+            "'point_in_polygon'); returning it unchanged.")
+    return(x)
+  }
+
+  # Attach unconditionally, before the dependency guard, so every return path
+  # — including the sf/tigris-unavailable degradation path — yields the same
+  # columns. A caller doing out[!is.na(out$place_type), ] must not see the
+  # column vanish just because sf isn't installed.
+  x$place_type <- NA_character_
+  x$place_fips <- NA_character_
 
   if (is.null(places_fun)) {
     if (!.spatial_deps_available()) {
@@ -96,9 +113,6 @@ add_place_spatial_members <- function(x, vintage = NULL, places_fun = NULL) {
     places_fun <- .default_places_fun
   }
 
-  x$place_type <- NA_character_
-  x$place_fips <- NA_character_
-
   if (nrow(x) == 0) {
     return(x)
   }
@@ -107,7 +121,20 @@ add_place_spatial_members <- function(x, vintage = NULL, places_fun = NULL) {
   target <- toupper(x$place_name[1])
 
   polys <- places_fun(state, vintage)
-  match_poly <- polys[toupper(polys$NAME) == target, , drop = FALSE]
+  if (!inherits(polys, "data.frame")) {
+    stop("'places_fun' must return a data.frame (an sf frame), got: ",
+         paste(class(polys), collapse = "/"), call. = FALSE)
+  }
+  poly_missing <- setdiff(c("NAME", "GEOID", "CLASSFP"), names(polys))
+  if (length(poly_missing) > 0) {
+    stop("The polygon frame returned by 'places_fun' is missing required ",
+         "columns: ", paste(poly_missing, collapse = ", "),
+         ". This usually means the tigris/Census place-polygon schema has ",
+         "changed.", call. = FALSE)
+  }
+
+  name_match <- !is.na(polys$NAME) & toupper(polys$NAME) == target
+  match_poly <- polys[name_match, , drop = FALSE]
   if (nrow(match_poly) == 0) {
     warning("No Census place polygon named '", x$place_name[1], "' in ", state,
             "; returning input unchanged.", call. = FALSE)
