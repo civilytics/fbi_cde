@@ -28,7 +28,9 @@ Suggests:
     withr,
     knitr,
     rmarkdown,
-    censusapi
+    censusapi,
+    sf,
+    tigris
 Imports:
     httr,
     jsonlite,
