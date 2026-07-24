@@ -34,3 +34,35 @@ classify_agency <- function(agency_type_name) {
   out[is.na(out)] <- "special"
   out
 }
+
+# Place-level classification. Distinct from `classify_agency()` because the
+# tiers differ: at place level the municipal agency IS the place's primary
+# reporter, and county/state/tribal agencies are not place members at all.
+#
+# Sheriffs police the unincorporated remainder and contract cities report under
+# their own city ORI (design §14), so a place's crime is carried entirely by its
+# own ORI. Mapping them to NA keeps them structurally unable to become members.
+.PLACE_AGENCY_CLASS_MAP <- c(
+  "City"                  = "place_primary",
+  "Municipality"          = "place_primary",
+  "Borough"               = "place_primary",
+  "City and Borough"      = "place_primary",
+  "University or College" = "campus",
+  "Other"                 = "special",
+  "Other State Agency"    = "special",
+  "Census Area"           = "special"
+)
+
+#' Classify an agency type into a place-level membership class
+#'
+#' Maps the CDE's raw `agency_type_name` to a place-level `agency_class`.
+#' Types that can never be place members (`County`, `Parish`, `State Police`,
+#' `Tribal`) map to `NA`.
+#'
+#' @param agency_type_name Character vector of raw `agency_type_name` values.
+#' @return Character vector of `"place_primary"`, `"campus"`, `"special"`, or
+#'   `NA` for types that are not place members.
+#' @keywords internal
+classify_place_agency <- function(agency_type_name) {
+  unname(.PLACE_AGENCY_CLASS_MAP[as.character(agency_type_name)])
+}

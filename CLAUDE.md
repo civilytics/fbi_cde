@@ -44,10 +44,11 @@ Targeting CRAN. Based on the original `fbi` package by Jacob Kaplan.
   `population` vs `participated_population` is the reporting-coverage gap.
 - Dates are `MM-YYYY` except police employment (`YYYY`).
 
-## Geography feature (v0.2, shipped)
+## Geography feature (v0.2–v0.4, shipped)
 
-County-level agency membership + itemized crime, an *attribution* model (which
-agencies are attributed to a geography — not spatial-truth). Layers:
+County- and place-level agency membership + itemized crime, an *attribution*
+model (which agencies are attributed to a geography — not spatial-truth).
+Layers:
 - `county_agencies(county, state)` — pure resolver; classifies each agency into
   `agency_class` (`county_primary`/`municipal`/`campus`/`state`/`tribal`/`special`)
   with a conservative `default_member` flag (`county_primary` + `municipal`).
@@ -57,18 +58,34 @@ agencies are attributed to a geography — not spatial-truth). Layers:
   NIBRS-transition reporting hole). Filters via `agency_class` / `default_only`;
   failed ORIs are dropped, warned, and listed in `attr(x, "dropped")`.
 - `get_county_agency_crime(...)` — the county's own primary (sheriff) series.
+- `place_agencies(place, state, county = NULL)` — pure, name-identity resolver
+  for the municipal tier (`"<Place> Police Department"` names); classifies
+  `agency_class` (`place_primary`/`campus`/`special`).
+- `get_place_crime_detail(...)` — the place twin of `get_county_crime_detail()`;
+  accepts an optional pre-resolved `agencies` frame (e.g. from
+  `add_place_spatial_members()`) so campus/special members can be queried.
+- `add_place_spatial_members(x, ...)` — opt-in, `sf`/`tigris`-backed
+  point-in-polygon attribution of campus/special agencies to a place; appends
+  rows with `attribution = "point_in_polygon"` to a `place_agencies()` result.
 
 ## Roadmap
 
 Full design + phased plan: `docs/superpowers/specs/2026-07-13-geography-first-querying-design.md`.
-Status: **v0.2 shipped** (resolver + detail). Planned phases (each its own
+Status: **v0.4 shipped** (county resolver + detail + aggregate; place
+resolver + detail + spatial members). Planned phases (each its own
 spec → plan → implementation cycle; tracked as Gitea issues):
 - **v0.2b** — optional reporting-gap imputation (`impute_reporting_gaps()`, off by default).
 - **v0.3** — Layer 2 aggregate (denominator model) + county FIPS crosswalk (derive
   from `county_name` + patch table; **do not ship LEAIC** — licensing/staleness)
   + Census join (`censusapi`, `Suggests`).
-- **v0.4 → 1.0** — metro (union of counties); place/municipal membership +
-  attributable-tier (campus/transit); place FIPS (`sf`/`tigris`, `Suggests`, lossy).
+- **v0.4** — **shipped.** Place/municipal membership: `place_agencies()`,
+  `get_place_crime_detail()`, and opt-in `add_place_spatial_members()`
+  (`sf`/`tigris` in `Suggests`). Spec:
+  `docs/superpowers/specs/2026-07-24-place-membership-v0.4-design.md`.
+- **Metro (CBSA)** — union of member counties; needs a county→CBSA crosswalk
+  and a delineation-vintage decision (Gitea #45).
+- **Place FIPS** as a promised join key — likely a name-based crosswalk rather
+  than `sf` (Gitea #46).
 - **Capstone** — imputation gap: FBI published aggregate vs. sum of reported
   components (uses the `reported`/coverage columns already collected).
 
