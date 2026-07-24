@@ -1,5 +1,37 @@
 # fbi 0.1.0.9000 (development version)
 
+## Place/municipal membership (v0.4)
+
+- Added `place_agencies()` — a pure, offline resolver mapping a municipality to
+  the agency that reports crime for it. CDE city agencies are named
+  `"<Place> Police Department"`, so the place name is recovered from the agency
+  name: ~100% of the 11,635 municipal-tier agencies resolve, and
+  `(state, county, place)` is collision-free. No new dependencies.
+- Added `get_place_crime_detail()` — itemized, unsummed place crime, reusing the
+  county fan-out machinery (comparison-row stripping, `reported` flag,
+  drop-warn-record partial-failure handling). Composes with
+  `impute_reporting_gaps()`.
+- Added `add_place_spatial_members()` — opt-in attribution of embedded campus
+  and special-district agencies by point-in-polygon against Census place
+  boundaries. Requires `sf` and `tigris` (both `Suggests`); returns its input
+  unchanged with a message when they are absent. Adds `place_type`
+  (`"incorporated"` / `"cdp"`) and a best-effort `place_fips` that is
+  explicitly **not** a promised join key.
+- Sheriffs, state police, and tribal agencies are never place members: a
+  sheriff polices the unincorporated remainder, and contract cities report
+  under their own city ORI, so a place's crime is carried entirely by its own
+  agency.
+- The bundled agency table stores `latitude`/`longitude` as character columns,
+  and 545 rows hold the literal string `"NULL"` rather than a real missing
+  value. `add_place_spatial_members()` coerces and drops those defensively, so
+  270 of the 2,324 embedded-tier agencies (11.6%) have no usable coordinates
+  and can never be spatially attributed.
+- Derived place names come from agency names (stripping a
+  `"... Police Department"` suffix), not from Census place names, so they can
+  disagree: e.g. the Las Vegas Metropolitan Police Department derives to
+  `"Las Vegas Metropolitan"`, not the Census place `"Las Vegas"`. Agreement
+  with Census naming is a separate, deferred concern.
+
 ## County aggregate and Census join (v0.3, Issues #36-#37)
 
 - Added `get_county_crime()` — Layer 2 aggregate that sums itemized detail from

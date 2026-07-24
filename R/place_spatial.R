@@ -44,6 +44,12 @@
 #' — a sheriff's HQ point carries no information about its jurisdiction. That
 #' restriction is what makes point-in-polygon defensible for this tier.
 #'
+#' The bundled agency table stores `latitude`/`longitude` as character columns,
+#' and some rows hold the literal string `"NULL"` rather than a real missing
+#' value; this function coerces and drops those defensively. In practice, 270
+#' of the 2,324 embedded-tier agencies (11.6%) have no usable coordinates and
+#' can never be spatially attributed by this function.
+#'
 #' @param x A data.frame as returned by [place_agencies()].
 #' @param vintage Optional Census boundary year passed to `tigris::places()`.
 #'   Boundaries change with annexations and new incorporations, so pin this when

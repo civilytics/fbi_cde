@@ -67,8 +67,14 @@ spec → plan → implementation cycle; tracked as Gitea issues):
 - **v0.3** — Layer 2 aggregate (denominator model) + county FIPS crosswalk (derive
   from `county_name` + patch table; **do not ship LEAIC** — licensing/staleness)
   + Census join (`censusapi`, `Suggests`).
-- **v0.4 → 1.0** — metro (union of counties); place/municipal membership +
-  attributable-tier (campus/transit); place FIPS (`sf`/`tigris`, `Suggests`, lossy).
+- **v0.4** — **shipped.** Place/municipal membership: `place_agencies()`,
+  `get_place_crime_detail()`, and opt-in `add_place_spatial_members()`
+  (`sf`/`tigris` in `Suggests`). Spec:
+  `docs/superpowers/specs/2026-07-24-place-membership-v0.4-design.md`.
+- **Metro (CBSA)** — union of member counties; needs a county→CBSA crosswalk
+  and a delineation-vintage decision (Gitea #45).
+- **Place FIPS** as a promised join key — likely a name-based crosswalk rather
+  than `sf` (Gitea #46).
 - **Capstone** — imputation gap: FBI published aggregate vs. sum of reported
   components (uses the `reported`/coverage columns already collected).
 
