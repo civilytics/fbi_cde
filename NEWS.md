@@ -31,6 +31,16 @@
   disagree: e.g. the Las Vegas Metropolitan Police Department derives to
   `"Las Vegas Metropolitan"`, not the Census place `"Las Vegas"`. Agreement
   with Census naming is a separate, deferred concern.
+- `get_place_crime_detail()` gains an `agencies` argument so a caller-supplied
+  membership frame (e.g. `add_place_spatial_members()`'s output) can be fanned
+  out directly, making `agency_class = "campus"`/`"special"` reachable; an
+  unsatisfiable filter now warns instead of returning an empty frame silently.
+- `add_place_spatial_members()` is now idempotent (a frame that already has
+  `point_in_polygon` rows is returned unchanged with a message rather than
+  duplicated), validates its input against the full membership column set, and
+  returns the same columns (`place_type`, `place_fips`) whether or not
+  `sf`/`tigris` are installed. It also validates the polygon frame it is given
+  and no longer produces a phantom match from an `NA` place name.
 
 ## County aggregate and Census join (v0.3, Issues #36-#37)
 
