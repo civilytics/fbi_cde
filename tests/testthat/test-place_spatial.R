@@ -193,6 +193,55 @@ test_that("add_place_spatial_members skips agencies with unusable coordinates", 
   expect_false("TX5555555" %in% out$ori)
 })
 
+test_that("add_place_spatial_members resolves the containing polygon when a name matches more than one", {
+  skip_if_not_installed("sf")
+
+  # Two same-named "Lufkin" polygons at disjoint locations — the realistic
+  # case is a CDP and an incorporated place sharing a name. The first (index
+  # 1) is a CDP the agency does NOT fall in; the second (index 2) is
+  # incorporated and DOES contain the agency. Under the old `match_poly[1, ]`
+  # behaviour this would incorrectly tag the agency with the first polygon's
+  # place_type/place_fips.
+  fixture_places_dup <- function() {
+    sq <- function(cx, cy) {
+      sf::st_polygon(list(cbind(
+        c(cx - 0.1, cx + 0.1, cx + 0.1, cx - 0.1, cx - 0.1),
+        c(cy - 0.1, cy - 0.1, cy + 0.1, cy + 0.1, cy - 0.1)
+      )))
+    }
+    sf::st_sf(
+      GEOID = c("4800001", "4800002"),
+      NAME = c("Lufkin", "Lufkin"),
+      CLASSFP = c("U1", "C1"),
+      geometry = sf::st_sfc(sq(-94.7, 31.3), sq(-96.0, 32.0), crs = 4326)
+    )
+  }
+
+  x <- place_agencies("Lufkin", "TX")
+  fake_agencies <- data.frame(
+    ori = "TX9999999",
+    agency_name = "Second Polygon College",
+    agency_type_name = "University or College",
+    state_abbr = "TX",
+    county_name = x$county_name,
+    latitude = 32.0,
+    longitude = -96.0,
+    stringsAsFactors = FALSE
+  )
+  testthat::local_mocked_bindings(
+    agencies_table = function() fake_agencies,
+    .package = "fbi"
+  )
+
+  out <- add_place_spatial_members(
+    x, places_fun = function(state, vintage) fixture_places_dup()
+  )
+  added <- out[out$attribution == "point_in_polygon", , drop = FALSE]
+  expect_equal(nrow(added), 1L)
+  expect_equal(added$place_fips, "4800002")
+  expect_equal(added$place_type, "incorporated")
+})
+
 test_that("add_place_spatial_members leaves name_identity rows with NA place_fips", {
   skip_if_not_installed("sf")
 

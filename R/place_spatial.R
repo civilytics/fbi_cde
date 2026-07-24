@@ -29,9 +29,11 @@
 
 #' Add spatially-attributed embedded agencies to a place membership frame
 #'
-#' Attributes campus, transit, airport, and other special-district agencies to a
-#' place by point-in-polygon of their headquarters coordinates against Census
-#' place boundaries. Appends them to a [place_agencies()] result.
+#' Attributes campus and other special-district agencies (any agency of type
+#' `"University or College"`, `"Other"`, or `"Other State Agency"` — CDE has
+#' no literal "transit" or "airport" type) to a place by point-in-polygon of
+#' their headquarters coordinates against Census place boundaries. Appends
+#' them to a [place_agencies()] result.
 #'
 #' This is opt-in and best-effort. It requires `sf` and `tigris` (both in
 #' \sQuote{Suggests}) and downloads boundary shapefiles. Without them the
@@ -111,14 +113,20 @@ add_place_spatial_members <- function(x, vintage = NULL, places_fun = NULL) {
     return(x)
   }
 
-  inside <- .points_in_polygon(cand$longitude, cand$latitude, match_poly)
-  cand <- cand[inside, , drop = FALSE]
+  idx <- .locate_in_polygons(cand$longitude, cand$latitude, match_poly)
+  keep <- !is.na(idx)
+  cand <- cand[keep, , drop = FALSE]
+  idx <- idx[keep]
   if (nrow(cand) == 0) {
     return(x)
   }
 
-  # CLASSFP "U*" denotes a Census Designated Place (unincorporated).
-  is_cdp <- substr(as.character(match_poly$CLASSFP[1]), 1L, 1L) == "U"
+  # CLASSFP "U*" denotes a Census Designated Place (unincorporated). Indexed
+  # per row by `idx` rather than match_poly[1, ]: a name match can return more
+  # than one polygon (e.g. a CDP and an incorporated place sharing a name), and
+  # each candidate must be tagged with the polygon it actually falls in, not
+  # the first name match.
+  classfp <- as.character(match_poly$CLASSFP)[idx]
 
   added <- data.frame(
     ori = cand$ori,
@@ -132,8 +140,8 @@ add_place_spatial_members <- function(x, vintage = NULL, places_fun = NULL) {
     attribution = "point_in_polygon",
     latitude = cand$latitude,
     longitude = cand$longitude,
-    place_type = if (is_cdp) "cdp" else "incorporated",
-    place_fips = as.character(match_poly$GEOID[1]),
+    place_type = ifelse(substr(classfp, 1L, 1L) == "U", "cdp", "incorporated"),
+    place_fips = as.character(match_poly$GEOID)[idx],
     stringsAsFactors = FALSE
   )
 
@@ -166,14 +174,22 @@ add_place_spatial_members <- function(x, vintage = NULL, places_fun = NULL) {
   out
 }
 
-# TRUE for each (lon, lat) falling inside any polygon of `polys`.
-.points_in_polygon <- function(lon, lat, polys) {
+# For each (lon, lat), the row index of `polys` it falls inside (or NA if
+# none). Resolved per point rather than against a union of `polys`, so a point
+# is attributed to the specific polygon it falls in when a name match returns
+# more than one (e.g. a CDP and an incorporated place sharing a name).
+#
+# When a caller supplies a custom `places_fun`, the `sf` availability guard in
+# add_place_spatial_members() is skipped (it only gates the default,
+# tigris-backed branch) — the caller is responsible for `sf` being available
+# in that case.
+.locate_in_polygons <- function(lon, lat, polys) {
   pts <- sf::st_as_sf(
     data.frame(lon = lon, lat = lat),
     coords = c("lon", "lat"),
     crs = 4326
   )
   polys <- sf::st_transform(polys, 4326)
-  hits <- sf::st_within(pts, sf::st_union(sf::st_geometry(polys)))
-  lengths(hits) > 0
+  hits <- sf::st_within(pts, sf::st_geometry(polys))
+  vapply(hits, function(h) if (length(h) > 0) h[1] else NA_integer_, integer(1))
 }

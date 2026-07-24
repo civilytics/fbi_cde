@@ -31,9 +31,11 @@ Exposed for testing; you should not need to set it.}
   `default_member = FALSE`.
 }
 \description{
-Attributes campus, transit, airport, and other special-district agencies to a
-place by point-in-polygon of their headquarters coordinates against Census
-place boundaries. Appends them to a [place_agencies()] result.
+Attributes campus and other special-district agencies (any agency of type
+`"University or College"`, `"Other"`, or `"Other State Agency"` — CDE has
+no literal "transit" or "airport" type) to a place by point-in-polygon of
+their headquarters coordinates against Census place boundaries. Appends
+them to a [place_agencies()] result.
 }
 \details{
 This is opt-in and best-effort. It requires `sf` and `tigris` (both in
