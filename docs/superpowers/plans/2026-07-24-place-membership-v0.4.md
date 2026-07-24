@@ -603,14 +603,11 @@ test_that("get_place_crime_detail drops a failing ORI with a warning and records
 })
 
 test_that("get_place_crime_detail warns and returns an empty frame for an unknown place", {
+  # The warning comes from place_agencies(); assert it, then assert the shape.
   expect_warning(
-    out <- suppressWarnings(
-      get_place_crime_detail("Nowheresville", "TX", from = "01-2021", to = "02-2021")
-    ) ,
-    NA
-  )
-  out <- suppressWarnings(
-    get_place_crime_detail("Nowheresville", "TX", from = "01-2021", to = "02-2021")
+    out <- get_place_crime_detail("Nowheresville", "TX",
+                                  from = "01-2021", to = "02-2021"),
+    "No municipal agency"
   )
   expect_equal(nrow(out), 0L)
   expect_equal(names(out), .PLACE_DETAIL_COLS)
@@ -765,7 +762,7 @@ get_place_crime_detail <- function(place, state, county = NULL, offense = "V",
 Run: `R -q -e 'devtools::document(quiet = TRUE); devtools::test(filter = "place")'`
 Expected: PASS (both `test-place.R` and `test-place_crime.R`).
 
-If the "unknown place" test is awkward because `place_agencies()` warns, simplify it to a single `suppressWarnings()` call plus the two assertions — do not remove the assertions.
+Fixture facts verified against the bundled table before this plan was written, so these are safe to assert: Lufkin TX is `TX0030400` in ANGELINA county and is unique; Los Angeles CA is unique; Foster Township PA is genuinely ambiguous across MCKEAN and SCHUYLKILL.
 
 - [ ] **Step 5: Commit**
 
@@ -1008,8 +1005,10 @@ Create `R/place_spatial.R`:
 }
 
 # Default polygon source. Only reached when tigris is installed.
+# Kept to the two arguments tigris::places() has carried stably (`state`,
+# `year`) — optional cosmetic arguments have moved between tigris versions.
 .default_places_fun <- function(state, vintage) {
-  args <- list(state = state, class = "sf", progress_bar = FALSE)
+  args <- list(state = state)
   if (!is.null(vintage)) {
     args$year <- vintage
   }
