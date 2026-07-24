@@ -98,3 +98,96 @@ test_that("only the two known (state, place) keys are ambiguous", {
   ambiguous <- sort(names(which(table(key) > 1)))
   expect_equal(ambiguous, c("PA Foster Township", "PA Jefferson Township"))
 })
+
+# ---- classify_place_agency() -----------------------------------------------
+
+test_that("classify_place_agency maps municipal types to place_primary", {
+  expect_equal(
+    classify_place_agency(c("City", "Municipality", "Borough", "City and Borough")),
+    rep("place_primary", 4)
+  )
+})
+
+test_that("classify_place_agency maps embedded types", {
+  expect_equal(classify_place_agency("University or College"), "campus")
+  expect_equal(classify_place_agency("Other"), "special")
+  expect_equal(classify_place_agency("Other State Agency"), "special")
+})
+
+test_that("classify_place_agency maps non-place types to NA", {
+  # A sheriff or state police agency is never a place member, so it has no
+  # place-level class at all.
+  expect_true(is.na(classify_place_agency("County")))
+  expect_true(is.na(classify_place_agency("State Police")))
+  expect_true(is.na(classify_place_agency("Tribal")))
+})
+
+# ---- place_agencies() ------------------------------------------------------
+
+test_that("place_agencies resolves a place to its own municipal agency", {
+  out <- place_agencies("Lufkin", "TX")
+
+  expect_s3_class(out, "data.frame")
+  expect_equal(nrow(out), 1L)
+  expect_equal(out$place_name, "Lufkin")
+  expect_equal(out$agency_class, "place_primary")
+  expect_true(out$default_member)
+  expect_equal(out$attribution, "name_identity")
+  expect_equal(out$state_abbr, "TX")
+  expect_match(out$ori, "^[A-Z]{2}[A-Z0-9]{7}$")
+})
+
+test_that("place_agencies returns the documented columns in order", {
+  out <- place_agencies("Lufkin", "TX")
+  expect_equal(names(out), .PLACE_AGENCY_COLS)
+})
+
+test_that("place_agencies is case- and whitespace-insensitive", {
+  a <- place_agencies("Lufkin", "TX")
+  b <- place_agencies("  lufkin  ", "tx")
+  expect_equal(a$ori, b$ori)
+})
+
+test_that("place_agencies never returns sheriffs, state police, or tribal agencies", {
+  # Los Angeles has a city PD; LASD (County) must not appear.
+  out <- place_agencies("Los Angeles", "CA")
+  expect_true(all(out$agency_class == "place_primary"))
+  expect_false(any(out$agency_type_name %in% c("County", "Parish", "State Police", "Tribal")))
+})
+
+test_that("place_agencies errors on an ambiguous place without county", {
+  expect_error(
+    place_agencies("Foster Township", "PA"),
+    "ambiguous"
+  )
+  # The error must name the candidate counties so the user can disambiguate.
+  err <- tryCatch(place_agencies("Foster Township", "PA"), error = function(e) e)
+  expect_match(conditionMessage(err), "county =")
+})
+
+test_that("place_agencies resolves an ambiguous place when county is supplied", {
+  amb <- fbi_api_agencies[
+    fbi_api_agencies$agency_type_name %in% .MUNICIPAL_TYPES &
+      fbi_api_agencies$state_abbr == "PA", , drop = FALSE
+  ]
+  amb$place <- derive_place_name(amb$agency_name)
+  counties <- amb$county_name[amb$place == "Foster Township"]
+  expect_gt(length(counties), 1L)
+
+  out <- place_agencies("Foster Township", "PA", county = counties[1])
+  expect_equal(nrow(out), 1L)
+  expect_equal(toupper(out$county_name), toupper(counties[1]))
+})
+
+test_that("place_agencies warns and returns an empty typed frame for an unknown place", {
+  expect_warning(
+    out <- place_agencies("Nowheresville", "TX"),
+    "No municipal agency"
+  )
+  expect_equal(nrow(out), 0L)
+  expect_equal(names(out), .PLACE_AGENCY_COLS)
+})
+
+test_that("place_agencies rejects an invalid state", {
+  expect_error(place_agencies("Lufkin", "ZZ"), "Invalid state")
+})
