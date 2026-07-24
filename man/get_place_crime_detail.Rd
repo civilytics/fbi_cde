@@ -13,6 +13,7 @@ get_place_crime_detail(
   to = "12-2020",
   agency_class = NULL,
   default_only = TRUE,
+  agencies = NULL,
   progress = FALSE
 )
 }
@@ -35,12 +36,27 @@ that occurs in more than one county of the same state.}
 \item{default_only}{If `TRUE` (the default), keep only default members
 (`place_primary`). Ignored if `agency_class` is supplied.}
 
+\item{agencies}{Optional pre-resolved agency membership data.frame, e.g. the
+output of [place_agencies()] with [add_place_spatial_members()] applied.
+When supplied, it is used directly instead of calling `place_agencies()`
+internally — this is the only way to reach `agency_class = "campus"` or
+`"special"` rows, since [place_agencies()] alone never returns them. Must
+be a data.frame carrying at least `ori`, `agency_name`,
+`agency_type_name`, `agency_class`, `default_member`, `place_name`,
+`county_name`, `state_abbr`, and `attribution`.}
+
 \item{progress}{If `TRUE`, print a simple progress line per agency.}
 }
 \value{
-A data.frame with the columns listed in Details. Agencies whose
-  request or parse fails are dropped with a warning and recorded in
-  `attr(x, "dropped")`.
+A data.frame with one row per agency-period, carrying: `ori`,
+  `agency_name`, `agency_type_name`, `agency_class`, `default_member`,
+  `place_name`, `county_name`, `state_abbr`, `attribution`, `offense`,
+  `period`, `count`, `population`, `participated_population`, `rate`, and
+  `reported`. Agencies whose request or parse fails are dropped with a
+  warning and recorded in `attr(x, "dropped")`. If filtering (via
+  `agency_class`/`default_only`) empties a non-empty agency set, a warning
+  names the place and the filter responsible, and a zero-row frame is
+  returned.
 }
 \description{
 Fans out one request per member agency and returns their crime series
@@ -60,6 +76,10 @@ a city total is a modeling choice, not arithmetic; see the county Layer 2
 \examples{
 \dontrun{
 get_place_crime_detail("Lufkin", "TX", from = "01-2019", to = "12-2019")
+
+# Compose with add_place_spatial_members() to reach campus/special agencies:
+x <- add_place_spatial_members(place_agencies("Berkeley", "CA"))
+get_place_crime_detail("Berkeley", "CA", agencies = x, agency_class = "campus")
 }
 }
 \seealso{

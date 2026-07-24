@@ -1,6 +1,17 @@
 # Layer 1 of the place geography model: itemized, unsummed place-crime detail.
-# Reuses the county fan-out machinery (parse_agency_detail, comparison-row
-# stripping, partial-failure handling) unchanged.
+# Reuses `parse_agency_detail()` (comparison-row stripping) as-is and mirrors
+# the *structure* of the county fan-out (R/county_crime.R): the loop,
+# per-agency column projection, empty-frame handling, and drop-record
+# bookkeeping are duplicated here rather than shared, because the place and
+# county column contracts differ (place carries `place_name`/`attribution`;
+# county does not). Keep the two loops in sync by hand if either changes.
+
+# Columns a caller-supplied `agencies` frame (or a place_agencies() result)
+# must carry for the fan-out loop below to work.
+.PLACE_CRIME_AGENCY_COLS <- c(
+  "ori", "agency_name", "agency_type_name", "agency_class", "default_member",
+  "place_name", "county_name", "state_abbr", "attribution"
+)
 
 .PLACE_DETAIL_COLS <- c(
   "ori", "agency_name", "agency_type_name", "agency_class", "default_member",
@@ -57,24 +68,55 @@
 #'   (`"place_primary"`, `"campus"`, `"special"`).
 #' @param default_only If `TRUE` (the default), keep only default members
 #'   (`place_primary`). Ignored if `agency_class` is supplied.
+#' @param agencies Optional pre-resolved agency membership data.frame, e.g. the
+#'   output of [place_agencies()] with [add_place_spatial_members()] applied.
+#'   When supplied, it is used directly instead of calling `place_agencies()`
+#'   internally — this is the only way to reach `agency_class = "campus"` or
+#'   `"special"` rows, since [place_agencies()] alone never returns them. Must
+#'   be a data.frame carrying at least `ori`, `agency_name`,
+#'   `agency_type_name`, `agency_class`, `default_member`, `place_name`,
+#'   `county_name`, `state_abbr`, and `attribution`.
 #' @param progress If `TRUE`, print a simple progress line per agency.
-#' @return A data.frame with the columns listed in Details. Agencies whose
-#'   request or parse fails are dropped with a warning and recorded in
-#'   `attr(x, "dropped")`.
+#' @return A data.frame with one row per agency-period, carrying: `ori`,
+#'   `agency_name`, `agency_type_name`, `agency_class`, `default_member`,
+#'   `place_name`, `county_name`, `state_abbr`, `attribution`, `offense`,
+#'   `period`, `count`, `population`, `participated_population`, `rate`, and
+#'   `reported`. Agencies whose request or parse fails are dropped with a
+#'   warning and recorded in `attr(x, "dropped")`. If filtering (via
+#'   `agency_class`/`default_only`) empties a non-empty agency set, a warning
+#'   names the place and the filter responsible, and a zero-row frame is
+#'   returned.
 #' @seealso [place_agencies()], [add_place_spatial_members()],
 #'   [impute_reporting_gaps()] for filling reporting gaps in the result.
 #' @export
 #' @examples
 #' \dontrun{
 #' get_place_crime_detail("Lufkin", "TX", from = "01-2019", to = "12-2019")
+#'
+#' # Compose with add_place_spatial_members() to reach campus/special agencies:
+#' x <- add_place_spatial_members(place_agencies("Berkeley", "CA"))
+#' get_place_crime_detail("Berkeley", "CA", agencies = x, agency_class = "campus")
 #' }
 get_place_crime_detail <- function(place, state, county = NULL, offense = "V",
                                    from = "01-2015", to = "12-2020",
                                    agency_class = NULL, default_only = TRUE,
-                                   progress = FALSE) {
+                                   agencies = NULL, progress = FALSE) {
   cde_validate_dates(from, to, "mm-yyyy")
 
-  agencies <- place_agencies(place, state, county = county)
+  if (!is.null(agencies)) {
+    if (!inherits(agencies, "data.frame")) {
+      stop("'agencies' must be a data.frame", call. = FALSE)
+    }
+    missing_cols <- setdiff(.PLACE_CRIME_AGENCY_COLS, names(agencies))
+    if (length(missing_cols) > 0) {
+      stop("'agencies' is missing required columns: ",
+           paste(missing_cols, collapse = ", "), call. = FALSE)
+    }
+  } else {
+    agencies <- place_agencies(place, state, county = county)
+  }
+
+  pre_filter_n <- nrow(agencies)
   if (!is.null(agency_class)) {
     agencies <- agencies[agencies$agency_class %in% agency_class, , drop = FALSE]
   } else if (isTRUE(default_only)) {
@@ -82,6 +124,15 @@ get_place_crime_detail <- function(place, state, county = NULL, offense = "V",
   }
 
   if (nrow(agencies) == 0) {
+    if (pre_filter_n > 0) {
+      filter_desc <- if (!is.null(agency_class)) {
+        paste0("agency_class = ", paste(agency_class, collapse = ", "))
+      } else {
+        "default_only = TRUE"
+      }
+      warning("No agencies to query for place '", place, "', ", state,
+              " after filtering (", filter_desc, ")", call. = FALSE)
+    }
     return(.empty_place_detail_frame())
   }
 

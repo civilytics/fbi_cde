@@ -94,9 +94,110 @@ test_that("get_place_crime_detail warns and returns an empty frame for an unknow
 })
 
 test_that("get_place_crime_detail validates the date range", {
-  expect_error(
+  suppressWarnings(expect_error(
     get_place_crime_detail("Lufkin", "TX", from = "2021-01", to = "02-2021")
+  ))
+})
+
+# ---- agencies = (composition with add_place_spatial_members()) -----------
+
+fake_place_agencies <- function(n = 1) {
+  data.frame(
+    ori = if (n == 1) "TX1234567" else c("TX1234567", "TX7654321"),
+    agency_name = if (n == 1) "Lufkin Police Department" else
+      c("Lufkin Police Department", "Angelina College"),
+    agency_type_name = if (n == 1) "City" else c("City", "University or College"),
+    agency_class = if (n == 1) "place_primary" else c("place_primary", "campus"),
+    default_member = if (n == 1) TRUE else c(TRUE, FALSE),
+    place_name = "Lufkin",
+    county_name = "ANGELINA",
+    state_abbr = "TX",
+    attribution = if (n == 1) "name_identity" else
+      c("name_identity", "point_in_polygon"),
+    stringsAsFactors = FALSE
   )
+}
+
+test_that("get_place_crime_detail uses a supplied agencies frame instead of re-resolving", {
+  called <- FALSE
+  testthat::local_mocked_bindings(
+    place_agencies = function(...) {
+      called <<- TRUE
+      stop("place_agencies() should not be called when agencies is supplied")
+    },
+    .package = "fbi"
+  )
+  testthat::local_mocked_bindings(
+    cde_request = function(...) fake_agency_response(),
+    .package = "fbi"
+  )
+
+  out <- get_place_crime_detail("Lufkin", "TX", from = "01-2021", to = "02-2021",
+                                agencies = fake_place_agencies(1))
+
+  expect_false(called)
+  expect_equal(nrow(out), 2L)
+  expect_equal(unique(out$agency_class), "place_primary")
+})
+
+test_that("get_place_crime_detail can reach campus agencies via a supplied agencies frame", {
+  testthat::local_mocked_bindings(
+    cde_request = function(...) fake_agency_response(label = "Angelina College"),
+    .package = "fbi"
+  )
+
+  out <- get_place_crime_detail("Lufkin", "TX", from = "01-2021", to = "02-2021",
+                                agencies = fake_place_agencies(2),
+                                agency_class = "campus")
+
+  expect_equal(nrow(out), 2L)
+  expect_equal(unique(out$agency_class), "campus")
+  expect_equal(unique(out$attribution), "point_in_polygon")
+})
+
+test_that("get_place_crime_detail warns rather than silently returning empty when a filter is unsatisfiable", {
+  expect_warning(
+    out <- get_place_crime_detail("Lufkin", "TX", from = "01-2021", to = "02-2021",
+                                  agencies = fake_place_agencies(1),
+                                  agency_class = "special"),
+    "No agencies to query"
+  )
+  expect_equal(nrow(out), 0L)
+  expect_equal(names(out), .PLACE_DETAIL_COLS)
+})
+
+test_that("get_place_crime_detail errors clearly on an invalid agencies argument", {
+  expect_error(
+    get_place_crime_detail("Lufkin", "TX", agencies = "not a data.frame"),
+    "must be a data.frame"
+  )
+  expect_error(
+    get_place_crime_detail("Lufkin", "TX", agencies = data.frame(ori = "TX1234567")),
+    "missing required columns"
+  )
+})
+
+test_that("get_place_crime_detail: with 2 supplied agencies, one failing ORI is dropped and the other survives", {
+  agencies <- fake_place_agencies(2)
+  testthat::local_mocked_bindings(
+    cde_request = function(path, ...) {
+      if (grepl("TX7654321", path, fixed = TRUE)) {
+        stop("503")
+      }
+      fake_agency_response()
+    },
+    .package = "fbi"
+  )
+
+  expect_warning(
+    out <- get_place_crime_detail("Lufkin", "TX", from = "01-2021", to = "02-2021",
+                                  agencies = agencies, agency_class = c("place_primary", "campus")),
+    "Dropped 1 agenc"
+  )
+
+  expect_equal(nrow(out), 2L)
+  expect_equal(unique(out$ori), "TX1234567")
+  expect_equal(attr(out, "dropped"), "TX7654321")
 })
 
 # ---- Live API -------------------------------------------------------------
