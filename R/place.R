@@ -9,8 +9,8 @@
 .MUNICIPAL_TYPES <- c("City", "Municipality", "Borough", "City and Borough")
 
 # Trailing agency-name suffixes stripped to recover the bare place name.
-# Order matters: longer, more specific alternatives must precede shorter ones
-# so "Police Department" is not truncated to "Department" by an earlier match.
+# The pattern is end-anchored with `$`, so each alternative must consume the
+# entire remaining tail of the string; alternation order does not matter.
 .PLACE_SUFFIX_PATTERN <- paste0(
   " (",
   paste(

@@ -70,6 +70,9 @@ test_that("place-name derivation resolves effectively every municipal agency", {
   mun <- fbi_api_agencies[
     fbi_api_agencies$agency_type_name %in% .MUNICIPAL_TYPES, , drop = FALSE
   ]
+  # Guard against the guard going vacuous.
+  expect_gt(nrow(mun), 10000)
+
   places <- derive_place_name(mun$agency_name)
 
   expect_false(any(is.na(places)))
