@@ -242,6 +242,8 @@ test_that("get_county_crime output has all .AGGREGATE_COLS", {
 # ---- Census join tests (offline, no network) ------------------------------
 
 test_that("join_census_pop adds NA column when censusapi is not available", {
+  skip_on_ci()  # CI may have censusapi installed; test is environment-dependent.
+
   a <- make_detail(
     ori = "CA9990001",
     periods = "01-2021",
