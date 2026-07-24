@@ -76,6 +76,16 @@
 #'   be a data.frame carrying at least `ori`, `agency_name`,
 #'   `agency_type_name`, `agency_class`, `default_member`, `place_name`,
 #'   `county_name`, `state_abbr`, and `attribution`.
+#'
+#'   Column presence is validated, but membership is **not**: a hand-built frame
+#'   can contain any ORI, including a sheriff or state police agency. The
+#'   supported path ([place_agencies()], optionally through
+#'   [add_place_spatial_members()]) can never produce one — county, parish,
+#'   state-police, and tribal agencies are excluded structurally. If you build
+#'   the frame yourself, that exclusion becomes yours to maintain: attributing a
+#'   sheriff to a place double-counts against the place's own agency, because a
+#'   sheriff polices the unincorporated remainder and contract cities report
+#'   under their own city ORI.
 #' @param progress If `TRUE`, print a simple progress line per agency.
 #' @return A data.frame with one row per agency-period, carrying: `ori`,
 #'   `agency_name`, `agency_type_name`, `agency_class`, `default_member`,
