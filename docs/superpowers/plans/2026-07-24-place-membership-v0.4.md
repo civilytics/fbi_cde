@@ -684,10 +684,28 @@ Create `R/place_crime.R`:
   "population", "participated_population", "rate", "reported"
 )
 
+# Built column-by-column rather than from a 0-row matrix() so the columns carry
+# their real types. A matrix-derived empty frame types every column `logical`,
+# which breaks rbind() against a populated result — the natural way to stack
+# several places' detail together.
 .empty_place_detail_frame <- function() {
-  as.data.frame(
-    matrix(nrow = 0, ncol = length(.PLACE_DETAIL_COLS),
-           dimnames = list(NULL, .PLACE_DETAIL_COLS)),
+  data.frame(
+    ori = character(0),
+    agency_name = character(0),
+    agency_type_name = character(0),
+    agency_class = character(0),
+    default_member = logical(0),
+    place_name = character(0),
+    county_name = character(0),
+    state_abbr = character(0),
+    attribution = character(0),
+    offense = character(0),
+    period = character(0),
+    count = numeric(0),
+    population = numeric(0),
+    participated_population = numeric(0),
+    rate = numeric(0),
+    reported = logical(0),
     stringsAsFactors = FALSE
   )
 }
@@ -906,8 +924,12 @@ test_that("add_place_spatial_members attributes an embedded agency inside the pl
     longitude = -94.7,
     stringsAsFactors = FALSE
   )
+  # Return ONLY the synthetic rows. Stacking these onto the real 18,459-row
+  # table would make the assertions hostage to real agencies that happen to fall
+  # inside the fixture polygon — Stephen F. Austin State University really does
+  # sit inside a 1-degree box around Lufkin.
   testthat::local_mocked_bindings(
-    agencies_table = function() rbind_fill(list(fbi_api_agencies, fake_agencies)),
+    agencies_table = function() fake_agencies,
     .package = "fbi"
   )
 
@@ -937,8 +959,12 @@ test_that("add_place_spatial_members excludes agencies outside the polygon", {
     longitude = -80.0,
     stringsAsFactors = FALSE
   )
+  # Return ONLY the synthetic rows. Stacking these onto the real 18,459-row
+  # table would make the assertions hostage to real agencies that happen to fall
+  # inside the fixture polygon — Stephen F. Austin State University really does
+  # sit inside a 1-degree box around Lufkin.
   testthat::local_mocked_bindings(
-    agencies_table = function() rbind_fill(list(fbi_api_agencies, fake_agencies)),
+    agencies_table = function() fake_agencies,
     .package = "fbi"
   )
 
@@ -961,8 +987,12 @@ test_that("add_place_spatial_members never attributes sheriffs or state police",
     longitude = -94.7,
     stringsAsFactors = FALSE
   )
+  # Return ONLY the synthetic rows. Stacking these onto the real 18,459-row
+  # table would make the assertions hostage to real agencies that happen to fall
+  # inside the fixture polygon — Stephen F. Austin State University really does
+  # sit inside a 1-degree box around Lufkin.
   testthat::local_mocked_bindings(
-    agencies_table = function() rbind_fill(list(fbi_api_agencies, fake_agencies)),
+    agencies_table = function() fake_agencies,
     .package = "fbi"
   )
 
@@ -986,14 +1016,46 @@ test_that("add_place_spatial_members flags a CDP match via place_type", {
     longitude = -100.0,
     stringsAsFactors = FALSE
   )
+  # Return ONLY the synthetic rows. Stacking these onto the real 18,459-row
+  # table would make the assertions hostage to real agencies that happen to fall
+  # inside the fixture polygon — Stephen F. Austin State University really does
+  # sit inside a 1-degree box around Lufkin.
   testthat::local_mocked_bindings(
-    agencies_table = function() rbind_fill(list(fbi_api_agencies, fake_agencies)),
+    agencies_table = function() fake_agencies,
     .package = "fbi"
   )
 
   out <- add_place_spatial_members(x, places_fun = function(state, vintage) fixture_places())
   added <- out[out$attribution == "point_in_polygon", , drop = FALSE]
   expect_equal(added$place_type, "cdp")
+})
+
+test_that("add_place_spatial_members skips agencies with unusable coordinates", {
+  skip_if_not_installed("sf")
+
+  x <- place_agencies("Lufkin", "TX")
+
+  # The bundled table stores coordinates as character and uses the literal
+  # string "NULL" for missing ones, which is.na() does not catch.
+  fake_agencies <- data.frame(
+    ori = c("TX4444444", "TX5555555"),
+    agency_name = c("Good Coords College", "No Coords College"),
+    agency_type_name = "University or College",
+    state_abbr = "TX",
+    county_name = x$county_name,
+    latitude = c("31.3", "NULL"),
+    longitude = c("-94.7", "NULL"),
+    stringsAsFactors = FALSE
+  )
+  testthat::local_mocked_bindings(
+    agencies_table = function() fake_agencies,
+    .package = "fbi"
+  )
+
+  out <- add_place_spatial_members(x, places_fun = function(state, vintage) fixture_places())
+
+  expect_true("TX4444444" %in% out$ori)
+  expect_false("TX5555555" %in% out$ori)
 })
 
 test_that("add_place_spatial_members leaves name_identity rows with NA place_fips", {
@@ -1164,13 +1226,27 @@ add_place_spatial_members <- function(x, vintage = NULL, places_fun = NULL) {
 }
 
 # Embedded-tier agencies in a state, with usable coordinates.
+#
+# The bundled table stores latitude/longitude as CHARACTER, and 545 rows hold
+# the literal string "NULL" rather than a real missing value — so is.na() alone
+# does not catch them and sf::st_as_sf() would error on the coercion. Coerce
+# explicitly and drop whatever fails to parse. This costs real coverage: 270 of
+# the 2,324 embedded-tier agencies (11.6%) have no usable coordinates and can
+# never be spatially attributed.
 .embedded_candidates <- function(state) {
   ag <- agencies_table()
+  lat <- suppressWarnings(as.numeric(as.character(ag$latitude)))
+  lon <- suppressWarnings(as.numeric(as.character(ag$longitude)))
+
   keep <- ag$agency_type_name %in% .EMBEDDED_TYPES &
     toupper(trimws(ag$state_abbr)) == toupper(trimws(state)) &
-    !is.na(ag$latitude) & !is.na(ag$longitude)
+    !is.na(lat) & !is.na(lon)
   keep[is.na(keep)] <- FALSE
-  ag[keep, , drop = FALSE]
+
+  out <- ag[keep, , drop = FALSE]
+  out$latitude <- lat[keep]
+  out$longitude <- lon[keep]
+  out
 }
 
 # TRUE for each (lon, lat) falling inside any polygon of `polys`.
