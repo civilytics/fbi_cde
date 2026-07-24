@@ -90,6 +90,24 @@ test_that("derive_place_name handles NA and empty input", {
   expect_true(is.na(derive_place_name(NA_character_)))
   expect_equal(derive_place_name(character(0)), character(0))
 })
+
+test_that("derive_place_name strips a doubled suffix to a fixed point", {
+  # Two real CDE records carry the suffix twice.
+  expect_equal(
+    derive_place_name("Las Vegas Metropolitan Police Department Police Department"),
+    "Las Vegas Metropolitan"
+  )
+  expect_equal(
+    derive_place_name("Northeast Police Department Police Department"),
+    "Northeast"
+  )
+})
+
+test_that("derive_place_name never strips a name down to nothing", {
+  # The pattern requires a leading space, so a bare "Police" is a fixed point.
+  expect_equal(derive_place_name("Police"), "Police")
+  expect_equal(derive_place_name("Police Police Department"), "Police")
+})
 ```
 
 - [ ] **Step 2: Run the test to verify it fails**
@@ -131,11 +149,26 @@ Create `R/place.R`:
   ")$"
 )
 
-# Recover the place name from a municipal agency's name by stripping a
-# recognized trailing suffix. Names matching no suffix are returned as-is
-# (the CDE stores a few hundred agencies under a bare place name).
+# Recover the place name from a municipal agency's name by stripping recognized
+# trailing suffixes. Names matching no suffix are returned as-is (the CDE stores
+# a few hundred agencies under a bare place name).
+#
+# Stripping repeats to a fixed point because two real records carry a doubled
+# suffix — "Las Vegas Metropolitan Police Department Police Department"
+# (NV0020100) and "Northeast Police Department Police Department" (PA0081200).
+# A single pass would leave a residual suffix in the derived place name.
+# The loop is safe: the pattern requires a space before the matched suffix, so a
+# name that is only "Police" is a fixed point rather than being stripped empty.
 derive_place_name <- function(agency_name) {
-  trimws(sub(.PLACE_SUFFIX_PATTERN, "", trimws(agency_name)))
+  out <- trimws(agency_name)
+  repeat {
+    stripped <- trimws(sub(.PLACE_SUFFIX_PATTERN, "", out, perl = TRUE))
+    if (identical(stripped, out)) {
+      break
+    }
+    out <- stripped
+  }
+  out
 }
 ```
 
