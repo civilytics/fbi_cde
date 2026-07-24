@@ -56,16 +56,26 @@ derive_place_name <- function(agency_name) {
 )
 
 # A 0-row, .PLACE_AGENCY_COLS-shaped frame with the correct column types.
+# Built column-by-column rather than via matrix(nrow = 0, ...): a matrix has a
+# single element type, so every column would come back "logical" except the
+# ones explicitly overridden afterwards. That silently mistyped the character
+# columns (ori, agency_name, ...) as logical(0), which breaks or coerces
+# unexpectedly under rbind() against a populated result.
 .empty_place_agency_frame <- function() {
-  out <- as.data.frame(
-    matrix(nrow = 0, ncol = length(.PLACE_AGENCY_COLS),
-           dimnames = list(NULL, .PLACE_AGENCY_COLS)),
+  data.frame(
+    ori = character(0),
+    agency_name = character(0),
+    agency_type_name = character(0),
+    agency_class = character(0),
+    default_member = logical(0),
+    place_name = character(0),
+    county_name = character(0),
+    state_abbr = character(0),
+    attribution = character(0),
+    latitude = numeric(0),
+    longitude = numeric(0),
     stringsAsFactors = FALSE
   )
-  out$default_member <- logical(0)
-  out$latitude <- numeric(0)
-  out$longitude <- numeric(0)
-  out
 }
 
 # The municipal-tier slice of the agency table, with place names derived.
@@ -149,7 +159,7 @@ place_agencies <- function(place, state, county = NULL) {
   }
 
   sel$agency_class <- classify_place_agency(sel$agency_type_name)
-  sel$default_member <- sel$agency_class == "place_primary"
+  sel$default_member <- sel$agency_class %in% "place_primary"
   sel$attribution <- "name_identity"
 
   out <- sel[, .PLACE_AGENCY_COLS, drop = FALSE]

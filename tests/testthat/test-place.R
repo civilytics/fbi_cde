@@ -191,3 +191,35 @@ test_that("place_agencies warns and returns an empty typed frame for an unknown 
 test_that("place_agencies rejects an invalid state", {
   expect_error(place_agencies("Lufkin", "ZZ"), "Invalid state")
 })
+
+test_that(".empty_place_agency_frame has correctly typed columns", {
+  empty <- .empty_place_agency_frame()
+  classes <- vapply(empty, class, character(1))
+
+  expect_equal(classes[["ori"]], "character")
+  expect_equal(classes[["agency_name"]], "character")
+  expect_equal(classes[["agency_type_name"]], "character")
+  expect_equal(classes[["agency_class"]], "character")
+  expect_equal(classes[["default_member"]], "logical")
+  expect_equal(classes[["place_name"]], "character")
+  expect_equal(classes[["county_name"]], "character")
+  expect_equal(classes[["state_abbr"]], "character")
+  expect_equal(classes[["attribution"]], "character")
+  expect_equal(classes[["latitude"]], "numeric")
+  expect_equal(classes[["longitude"]], "numeric")
+})
+
+test_that("an unmatched-place empty frame rbinds cleanly against a real result", {
+  # Regression: the empty frame was previously built from matrix(nrow = 0, ...),
+  # which typed every unoverridden column as logical(0). rbind() against a
+  # populated, character-typed result would then break or silently coerce.
+  empty <- suppressWarnings(place_agencies("Nowheresville", "TX"))
+  real <- place_agencies("Lufkin", "TX")
+
+  out <- rbind(empty, real)
+
+  expect_equal(nrow(out), 1L)
+  classes <- vapply(out, class, character(1))
+  expect_equal(classes[["ori"]], "character")
+  expect_equal(out$ori, real$ori)
+})
