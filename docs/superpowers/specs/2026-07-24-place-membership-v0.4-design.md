@@ -76,11 +76,22 @@ Pure membership resolver. No network, no new dependencies.
 
 ### Data asset
 
-A build-time index mapping `(state_abbr, county_name, place)` → ORI for all
-11,635 municipal-tier agencies, generated in `data-raw/` and shipped in
-`R/sysdata.rda` — the same pattern already used for the county FIPS crosswalk.
-Deriving at build time (not at call time) keeps the resolver fast and makes the
-derivation rules reviewable in one place.
+**Amended 2026-07-24 during planning.** The place index is derived **at call
+time** by a pure `derive_place_name()` function, not built into `R/sysdata.rda`.
+
+The original plan was a build-time index shipped in `sysdata.rda`, mirroring the
+county FIPS crosswalk. Three things argue against it:
+
+1. `R/sysdata.rda` currently holds exactly one object (`crosswalk`). Adding a
+   second means every future regeneration must re-save both or silently clobber
+   the FIPS crosswalk — a live footgun for a marginal gain.
+2. A pure derivation function is directly unit-testable, which serves this
+   section's own "reviewable in one place" goal better than a binary blob does.
+3. The drift assertions below become **tests over the bundled table** rather
+   than build-script assertions, so they run on every CI run instead of only
+   when someone regenerates data.
+
+Cost is ~11,635 regex operations per call — negligible.
 
 Place name is derived by stripping a recognized trailing suffix from
 `agency_name`:
@@ -92,9 +103,10 @@ Place name is derived by stripping a recognized trailing suffix from
 ```
 
 Names matching no suffix are used verbatim (the 251 bare-name cases). The suffix
-list is a reviewable constant, and the build script asserts the derivation rate
-stays at ~100% and that `(state, county, place)` remains collision-free — so a
-CDE naming drift fails the build loudly instead of silently degrading.
+list is a reviewable constant, and a **test over the bundled agency table**
+asserts the derivation rate stays at ~100% and that `(state, county, place)`
+remains collision-free — so a CDE naming drift fails CI loudly instead of
+silently degrading.
 
 ### Return shape
 
@@ -132,15 +144,21 @@ omitting the contract city would lose it. Neither occurs.
 
 ### Errors and edges
 
-- Unknown `(place, state)` → error naming the place and state, and suggesting
-  `counties_with_fips()`-style discovery (a `places_in_state()` helper is a
-  reasonable follow-on, not required here).
+- **Amended 2026-07-24 during planning.** Unknown `(place, state)` → **warning +
+  zero-row typed frame**, matching the existing `county_agencies()` precedent
+  rather than erroring.
+
+  The original text specified an error for an unknown place *and* a legitimate
+  empty result for a place with no agency. Those are the same observation from
+  our data: we hold no independent place universe, so "this place does not
+  exist" and "this place exists but no agency reports for it" are
+  indistinguishable. Promising to tell them apart would be a distinction we
+  cannot make. The warning message names both possibilities instead.
 - Ambiguous key without `county` → error listing the candidate counties, rather
   than silently picking one. Only two such keys exist, but the resolver must not
   guess.
-- An incorporated place with no CDE agency at all is a **legitimate empty
-  result**, not an error condition to paper over: it means no agency reports for
-  that place. Document the distinction explicitly.
+- A `places_in_state()` discovery helper is a reasonable follow-on, not required
+  here.
 
 ## 4. Layer 1 — `get_place_crime_detail()`
 
