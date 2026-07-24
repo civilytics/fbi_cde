@@ -21,6 +21,26 @@
 
 ## Bug fixes
 
+- Fixed `impute_reporting_gaps()` writing interpolated values to the wrong rows
+  when `detail` was not already sorted by period within an agency. The function
+  sorts each `(ori, offense)` group internally but mapped results back using the
+  pre-sort row indices, so a genuinely reported row could be overwritten with an
+  interpolated value and flagged `imputed = TRUE` while the real gap went
+  unfilled.
+- Fixed `join_census_pop()` calling `censusapi::get_acs()`, which does not
+  exist — `get_acs()` is a **tidycensus** function. The join now uses
+  `censusapi::getCensus()` with the correct argument shape (`name`, `vintage`,
+  `vars`, `region`, `regionin`), issues one request per state (the API takes a
+  single `regionin`), and builds the 5-digit key from the returned `state` and
+  `county` columns with zero-padding. Previously every call failed, was swallowed
+  by `tryCatch()`, and returned an all-`NA` `census_population` column.
+- `join_census_pop()` now defaults to the ACS **5-year** release (`"acs/acs5"`,
+  overridable via `dataset`); the 1-year release only covers geographies of
+  65,000+ people, excluding most counties. The default `year` is now two years
+  back, since the ACS release for year `Y` publishes in December of `Y + 1`.
+- Fixed a truncated `@param denominator` entry and a missing examples section in
+  `get_county_crime()` docs (the roxygen blocks used `#` instead of `#'`).
+- Fixed two error messages that embedded literal newlines and source indentation.
 - Fixed `.onLoad` namespace error: `setNames()` is in `stats`, not `base`.
 - Moved FIPS crosswalk from `data/county_fips.rda` to internal `R/sysdata.rda`
   (was triggering "undocumented data set" warning).

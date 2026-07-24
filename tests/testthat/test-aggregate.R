@@ -275,9 +275,150 @@ test_that("join_census_pop requires Census API key", {
   )
   a$county_fips <- "06001"
 
-  # Only test if censusapi is available (it's in Suggests).
-  if (requireNamespace("censusapi", quietly = TRUE)) {
-    expect_error(join_census_pop(a, key = ""),
-                 "Census API key not found")
+  # census_fun is injected so this exercises the key check without needing
+  # censusapi (Suggests) installed.
+  expect_error(
+    join_census_pop(a, key = "", census_fun = function(...) NULL),
+    "Census API key not found"
+  )
+})
+
+# ---- join_census_pop: Census API seam --------------------------------------
+
+# A stand-in for censusapi::getCensus(). Records the arguments it was called
+# with and returns a response in getCensus()'s documented shape.
+fake_get_census <- function(calls = NULL, pop = c(`001` = 1682353)) {
+  function(name, vintage, vars, region, regionin, key, ...) {
+    if (!is.null(calls)) {
+      calls$args <- c(calls$args, list(list(
+        name = name, vintage = vintage, vars = vars,
+        region = region, regionin = regionin, key = key
+      )))
+    }
+    counties <- strsplit(sub("^county:", "", region), ",", fixed = TRUE)[[1]]
+    data.frame(
+      state = sub("^state:", "", regionin),
+      county = counties,
+      NAME = paste("County", counties),
+      B01003_001E = as.integer(pop[counties]),
+      stringsAsFactors = FALSE
+    )
   }
+}
+
+test_that("join_census_pop attaches Census population keyed by county FIPS", {
+  a <- make_detail(ori = "CA9990001", periods = c("01-2021", "02-2021"),
+                   counts = c(10, 12))
+  a$county_fips <- "06001"
+
+  out <- join_census_pop(a, key = "fake-key",
+                         census_fun = fake_get_census())
+
+  expect_true("census_population" %in% names(out))
+  expect_equal(out$census_population, rep(1682353L, 2L))
+  # Original rows are otherwise untouched.
+  expect_equal(out$count, a$count)
+})
+
+test_that("join_census_pop calls getCensus with the documented argument shape", {
+  calls <- new.env(parent = emptyenv())
+  calls$args <- list()
+
+  a <- make_detail(ori = "CA9990001", periods = "01-2021", counts = 10)
+  a$county_fips <- "06001"
+
+  join_census_pop(a, key = "fake-key", year = 2023,
+                  census_fun = fake_get_census(calls))
+
+  expect_length(calls$args, 1L)
+  got <- calls$args[[1]]
+  expect_equal(got$name, "acs/acs5")
+  expect_equal(got$vintage, 2023)
+  expect_equal(got$vars, c("NAME", "B01003_001E"))
+  expect_equal(got$region, "county:001")
+  expect_equal(got$regionin, "state:06")
+  expect_equal(got$key, "fake-key")
+})
+
+test_that("join_census_pop issues one request per state and joins each back", {
+  calls <- new.env(parent = emptyenv())
+  calls$args <- list()
+
+  a <- make_detail(ori = "CA9990001", periods = "01-2021", counts = 10)
+  a$county_fips <- "06001"
+  b <- make_detail(ori = "TX9990001", periods = "01-2021", counts = 20)
+  b$state_abbr <- "TX"
+  b$county_fips <- "48453"
+
+  detail <- rbind(a, b)
+  out <- join_census_pop(
+    detail, key = "fake-key",
+    census_fun = fake_get_census(calls, pop = c(`001` = 1682353,
+                                                `453` = 1290188))
+  )
+
+  # regionin takes a single state, so one call per state prefix.
+  expect_length(calls$args, 2L)
+  expect_setequal(vapply(calls$args, function(x) x$regionin, character(1)),
+                  c("state:06", "state:48"))
+
+  expect_equal(out$census_population[out$county_fips == "06001"], 1682353L)
+  expect_equal(out$census_population[out$county_fips == "48453"], 1290188L)
+})
+
+test_that("join_census_pop zero-pads unpadded state/county codes from the API", {
+  a <- make_detail(ori = "CA9990001", periods = "01-2021", counts = 10)
+  a$county_fips <- "06001"
+
+  # Some Census responses return geography codes without leading zeros.
+  unpadded <- function(...) {
+    data.frame(state = 6L, county = 1L, NAME = "Alameda County",
+               B01003_001E = 1682353L, stringsAsFactors = FALSE)
+  }
+
+  out <- join_census_pop(a, key = "fake-key", census_fun = unpadded)
+  expect_equal(out$census_population, 1682353L)
+})
+
+test_that("join_census_pop warns and returns NA when the Census request fails", {
+  a <- make_detail(ori = "CA9990001", periods = "01-2021", counts = 10)
+  a$county_fips <- "06001"
+
+  boom <- function(...) stop("503 service unavailable")
+
+  expect_warning(
+    out <- join_census_pop(a, key = "fake-key", census_fun = boom),
+    "Census API request failed"
+  )
+  expect_true(all(is.na(out$census_population)))
+})
+
+test_that("join_census_pop warns on an unrecognized response shape", {
+  a <- make_detail(ori = "CA9990001", periods = "01-2021", counts = 10)
+  a$county_fips <- "06001"
+
+  wrong_shape <- function(...) {
+    data.frame(GEO_ID = "0500000US06001", total = 1682353L,
+               stringsAsFactors = FALSE)
+  }
+
+  expect_warning(
+    out <- join_census_pop(a, key = "fake-key", census_fun = wrong_shape),
+    "missing state/county"
+  )
+  expect_true(all(is.na(out$census_population)))
+})
+
+test_that("join_census_pop output feeds get_county_crime(census_pop)", {
+  a <- make_detail(ori = "CA9990001", periods = "01-2021", counts = 10,
+                   pops = 30000, part_pops = 30000)
+  a$county_fips <- "06001"
+
+  joined <- join_census_pop(a, key = "fake-key",
+                            census_fun = fake_get_census())
+  agg <- get_county_crime(joined, denominator = "census_pop")
+
+  expect_equal(agg$population, 1682353L)
+  expect_equal(agg$denominator_type, "census_pop")
+  expect_equal(agg$rate, 10 / 1682353 * 1e5)
 })

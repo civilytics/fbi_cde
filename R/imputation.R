@@ -90,8 +90,11 @@ impute_reporting_gaps <- function(detail, method = "interpolate") {
       next  # leave entirely unchanged (imputed stays FALSE)
     }
 
-    # Sort by period within the group.
+    # Sort by period within the group. `grp_ord` carries the original row
+    # indices in sorted order, so anything computed against `sub` writes back
+    # to the right rows even when `detail` was not period-sorted to begin with.
     ord <- order(period_to_num(sub$period))
+    grp_ord <- grp[ord]
     sub <- sub[ord, , drop = FALSE]
 
     periods_num <- period_to_num(sub$period)
@@ -130,8 +133,8 @@ impute_reporting_gaps <- function(detail, method = "interpolate") {
           imputed_rate[can_fill] * participated_pop[can_fill] / 1e5
         )
 
-        # Map back to the original row indices.
-        gap_indices <- grp[gap_mask]
+        # Map back to the original row indices (sorted order, not input order).
+        gap_indices <- grp_ord[gap_mask]
         fillable_indices <- gap_indices[can_fill]
 
         detail$count[fillable_indices] <- imputed_count

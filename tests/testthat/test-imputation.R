@@ -240,6 +240,36 @@ test_that("single reported period (no interpolation possible) leaves gaps unfill
   expect_false(feb$imputed)
 })
 
+test_that("unsorted input fills the real gap and never overwrites a reported row", {
+  # Rows arrive out of period order (01, 03, 02, 04) — the API does not promise
+  # sorted output. The gap is 02-2021; 03-2021 is genuinely reported.
+  detail <- make_detail(
+    ori = "CA9990001",
+    periods = c("01-2021", "03-2021", "02-2021", "04-2021"),
+    counts = c(10, 30, NA, 40)
+  )
+
+  out <- impute_reporting_gaps(detail, method = "interpolate")
+
+  # Only the true gap is imputed.
+  expect_equal(out$period[out$imputed], "02-2021")
+
+  gap <- out[out$period == "02-2021", , drop = FALSE]
+  expect_false(is.na(gap$count))
+  expect_equal(gap$count, 20L)  # midpoint rate of 10 and 30, constant pop
+  expect_equal(gap$impute_method, "interpolate")
+
+  # Every reported row keeps its original count and is not flagged.
+  mar <- out[out$period == "03-2021", , drop = FALSE]
+  expect_equal(mar$count, 30L)
+  expect_false(mar$imputed)
+  expect_true(is.na(mar$impute_method))
+
+  reported <- out[out$reported, , drop = FALSE]
+  expect_equal(reported$count, c(10L, 30L, 40L)[order(reported$period)])
+  expect_false(any(reported$imputed))
+})
+
 test_that("invalid input types are rejected", {
   expect_error(impute_reporting_gaps("not a data.frame"),
                "must be a data.frame")

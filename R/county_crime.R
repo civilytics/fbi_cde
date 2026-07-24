@@ -240,15 +240,16 @@ get_county_agency_crime <- function(county, state, offense = "V",
 #'   least the columns: `offense`, `period`, `count`, `population`,
 #'   `participated_population`, `reported`.
 #' @param denominator Denominator strategy. One of:
-#\itemize{
-#  \code{"jurisdiction_pop"} — sum of agency `population` columns (default;
-#    coherent with CDE population semantics).
-#  \code{"participated_pop"} — sum of agency `participated_population` columns
-#    (coverage-consistent; rate reflects only reporting coverage).
-#  \code{"census_pop"} — use a single external population value per period.
-#    Requires `detail` to have a `census_population` column (e.g. from
-#    [join_census_pop()]).
-#}
+#'   \itemize{
+#'     \item \code{"jurisdiction_pop"} — sum of agency `population` columns
+#'       (default; coherent with CDE population semantics).
+#'     \item \code{"participated_pop"} — sum of agency
+#'       `participated_population` columns (coverage-consistent; the rate
+#'       reflects only reporting coverage).
+#'     \item \code{"census_pop"} — use a single external population value per
+#'       period. Requires `detail` to have a `census_population` column (e.g.
+#'       from [join_census_pop()]).
+#'   }
 #' @return A data.frame with columns: `county_name`, `state_abbr`, `offense`,
 #'   `period`, `count` (sum of reported counts), `population` (the denominator
 #'   value used), `participated_population` (sum of participated populations),
@@ -256,14 +257,16 @@ get_county_agency_crime <- function(county, state, offense = "V",
 #'   used), and `coverage_fraction` (`participated_population / population`).
 #'   Returns a zero-row frame with correct columns if `detail` is empty.
 #' @export
-#\examples{
-#\dontrun{
-#  detail <- get_county_crime_detail("Alameda", "CA",
-#                                    from = "01-2019", to = "12-2019",
-#                                    default_only = TRUE)
-#  get_county_crime(detail)
-#}
-#}
+#' @examples
+#' \dontrun{
+#' detail <- get_county_crime_detail("Alameda", "CA",
+#'                                   from = "01-2019", to = "12-2019",
+#'                                   default_only = TRUE)
+#' get_county_crime(detail)
+#'
+#' # Coverage-consistent rate instead of the full jurisdiction denominator.
+#' get_county_crime(detail, denominator = "participated_pop")
+#' }
 get_county_crime <- function(detail, denominator = "jurisdiction_pop") {
   if (!inherits(detail, "data.frame")) {
     stop("'detail' must be a data.frame", call. = FALSE)
@@ -279,14 +282,14 @@ get_county_crime <- function(detail, denominator = "jurisdiction_pop") {
 
   if (!denominator %in% c("jurisdiction_pop", "participated_pop",
                           "census_pop")) {
-    stop("'denominator' must be one of 'jurisdiction_pop',
-         'participated_pop', or 'census_pop'", call. = FALSE)
+    stop("'denominator' must be one of 'jurisdiction_pop', ",
+         "'participated_pop', or 'census_pop'", call. = FALSE)
   }
 
   if (denominator == "census_pop" &&
       !"census_population" %in% names(detail)) {
-    stop("denominator = 'census_pop' requires a 'census_population'
-         column in detail (e.g. from join_census_pop())", call. = FALSE)
+    stop("denominator = 'census_pop' requires a 'census_population' column ",
+         "in detail (e.g. from join_census_pop())", call. = FALSE)
   }
 
   # Handle empty input.

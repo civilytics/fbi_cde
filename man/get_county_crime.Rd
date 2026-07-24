@@ -11,7 +11,17 @@ get_county_crime(detail, denominator = "jurisdiction_pop")
 least the columns: `offense`, `period`, `count`, `population`,
 `participated_population`, `reported`.}
 
-\item{denominator}{Denominator strategy. One of:}
+\item{denominator}{Denominator strategy. One of:
+\itemize{
+  \item \code{"jurisdiction_pop"} — sum of agency `population` columns
+    (default; coherent with CDE population semantics).
+  \item \code{"participated_pop"} — sum of agency
+    `participated_population` columns (coverage-consistent; the rate
+    reflects only reporting coverage).
+  \item \code{"census_pop"} — use a single external population value per
+    period. Requires `detail` to have a `census_population` column (e.g.
+    from [join_census_pop()]).
+}}
 }
 \value{
 A data.frame with columns: `county_name`, `state_abbr`, `offense`,
@@ -38,4 +48,15 @@ no double-count. Use `denominator = "participated_pop"` for a coverage-
 consistent rate (drops uncovered months), or `denominator = "census_pop"`
 to supply an external Census population (requires the `county_fips` column
 from [county_agencies()] and a Census join).
+}
+\examples{
+\dontrun{
+detail <- get_county_crime_detail("Alameda", "CA",
+                                  from = "01-2019", to = "12-2019",
+                                  default_only = TRUE)
+get_county_crime(detail)
+
+# Coverage-consistent rate instead of the full jurisdiction denominator.
+get_county_crime(detail, denominator = "participated_pop")
+}
 }

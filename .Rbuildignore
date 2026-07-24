@@ -22,3 +22,4 @@
 ^\.superpowers$
 ^\.claude$
 ^CLAUDE\.md$
+^data-raw$

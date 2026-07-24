@@ -90,27 +90,43 @@ test_that("cde_request() returns parsed JSON on success", {
 
 # ---- cde_request() is the only httr::GET caller ----------------------------
 
-test_that("cde_request() is the only httr::GET caller in the package", {
-  r_files <- list.files(system.file("R", package = "fbi"),
-                        full.names = TRUE,
-                        pattern = "\\.R$")
-  for (f in r_files) {
-    lines <- readLines(f, warn = FALSE)
-    # Allow httr::GET only inside cde_request()
-    in_cde_request <- FALSE
-    for (line in lines) {
-      trimmed <- trimws(line)
-      if (grepl("^cde_request\\s*<-\\s*function", trimmed)) {
-        in_cde_request <- TRUE
-      }
-      if (in_cde_request && trimmed == "}") {
-        in_cde_request <- FALSE
-      }
-      if (!in_cde_request && grepl("httr::GET\\s*\\(", trimmed)) {
-        fail(paste0("httr::GET found in ", f, ": ", trimmed))
-      }
-    }
-  }
+test_that("cde_request() is the only httr request caller in the package", {
+  # Inspect the loaded namespace rather than scanning source text: the R/*.R
+  # files are not shipped with an installed package, so a file-based scan finds
+  # nothing and silently passes. Every HTTP verb must funnel through
+  # cde_request() (see the single-network-seam rule in CLAUDE.md).
+  ns <- asNamespace("fbi")
+  verbs <- c("GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "RETRY", "VERB")
+  pattern <- paste0("httr::(", paste(verbs, collapse = "|"), ")\\b")
+
+  obj_names <- ls(ns, all.names = TRUE)
+  fn_names <- Filter(
+    function(nm) is.function(get(nm, envir = ns)),
+    obj_names
+  )
+  # Guard against the inspection itself going vacuous.
+  expect_true(length(fn_names) > 20L)
+  expect_true("cde_request" %in% fn_names)
+
+  offenders <- Filter(
+    function(nm) {
+      if (identical(nm, "cde_request")) return(FALSE)
+      fn <- get(nm, envir = ns)
+      code <- c(deparse(body(fn)), unlist(lapply(formals(fn), deparse)))
+      any(grepl(pattern, code))
+    },
+    fn_names
+  )
+
+  expect_equal(offenders, character(0))
+})
+
+test_that("the httr-seam guard detects a violation", {
+  # Meta-test: prove the check above can actually fail. Mirrors its logic
+  # against a deliberately non-compliant function.
+  bad <- function(url) httr::GET(url)
+  code <- c(deparse(body(bad)), unlist(lapply(formals(bad), deparse)))
+  expect_true(any(grepl("httr::(GET|POST)\\b", code)))
 })
 
 # ---- cde_path() ------------------------------------------------------------
