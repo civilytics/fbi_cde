@@ -324,14 +324,22 @@ counties_with_fips <- function() {
 
     # ---- CT traditional county names (fbi uses these, tigris has planning regions) ----
     # Direct FIPS mapping since tigris doesn't have traditional CT county names.
-    "NEW HAVEN"              = "09009",
-    "HARTFORD"               = "09003",
-    "FAIRFIELD"              = "09001",
-    "MIDDLESEX"              = "09007",
-    "TOLLAND"                = "09013",
-    "NEW LONDON"             = "09011",
-    "LITCHFIELD"             = "09005",
-    "WINDHAM"                = "09015",
+    #
+    # These MUST be state-scoped ("09__NAME"). As unscoped, name-only keys they
+    # applied to every state, so MA/NJ/VA "MIDDLESEX", OH/SC "FAIRFIELD" and VT
+    # "WINDHAM" all resolved to Connecticut's FIPS — silently, and with real
+    # consequences: join_census_pop() keys on county FIPS, so Massachusetts
+    # Middlesex (~1.63M) was receiving Connecticut Middlesex's (~164k)
+    # population. See Gitea #50. county_to_fips() checks the state-scoped key
+    # before the bare one, so scoping confines these to CT.
+    "09__NEW HAVEN"          = "09009",
+    "09__HARTFORD"           = "09003",
+    "09__FAIRFIELD"          = "09001",
+    "09__MIDDLESEX"          = "09007",
+    "09__TOLLAND"            = "09013",
+    "09__NEW LONDON"         = "09011",
+    "09__LITCHFIELD"         = "09005",
+    "09__WINDHAM"            = "09015",
 
     # ---- Additional name variants ----
     "LA SALLE"               = "LaSalle",    # LA parish (no space, no period)
