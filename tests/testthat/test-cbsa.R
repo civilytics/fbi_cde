@@ -3,10 +3,26 @@
 # These assert the bundled asset itself. If the delineation file or the build
 # script drifts, CI fails loudly rather than results changing silently.
 
-test_that("sysdata still carries BOTH internal crosswalks", {
+test_that("sysdata still carries at least the known internal objects", {
   # Regression guard: R/sysdata.rda holds multiple objects and save()
-  # overwrites wholesale, so a careless rebuild can destroy the county FIPS
-  # table. Both must survive.
+  # overwrites wholesale, so a careless rebuild can destroy an object it
+  # doesn't know about. Rather than enumerate exactly two objects by name
+  # (which would not catch a THIRD object being dropped by a future rebuild),
+  # assert the two known ones are present AND that the total object count in
+  # the file has not shrunk below what it holds today. See data-raw/
+  # cbsa_crosswalk.R and data-raw/fix_county_fips_state_prefix.R, which both
+  # use the generic save(list = objs, envir = ...) idiom for this reason.
+  sysdata_path <- testthat::test_path("..", "..", "R", "sysdata.rda")
+  skip_if_not(file.exists(sysdata_path),
+              "R/sysdata.rda source file not available from this test location")
+
+  existing <- new.env(parent = emptyenv())
+  load(sysdata_path, envir = existing)
+  objs <- ls(existing)
+
+  expect_true(all(c("crosswalk", "cbsa_crosswalk") %in% objs))
+  expect_gte(length(objs), 2L)
+
   expect_true(is.data.frame(fbi:::crosswalk))
   expect_gt(nrow(fbi:::crosswalk), 3000L)
   expect_true(is.data.frame(fbi:::cbsa_crosswalk))
@@ -69,6 +85,16 @@ test_that("list_metros rejects an unknown type", {
 
 test_that("list_metros carries the delineation vintage", {
   expect_equal(attr(list_metros(), "vintage"), CBSA_VINTAGE)
+})
+
+test_that("CBSA_VINTAGE matches the shipped data, not just itself (I4)", {
+  # Regression guard: CBSA_VINTAGE must be sourced from cbsa_crosswalk's own
+  # "vintage" attribute (see .onLoad() in R/fips.R), not an independent
+  # literal in R/cbsa.R that a rebuild could bump without updating this
+  # constant. Comparing against the shipped data directly -- rather than
+  # against list_metros(), which itself just stamps CBSA_VINTAGE -- is the
+  # only way this test can fail if the two ever diverge.
+  expect_equal(CBSA_VINTAGE, attr(fbi:::cbsa_crosswalk, "vintage"))
 })
 
 test_that("the largest metros carry the expected county counts", {

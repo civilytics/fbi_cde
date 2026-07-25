@@ -65,15 +65,28 @@ stopifnot(
 )
 
 # ---- Re-save ALL internal objects (see the WARNING above) -----------------
+# Generic idiom (matches data-raw/fix_county_fips_state_prefix.R): capture
+# every object already in R/sysdata.rda by NAME, add this script's own, and
+# save the union from the environment. Naming objects explicitly in save()
+# (the previous form here) is only correct for exactly the objects that exist
+# today -- a later script adding a third internal object and re-running THIS
+# script would silently drop it. The stopifnot() below turns that into a
+# loud failure instead of a silent one.
 existing <- new.env(parent = emptyenv())
 load("R/sysdata.rda", envir = existing)
-cat("existing sysdata objects:", paste(ls(existing), collapse = ", "), "\n")
+previous_objs <- ls(existing)
+cat("existing sysdata objects:", paste(previous_objs, collapse = ", "), "\n")
 
 crosswalk <- get("crosswalk", envir = existing)
 stopifnot(is.data.frame(crosswalk), nrow(crosswalk) > 3000)
 
-save(crosswalk, cbsa_crosswalk,
+assign("cbsa_crosswalk", cbsa_crosswalk, envir = existing)
+objs <- ls(existing)
+stopifnot(all(previous_objs %in% objs))
+
+save(list = objs, envir = existing,
      file = "R/sysdata.rda", compress = "bzip2", version = 2)
 
-cat("wrote R/sysdata.rda with", nrow(crosswalk), "county FIPS rows and",
-    nrow(cbsa_crosswalk), "CBSA rows\n")
+cat("wrote R/sysdata.rda with objects:", paste(objs, collapse = ", "), "\n")
+cat("(", nrow(crosswalk), "county FIPS rows,",
+    nrow(cbsa_crosswalk), "CBSA rows )\n")

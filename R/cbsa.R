@@ -8,7 +8,15 @@ utils::globalVariables("cbsa_crosswalk")
 #' The OMB delineation vintage the bundled CBSA crosswalk was built from
 #'
 #' CBSA definitions are revised periodically and counties move between metros,
-#' so results are only reproducible against a stated vintage.
+#' so results are only reproducible against a stated vintage. Sourced from the
+#' shipped data's own `"vintage"` attribute (stamped in
+#' data-raw/cbsa_crosswalk.R), not duplicated as an independent literal, so a
+#' rebuild that bumps the vintage cannot leave this constant stale. The 2023L
+#' below is a fallback for the (very unlikely) case where `cbsa_crosswalk`
+#' carries no `"vintage"` attribute; `.onLoad()` in R/fips.R overwrites it
+#' from the data as soon as the namespace is available -- sysdata.rda is not
+#' guaranteed to be loaded yet while this file's top-level code is parsed, so
+#' the real read cannot happen here directly.
 #'
 #' @format An integer scalar.
 #' @export
