@@ -1,4 +1,8 @@
 # Layer 1 of the geography model: itemized, unsummed county-crime detail.
+#
+# `parse_agency_detail()` below is shared by all three geographic levels, as is
+# the fan-out loop in R/fanout.R; this file supplies the county column contract
+# and metadata columns.
 
 # Every "MM-YYYY" month from `from` to `to`, inclusive, in chronological order.
 # Used to build the reporting grid so a missing month reads as "did not report"
@@ -140,11 +144,7 @@ get_county_crime_detail <- function(county, state, offense = "V",
   cde_validate_dates(from, to, "mm-yyyy")
 
   agencies <- county_agencies(county, state)
-  if (!is.null(agency_class)) {
-    agencies <- agencies[agencies$agency_class %in% agency_class, , drop = FALSE]
-  } else if (isTRUE(default_only)) {
-    agencies <- agencies[agencies$default_member, , drop = FALSE]
-  }
+  agencies <- .filter_agency_members(agencies, agency_class, default_only)
 
   if (nrow(agencies) == 0) {
     warning("No agencies to query for '", county, "', ", state,
@@ -152,49 +152,14 @@ get_county_crime_detail <- function(county, state, offense = "V",
     return(.empty_detail_frame())
   }
 
-  dropped <- character(0)
-  parts <- vector("list", nrow(agencies))
-  for (i in seq_len(nrow(agencies))) {
-    ori <- agencies$ori[i]
-    if (isTRUE(progress)) {
-      message(sprintf("[%d/%d] %s", i, nrow(agencies), ori))
-    }
-    path <- cde_path("summarized", paste0("agency/", ori), offense)
-    query <- list(from = from, to = to, type = "counts")
-
-    res <- tryCatch(
-      parse_agency_detail(cde_request(path, query), ori, offense, from, to),
-      error = function(e) e
-    )
-    if (inherits(res, "error")) {
-      dropped <- c(dropped, ori)
-      next
-    }
-    res$agency_name <- agencies$agency_name[i]
-    res$agency_type_name <- agencies$agency_type_name[i]
-    res$agency_class <- agencies$agency_class[i]
-    res$default_member <- agencies$default_member[i]
-    res$county_name <- agencies$county_name[i]
-    res$state_abbr <- agencies$state_abbr[i]
-    parts[[i]] <- res
-  }
-
-  out <- rbind_fill(parts)
-  out <- out[, intersect(.DETAIL_COLS, names(out)), drop = FALSE]
-  rownames(out) <- NULL
-
-  if (nrow(out) == 0 || ncol(out) == 0) {
-    out <- .empty_detail_frame()
-  }
-
-  if (length(dropped) > 0) {
-    warning("Dropped ", length(dropped),
-            " agenc", if (length(dropped) == 1) "y" else "ies",
-            " that returned no data: ", paste(dropped, collapse = ", "),
-            call. = FALSE)
-    attr(out, "dropped") <- dropped
-  }
-  out
+  .fanout_agency_detail(
+    agencies = agencies,
+    meta_cols = c("agency_name", "agency_type_name", "agency_class",
+                  "default_member", "county_name", "state_abbr"),
+    cols = .DETAIL_COLS,
+    empty_fn = .empty_detail_frame,
+    offense = offense, from = from, to = to, progress = progress
+  )
 }
 
 #' Crime reported by a county's own primary agency (sheriff/parish)

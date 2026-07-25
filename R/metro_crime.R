@@ -1,8 +1,8 @@
 # Layer 1 of the metro geography model: itemized, unsummed metro-crime detail.
 #
-# Reuses parse_agency_detail() and mirrors the county fan-out structure. The
-# loop is duplicated rather than shared because the column contracts differ;
-# see R/place_crime.R for the same trade-off.
+# The fan-out itself lives in R/fanout.R and is shared with the county and
+# place levels; this file supplies only the metro column contract, the metro
+# metadata columns, and the max_agencies guard.
 #
 # Unlike its county and place siblings this one is guarded: a metro can be
 # hundreds of agencies (New York is 489, each a sequential request), so an
@@ -91,21 +91,13 @@ get_metro_crime_detail <- function(metro, state = NULL, offense = "V",
 
   agencies <- metro_agencies(metro, state)
   pre_filter_n <- nrow(agencies)
-  if (!is.null(agency_class)) {
-    agencies <- agencies[agencies$agency_class %in% agency_class, , drop = FALSE]
-  } else if (isTRUE(default_only)) {
-    agencies <- agencies[agencies$default_member, , drop = FALSE]
-  }
+  agencies <- .filter_agency_members(agencies, agency_class, default_only)
 
   if (nrow(agencies) == 0) {
     if (pre_filter_n > 0) {
-      filter_desc <- if (!is.null(agency_class)) {
-        paste0("agency_class = ", paste(agency_class, collapse = ", "))
-      } else {
-        "default_only = TRUE"
-      }
       warning("No agencies to query for metro '", metro,
-              "' after filtering (", filter_desc, ")", call. = FALSE)
+              "' after filtering (", .filter_desc(agency_class), ")",
+              call. = FALSE)
     }
     return(.empty_metro_detail_frame())
   }
@@ -119,52 +111,13 @@ get_metro_crime_detail <- function(metro, state = NULL, offense = "V",
          "agency_class.", call. = FALSE)
   }
 
-  dropped <- character(0)
-  parts <- vector("list", nrow(agencies))
-  for (i in seq_len(nrow(agencies))) {
-    ori <- agencies$ori[i]
-    if (isTRUE(progress)) {
-      message(sprintf("[%d/%d] %s", i, nrow(agencies), ori))
-    }
-    path <- cde_path("summarized", paste0("agency/", ori), offense)
-    query <- list(from = from, to = to, type = "counts")
-
-    res <- tryCatch(
-      parse_agency_detail(cde_request(path, query), ori, offense, from, to),
-      error = function(e) e
-    )
-    if (inherits(res, "error")) {
-      dropped <- c(dropped, ori)
-      next
-    }
-    res$agency_name <- agencies$agency_name[i]
-    res$agency_type_name <- agencies$agency_type_name[i]
-    res$agency_class <- agencies$agency_class[i]
-    res$default_member <- agencies$default_member[i]
-    res$county_name <- agencies$county_name[i]
-    res$state_abbr <- agencies$state_abbr[i]
-    res$county_fips <- agencies$county_fips[i]
-    res$cbsa_code <- agencies$cbsa_code[i]
-    res$cbsa_title <- agencies$cbsa_title[i]
-    res$cbsa_type <- agencies$cbsa_type[i]
-    res$central_outlying <- agencies$central_outlying[i]
-    parts[[i]] <- res
-  }
-
-  out <- rbind_fill(parts)
-  if (is.null(out) || nrow(out) == 0 || ncol(out) == 0) {
-    out <- .empty_metro_detail_frame()
-  } else {
-    out <- out[, .METRO_DETAIL_COLS, drop = FALSE]
-    rownames(out) <- NULL
-  }
-
-  if (length(dropped) > 0) {
-    warning("Dropped ", length(dropped),
-            " agenc", if (length(dropped) == 1) "y" else "ies",
-            " that returned no data: ", paste(dropped, collapse = ", "),
-            call. = FALSE)
-    attr(out, "dropped") <- dropped
-  }
-  out
+  .fanout_agency_detail(
+    agencies = agencies,
+    meta_cols = c("agency_name", "agency_type_name", "agency_class",
+                  "default_member", "county_name", "state_abbr", "county_fips",
+                  "cbsa_code", "cbsa_title", "cbsa_type", "central_outlying"),
+    cols = .METRO_DETAIL_COLS,
+    empty_fn = .empty_metro_detail_frame,
+    offense = offense, from = from, to = to, progress = progress
+  )
 }
