@@ -5,7 +5,7 @@
 # see R/place_crime.R for the same trade-off.
 #
 # Unlike its county and place siblings this one is guarded: a metro can be
-# hundreds of agencies (New York is 459, each a sequential request), so an
+# hundreds of agencies (New York is 489, each a sequential request), so an
 # unbounded call would hang for minutes with no explanation.
 
 .METRO_DETAIL_COLS <- c(
@@ -49,7 +49,7 @@
 #'
 #' **This can be an expensive call.** A metro is the union of whole counties, so
 #' the largest are very large: New York-Newark-Jersey City resolves to roughly
-#' 459 agencies, Chicago 356. Every agency is one sequential request. The median
+#' 489 agencies, Chicago 314. Every agency is one sequential request. The median
 #' CBSA is only 7 agencies, so the cost is highly skewed -- which is why
 #' `max_agencies` refuses the large cases up front rather than letting them run
 #' silently for minutes.
@@ -84,9 +84,13 @@ get_metro_crime_detail <- function(metro, state = NULL, offense = "V",
                                    from = "01-2015", to = "12-2020",
                                    agency_class = NULL, default_only = TRUE,
                                    max_agencies = 150, progress = TRUE) {
+  stopifnot(
+    is.numeric(max_agencies), length(max_agencies) == 1L, !is.na(max_agencies)
+  )
   cde_validate_dates(from, to, "mm-yyyy")
 
   agencies <- metro_agencies(metro, state)
+  pre_filter_n <- nrow(agencies)
   if (!is.null(agency_class)) {
     agencies <- agencies[agencies$agency_class %in% agency_class, , drop = FALSE]
   } else if (isTRUE(default_only)) {
@@ -94,6 +98,15 @@ get_metro_crime_detail <- function(metro, state = NULL, offense = "V",
   }
 
   if (nrow(agencies) == 0) {
+    if (pre_filter_n > 0) {
+      filter_desc <- if (!is.null(agency_class)) {
+        paste0("agency_class = ", paste(agency_class, collapse = ", "))
+      } else {
+        "default_only = TRUE"
+      }
+      warning("No agencies to query for metro '", metro,
+              "' after filtering (", filter_desc, ")", call. = FALSE)
+    }
     return(.empty_metro_detail_frame())
   }
 

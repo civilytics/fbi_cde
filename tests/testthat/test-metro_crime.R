@@ -142,9 +142,66 @@ test_that("an unknown metro returns a typed empty frame", {
   expect_equal(names(out), .METRO_DETAIL_COLS)
 })
 
+test_that("a filter that empties a non-empty agency set warns (I2)", {
+  # metro_agencies() itself resolves fine (2 municipal agencies), but the
+  # agency_class filter matches none of them. Unlike the case where
+  # metro_agencies() returns nothing to begin with, this must warn: both
+  # siblings (get_county_crime_detail(), get_place_crime_detail()) already do,
+  # and there is no reason for the metro path to be silent here.
+  agencies <- fake_metro_agencies()
+  testthat::local_mocked_bindings(
+    metro_agencies = function(metro, state = NULL) agencies,
+    .package = "fbi"
+  )
+
+  expect_warning(
+    out <- get_metro_crime_detail("Pittsburgh, PA", agency_class = "tribal",
+                                  from = "01-2021", to = "01-2021",
+                                  progress = FALSE),
+    "Pittsburgh, PA"
+  )
+  expect_equal(nrow(out), 0L)
+  expect_equal(names(out), .METRO_DETAIL_COLS)
+})
+
+test_that("no filter warning when metro_agencies() already returned nothing", {
+  # metro_agencies() warns for its own reasons (unknown metro, Connecticut,
+  # etc.); get_metro_crime_detail() must not pile a second, redundant warning
+  # on top when the frame was already empty before any filtering happened.
+  testthat::local_mocked_bindings(
+    metro_agencies = function(metro, state = NULL) .empty_metro_agency_frame(),
+    .package = "fbi"
+  )
+  expect_no_warning(
+    out <- get_metro_crime_detail("Nowhere", from = "01-2021", to = "01-2021",
+                                  progress = FALSE)
+  )
+  expect_equal(nrow(out), 0L)
+})
+
 test_that("get_metro_crime_detail validates the date range", {
+  # cde_validate_dates() coerces a malformed "yyyy-mm" string with as.numeric(),
+  # which produces NA with a coercion warning, and the subsequent NA > NA
+  # comparison is what actually raises the error -- not a deliberate
+  # validation message. Match that real message (rather than a bare
+  # expect_error()) so this test fails if the failure mode ever changes, and
+  # suppress the one coercion warning the suite emits, as
+  # test-place_crime.R does for the same case.
+  suppressWarnings(expect_error(
+    get_metro_crime_detail("Pittsburgh, PA", from = "2021-01", to = "01-2021"),
+    "missing value where TRUE/FALSE needed"
+  ))
+})
+
+# ---- max_agencies type safety (M5) -----------------------------------------
+
+test_that("a non-numeric max_agencies errors instead of silently disabling the guard", {
+  # "9" > "281" compares lexicographically and is FALSE, so a string
+  # max_agencies would silently disable the guard -- the function's headline
+  # safety feature -- rather than raising an error.
   expect_error(
-    get_metro_crime_detail("Pittsburgh, PA", from = "2021-01", to = "01-2021")
+    get_metro_crime_detail("Pittsburgh, PA", max_agencies = "9",
+                           from = "01-2021", to = "01-2021")
   )
 })
 
