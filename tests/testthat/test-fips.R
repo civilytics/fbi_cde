@@ -76,3 +76,53 @@ test_that("county_to_fips is case-insensitive", {
   expect_equal(county_to_fips("Ca", "Los Angeles"), "06037")
   expect_equal(county_to_fips("CA", "Los Angeles"), "06037")
 })
+
+# ---- Structural invariant --------------------------------------------------
+#
+# A county FIPS code begins with its state's 2-digit FIPS. That is total, cheap
+# to check, and would have caught the Connecticut cross-state leak in #50 at
+# build time. Asserted here over the bundled asset so it runs on every CI run,
+# not only when the crosswalk is regenerated.
+
+test_that("every crosswalk FIPS begins with its own state's FIPS prefix", {
+  cw <- fbi:::crosswalk
+  cw <- cw[!is.na(cw$county_fips), , drop = FALSE]
+
+  # Guard against the guard: an empty crosswalk would pass trivially.
+  expect_gt(nrow(cw), 3000L)
+
+  expected <- suppressWarnings(fbi:::.state_abbr_to_fips(cw$state_abbr))
+  mismatched <- cw[substr(cw$county_fips, 1L, 2L) != expected, , drop = FALSE]
+
+  # Name the offenders, so a failure is diagnosable without re-deriving it.
+  expect_equal(
+    nrow(mismatched), 0L,
+    info = paste0(
+      "rows whose FIPS state prefix disagrees with their state: ",
+      paste(sprintf("%s|%s->%s", mismatched$state_abbr,
+                    mismatched$county_name, mismatched$county_fips),
+            collapse = ", ")
+    )
+  )
+})
+
+test_that("counties sharing a name across states resolve to their own state (#50)", {
+  # Connecticut retains historical county names that also exist elsewhere; the
+  # crosswalk previously returned CT's FIPS for all of them.
+  expect_equal(county_to_fips("MA", "MIDDLESEX"), "25017")
+  expect_equal(county_to_fips("NJ", "MIDDLESEX"), "34023")
+  expect_equal(county_to_fips("VA", "MIDDLESEX"), "51119")
+  expect_equal(county_to_fips("OH", "FAIRFIELD"), "39045")
+  expect_equal(county_to_fips("SC", "FAIRFIELD"), "45039")
+  expect_equal(county_to_fips("VT", "WINDHAM"), "50025")
+
+  # Multi-county variants take the first county, still in the right state.
+  expect_equal(county_to_fips("OH", "FAIRFIELD; LICKING"), "39045")
+})
+
+test_that("Connecticut's own counties are not broken by the #50 fix", {
+  # The fix must not overcorrect: these CT codes are legitimately 09xxx.
+  expect_equal(county_to_fips("CT", "MIDDLESEX"), "09007")
+  expect_equal(county_to_fips("CT", "FAIRFIELD"), "09001")
+  expect_equal(county_to_fips("CT", "WINDHAM"), "09015")
+})
