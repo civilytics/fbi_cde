@@ -102,3 +102,18 @@ test_that("partial county coverage warns with the counts", {
     "counties but only"
   )
 })
+
+test_that("EVERY CBSA containing a Connecticut county warns", {
+  # Derived from the shipped crosswalk itself, not a hardcoded list of seven
+  # CT metro names -- so this cannot silently go stale the way the docs did
+  # (Gitea whole-branch review, I1). Any CBSA with a 09xxx (Connecticut)
+  # county must warn, because none of Connecticut's planning-region FIPS join
+  # the CDE's traditional county names.
+  cw <- .cbsa_table()
+  ct_titles <- sort(unique(cw$cbsa_title[substr(cw$county_fips, 1L, 2L) == "09"]))
+  expect_gt(length(ct_titles), 0L)
+
+  for (title in ct_titles) {
+    expect_warning(metro_agencies(title), info = title)
+  }
+})

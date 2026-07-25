@@ -53,7 +53,7 @@ coverage columns and the CBSA metadata.
 \details{
 **This can be an expensive call.** A metro is the union of whole counties, so
 the largest are very large: New York-Newark-Jersey City resolves to roughly
-459 agencies, Chicago 356. Every agency is one sequential request. The median
+489 agencies, Chicago 314. Every agency is one sequential request. The median
 CBSA is only 7 agencies, so the cost is highly skewed -- which is why
 `max_agencies` refuses the large cases up front rather than letting them run
 silently for minutes.
