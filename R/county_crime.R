@@ -266,8 +266,8 @@ get_county_agency_crime <- function(county, state, offense = "V",
 #' The default denominator (`"jurisdiction_pop"`) sums each agency's own
 #' `population` column. Empirical probes confirm this is coherent: a sheriff's
 #' population is the *unincorporated remainder* it polices, and contract cities
-#' report under their own ORI — so `Σ jurisdiction_pop` ≈ the full county with
-#' no double-count. Use `denominator = "participated_pop"` for a coverage-
+#' report under their own ORI — so the sum of `jurisdiction_pop` approximates
+#' the full county with no double-count. Use `denominator = "participated_pop"` for a coverage-
 #' consistent rate (drops uncovered months), or `denominator = "census_pop"`
 #' to supply an external Census population (requires the `county_fips` column
 #' from [county_agencies()] and a Census join).
