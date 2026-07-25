@@ -87,6 +87,22 @@
 #'   `cbsa_title`, `cbsa_type` (`"metro"`/`"micro"`), and `central_outlying`
 #'   (whether the agency's county is central or outlying in the CBSA). Returns a
 #'   zero-row frame with a warning when the metro is unknown.
+#' @section Coverage limitations:
+#' The bundled crosswalk covers about 61% of known counties -- rural counties
+#' belong to no CBSA at all. That is a property of the 2023 OMB delineation,
+#' not a gap in the data.
+#'
+#' Connecticut metros are not supported. The 2023 delineation delineates
+#' Connecticut by planning regions (FIPS 09110-09190), which replaced its
+#' counties in 2022, while the CDE still reports Connecticut agencies by
+#' traditional county (09001-09015). The two vocabularies do not join, so all
+#' five Connecticut metros resolve to zero counties. This function warns
+#' explicitly in that case rather than returning a silent empty frame, because
+#' a quiet zero-row result would read as "no agencies report here", which is
+#' false. Tracked as Gitea issue #52.
+#'
+#' Puerto Rico's 12 CBSAs are unmapped too, but that is academic: the CDE has
+#' exactly one Puerto Rico agency.
 #' @seealso [list_metros()] to discover metro names,
 #'   [county_agencies()].
 #' @export
