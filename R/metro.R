@@ -175,6 +175,17 @@ metro_agencies <- function(metro, state = NULL) {
     return(.empty_metro_agency_frame())
   }
 
+  # Deduplicate by ORI. A multi-county agency legitimately matches every county
+  # it polices, which is correct at county level -- but a metro unions its
+  # member counties, and the Columbus CBSA contains all three of Columbus PD's
+  # counties. Without this the agency would appear three times and
+  # get_metro_crime_detail() would triple-count its crime, breaking the
+  # no-double-count invariant the metro layer rests on (#56).
+  #
+  # The first match is kept, which is the first member county in delineation
+  # order; the retained row's county_name still lists every county it covers.
+  out <- out[!duplicated(out$ori), , drop = FALSE]
+
   out <- out[, .METRO_AGENCY_COLS, drop = FALSE]
   rownames(out) <- NULL
   out

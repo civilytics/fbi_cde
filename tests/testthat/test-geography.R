@@ -73,3 +73,39 @@ test_that("county_agencies validates state and warns on unknown county", {
   expect_warning(res <- county_agencies("Nowhere", "CA"), "No agencies")
   expect_equal(nrow(res), 0L)
 })
+
+# ---- Multi-county agencies (#56) -------------------------------------------
+#
+# The CDE stores a multi-county agency's county_name as a semicolon-separated
+# list ("DELAWARE; FAIRFIELD; FRANKLIN"). Exact string matching never fired for
+# those 617 agencies, so major city departments were silently missing from
+# their own county and metro results.
+
+test_that("county_agencies finds an agency whose county_name lists several counties", {
+  # Columbus PD polices parts of Delaware, Fairfield and Franklin counties.
+  for (cty in c("Franklin", "Delaware", "Fairfield")) {
+    out <- county_agencies(cty, "OH")
+    expect_true("OHCOP0000" %in% out$ori, info = paste("county:", cty))
+  }
+})
+
+test_that("county_agencies still excludes agencies from unrelated counties", {
+  # Columbus PD is not in Hocking, another Columbus-CBSA county.
+  expect_false("OHCOP0000" %in% county_agencies("Hocking", "OH")$ori)
+})
+
+test_that("county matching is not substring-based", {
+  # "YORK" must not match "NEW YORK": a substring test would wrongly cross-match.
+  ny <- county_agencies("New York", "NY")
+  expect_gt(nrow(ny), 0L)
+  expect_true(all(grepl("NEW YORK", toupper(ny$county_name))))
+})
+
+test_that("a single-county agency matches only its own county", {
+  alameda <- county_agencies("Alameda", "CA")
+  expect_gt(nrow(alameda), 0L)
+  expect_true(all(vapply(
+    strsplit(toupper(alameda$county_name), ";", fixed = TRUE),
+    function(p) "ALAMEDA" %in% trimws(p), logical(1)
+  )))
+})

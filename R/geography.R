@@ -12,6 +12,21 @@ agencies_table <- function() {
   fbi_api_agencies
 }
 
+# TRUE where `county_name` covers `county_key` (already uppercase, trimmed).
+#
+# The CDE stores a multi-county agency's county_name as a semicolon-separated
+# list -- Columbus PD is "DELAWARE; FAIRFIELD; FRANKLIN". Exact string equality
+# never matched those 617 agencies, so major city departments were silently
+# missing from their own county and metro (#56). Membership against the split
+# list fixes that.
+#
+# Splitting rather than substring-matching is deliberate: `grepl("YORK", ...)`
+# would wrongly match "NEW YORK".
+.county_name_matches <- function(county_name, county_key) {
+  parts <- strsplit(toupper(trimws(county_name)), ";", fixed = TRUE)
+  vapply(parts, function(p) county_key %in% trimws(p), logical(1))
+}
+
 .COUNTY_AGENCY_COLS <- c(
   "ori", "agency_name", "agency_type_name", "agency_class", "default_member",
   "county_name", "state_abbr", "county_fips", "latitude", "longitude"
@@ -71,7 +86,7 @@ county_agencies <- function(county, state) {
   county_key <- toupper(trimws(county))
   state_key <- toupper(trimws(state))
 
-  keep <- toupper(trimws(ag$county_name)) == county_key &
+  keep <- .county_name_matches(ag$county_name, county_key) &
     toupper(trimws(ag$state_abbr)) == state_key
   keep[is.na(keep)] <- FALSE
   sel <- ag[keep, , drop = FALSE]
