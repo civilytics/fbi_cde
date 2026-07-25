@@ -120,3 +120,44 @@ test_that("get_place_crime_detail empty frame agrees with its populated frame", 
                                       from = "01-2021", to = "02-2021")
   expect_frames_agree(.empty_place_detail_frame(), populated)
 })
+
+# ---- metro_agencies() ------------------------------------------------------
+
+test_that("metro_agencies empty frame agrees with its populated frame", {
+  populated <- metro_agencies("Pittsburgh, PA")
+  empty <- suppressWarnings(metro_agencies("Nowhere Metro"))
+
+  expect_frames_agree(empty, populated)
+})
+
+# ---- get_metro_crime_detail() ----------------------------------------------
+
+test_that("get_metro_crime_detail empty frame agrees with its populated frame", {
+  agencies <- data.frame(
+    ori = "PA0000001",
+    agency_name = "Alpha PD",
+    agency_type_name = "City",
+    agency_class = "municipal",
+    default_member = TRUE,
+    county_name = "ALLEGHENY",
+    state_abbr = "PA",
+    county_fips = "42003",
+    latitude = "0", longitude = "0",
+    cbsa_code = "38300",
+    cbsa_title = "Pittsburgh, PA",
+    cbsa_type = "metro",
+    central_outlying = "Central",
+    stringsAsFactors = FALSE
+  )
+  response <- make_response("Alpha PD", c("01-2021" = 10, "02-2021" = 12))
+
+  testthat::local_mocked_bindings(
+    metro_agencies = function(metro, state = NULL) agencies,
+    cde_request = function(path, query = list(), ...) response,
+    .package = "fbi"
+  )
+
+  populated <- get_metro_crime_detail("Pittsburgh, PA", from = "01-2021",
+                                      to = "02-2021", progress = FALSE)
+  expect_frames_agree(.empty_metro_detail_frame(), populated)
+})

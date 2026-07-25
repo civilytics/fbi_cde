@@ -367,4 +367,13 @@ counties_with_fips <- function() {
 # Build lookups on package load
 .onLoad <- function(libname, pkgname) {
   .build_fips_lookups()
+
+  # CBSA_VINTAGE (R/cbsa.R) must reflect the shipped crosswalk's own
+  # "vintage" attribute, not an independent literal that can drift from it.
+  # sysdata.rda is only guaranteed to be available once the namespace is
+  # loading, so the read happens here rather than at cbsa.R's top level.
+  cbsa_vintage <- attr(cbsa_crosswalk, "vintage")
+  if (!is.null(cbsa_vintage)) {
+    CBSA_VINTAGE <<- cbsa_vintage
+  }
 }

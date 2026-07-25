@@ -25,6 +25,10 @@ Targeting CRAN. Based on the original `fbi` package by Jacob Kaplan.
   `NA` count) — strip them to the geography's own series.
 - **`cde_request()` uses `simplifyVector = FALSE`** (nested lists). Index parsers
   with `names()` / `[[ ]]` so they work for both the live shape and fixtures.
+- **`R/sysdata.rda` holds two internal objects**, `crosswalk` (county FIPS) and
+  `cbsa_crosswalk` (county->CBSA). Any build script that touches it must
+  `load()` and re-`save()` **both** objects together, or it will silently
+  destroy whichever one it did not know about.
 
 ## API shape & data facts (non-obvious)
 
@@ -82,8 +86,10 @@ spec → plan → implementation cycle; tracked as Gitea issues):
   `get_place_crime_detail()`, and opt-in `add_place_spatial_members()`
   (`sf`/`tigris` in `Suggests`). Spec:
   `docs/superpowers/specs/2026-07-24-place-membership-v0.4-design.md`.
-- **Metro (CBSA)** — union of member counties; needs a county→CBSA crosswalk
-  and a delineation-vintage decision (Gitea #45).
+- **v0.5** — **shipped.** Metro (CBSA) geography: `metro_agencies()`,
+  `get_metro_crime_detail()` (guarded by `max_agencies`), `list_metros()`, and
+  a bundled 2023 OMB delineation crosswalk. Spec:
+  `docs/superpowers/specs/2026-07-24-metro-cbsa-v0.5-design.md`.
 - **Place FIPS** as a promised join key — likely a name-based crosswalk rather
   than `sf` (Gitea #46).
 - **Capstone** — imputation gap: FBI published aggregate vs. sum of reported

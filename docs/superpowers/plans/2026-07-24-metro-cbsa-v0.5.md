@@ -224,10 +224,18 @@ test_that("list_metros carries the delineation vintage", {
   expect_equal(attr(list_metros(), "vintage"), CBSA_VINTAGE)
 })
 
-test_that("New York is the largest metro by county count", {
+test_that("the largest metros carry the expected county counts", {
   out <- list_metros(type = "metro")
-  top <- out[order(-out$n_counties), , drop = FALSE]
-  expect_match(top$cbsa_title[1], "New York")
+
+  expect_gt(max(out$n_counties), 20L)
+
+  # New York is 22 counties in the 2023 delineation — a specific, checkable
+  # anchor that catches drift. Note it is NOT the largest CBSA: San Juan, PR
+  # has 40 municipios, and Atlanta 29. Territories are part of the official
+  # delineation and are deliberately retained.
+  ny <- out[out$cbsa_title == "New York-Newark-Jersey City, NY-NJ", , drop = FALSE]
+  expect_equal(nrow(ny), 1L)
+  expect_equal(ny$n_counties, 22L)
 })
 ```
 
@@ -322,7 +330,7 @@ git commit -m "feat: add county-to-CBSA crosswalk and list_metros()
 
 Derived at build time from the public-domain 2023 OMB/Census delineation
 file (Bulletin 23-01) and bundled in R/sysdata.rda, following the county
-FIPS crosswalk precedent. 938 CBSAs over 1,918 county rows, covering 61%
+FIPS crosswalk precedent. 935 CBSAs over 1,915 county rows, covering 61%
 of known counties - rural counties belong to no CBSA by construction.
 
 The build script re-saves every internal object, because sysdata.rda holds
@@ -388,8 +396,11 @@ test_that("metro_agencies unions agencies across member counties", {
   out <- metro_agencies("Pittsburgh, PA")
 
   expect_s3_class(out, "data.frame")
-  expect_gt(nrow(out), 100L)
-  expect_gt(length(unique(out$county_name)), 1L)
+  # Measured against the real data: Pittsburgh, PA is 8 counties / 336
+  # agencies. Asserting a floor rather than the exact count leaves room for
+  # CDE agency-table updates without making the test meaningless.
+  expect_gt(nrow(out), 300L)
+  expect_equal(length(unique(out$county_fips)), 8L)
   expect_equal(unique(out$cbsa_title), "Pittsburgh, PA")
   expect_equal(unique(out$cbsa_type), "metro")
   expect_true(all(nchar(out$county_fips) == 5L))
@@ -426,6 +437,26 @@ test_that("metro_agencies resolves a single-county micro area", {
   expect_gt(nrow(out), 0L)
   expect_equal(unique(out$cbsa_type), "micro")
   expect_equal(length(unique(out$county_name)), 1L)
+})
+
+test_that("a Connecticut metro warns rather than returning silently empty", {
+  # The 2023 delineation uses CT planning regions (09110-09190); the CDE
+  # reports traditional CT counties (09001-09015). They do not join, so all
+  # five CT metros resolve to nothing. That MUST be loud: a quiet zero-row
+  # frame would read as "no agencies report in Hartford", which is false.
+  expect_warning(
+    out <- metro_agencies("Hartford-West Hartford-East Hartford, CT"),
+    "Connecticut"
+  )
+  expect_equal(nrow(out), 0L)
+  expect_equal(names(out), .METRO_AGENCY_COLS)
+})
+
+test_that("partial county coverage warns with the counts", {
+  expect_warning(
+    metro_agencies("New Haven, CT"),
+    "counties but only"
+  )
 })
 ```
 
@@ -562,6 +593,26 @@ metro_agencies <- function(metro, state = NULL) {
     ag
   })
 
+  # Coverage must never be silent. A CBSA whose counties do not join our
+  # crosswalk would otherwise return a quiet zero-row frame, which reads as
+  # "no agencies report here" — false, and materially misleading. The live case
+  # is Connecticut: the 2023 delineation uses planning regions (09110-09190)
+  # while the CDE reports traditional counties (09001-09015), so all five CT
+  # metros resolve to nothing.
+  resolved <- sum(hit$county_fips %in% names(fips_to_county))
+  if (resolved < nrow(hit)) {
+    warning("Metro '", hit$cbsa_title[1], "' lists ", nrow(hit),
+            " counties but only ", resolved,
+            " could be matched to CDE county names",
+            if (any(substr(hit$county_fips, 1L, 2L) == "09")) {
+              paste0(". Connecticut is delineated by planning regions, which ",
+                     "the CDE does not use, so its metros are not supported")
+            } else {
+              ""
+            },
+            ". Results are incomplete.", call. = FALSE)
+  }
+
   out <- rbind_fill(parts)
   if (is.null(out) || nrow(out) == 0) {
     return(.empty_metro_agency_frame())
@@ -574,9 +625,20 @@ metro_agencies <- function(metro, state = NULL) {
 
 # Map 5-digit county FIPS back to the (county_name, state_abbr) pair
 # county_agencies() takes, using the bundled county FIPS crosswalk.
+#
+# The crosswalk is keyed by the CDE's raw county_name, which includes
+# multi-county strings ("FAIRFIELD; LICKING"), so county_fips is NOT unique
+# across all rows. Filtering to names without a semicolon gives the canonical
+# entry: 3,131 such rows for 3,131 distinct FIPS — an exact 1:1, with every
+# FIPS represented. Skipping that filter would sometimes pick a multi-county
+# row, and county_agencies() matches county_name exactly, so it would return a
+# subset of the county rather than the county.
 .cbsa_county_lookup <- function(fips) {
   cw <- crosswalk
-  sel <- cw[cw$county_fips %in% fips, , drop = FALSE]
+  sel <- cw[!is.na(cw$county_fips) &
+              !grepl(";", cw$county_name, fixed = TRUE) &
+              cw$county_fips %in% fips, , drop = FALSE]
+  sel <- sel[!duplicated(sel$county_fips), , drop = FALSE]
   stats::setNames(
     lapply(seq_len(nrow(sel)), function(i) {
       list(county_name = sel$county_name[i], state_abbr = sel$state_abbr[i])
@@ -1054,8 +1116,8 @@ Insert immediately below the `# fbi 0.1.0.9000 (development version)` heading in
 - Added `list_metros()` — the discovery counterpart: every CBSA with its county
   count, filterable by type.
 - Added an internal county→CBSA crosswalk derived from the public-domain
-  **2023** OMB/Census delineation file (Bulletin 23-01): 938 CBSAs (393
-  metropolitan, 542 micropolitan) over 1,918 county rows. It covers 61% of known
+  **2023** OMB/Census delineation file (Bulletin 23-01): 935 CBSAs (393
+  metropolitan, 542 micropolitan) over 1,915 county rows. It covers 61% of known
   counties — rural counties belong to no CBSA by construction, which is a
   property of the delineation, not a gap in the data. The vintage is pinned and
   exposed as `CBSA_VINTAGE` and as an attribute on `list_metros()`, since CBSA

@@ -1,5 +1,53 @@
 # fbi 0.1.0.9000 (development version)
 
+## Metro (CBSA) geography (v0.5, Issue #45)
+
+- Added `metro_agencies()` -- resolves a Core Based Statistical Area to the union
+  of its member counties' agency sets. Because a metro is a set of *whole*
+  counties, `agency_class` and `default_member` keep exactly their county-level
+  meaning, including that a sheriff is a default member. Rows carry
+  `cbsa_code`, `cbsa_title`, `cbsa_type` (`"metro"`/`"micro"`), and
+  `central_outlying`.
+- Added `get_metro_crime_detail()` -- itemized, unsummed metro crime. **Guarded:**
+  a metro can be hundreds of agencies (New York resolves to ~489, Chicago ~314),
+  each a sequential request, so `max_agencies` (default `150`) errors *before
+  issuing any request* rather than hanging for minutes. Set `max_agencies = Inf`
+  to override. `progress` defaults to `TRUE` here, unlike the county and place
+  equivalents.
+- Added `list_metros()` -- the discovery counterpart: every CBSA with its county
+  count, filterable by type.
+- Added an internal county->CBSA crosswalk derived from the public-domain
+  **2023** OMB/Census delineation file (Bulletin 23-01): 935 CBSAs (393
+  metropolitan, 542 micropolitan) over 1,915 county rows. That is 61% of the
+  3,131 counties `county_agencies()` knows about, counted as crosswalk rows;
+  counted as distinct, CDE-reachable counties instead it is about 58.5%
+  (1,831 of 3,131) -- rural counties belong to no CBSA by construction, which
+  is a property of the delineation, not a gap in the data. The vintage is
+  pinned and exposed as `CBSA_VINTAGE` (read from the shipped data's own
+  `"vintage"` attribute, not duplicated as a literal) and as an attribute on
+  `list_metros()`, since CBSA definitions are revised periodically and
+  counties move between metros.
+- No metro-level aggregate. Summing across a metro raises the same denominator
+  question the county aggregate deferred, and a metro's is harder (multi-state,
+  mixed reporting coverage).
+- **Connecticut's seven metros are not supported.** The 2023 delineation
+  delineates Connecticut by planning regions (FIPS 09110-09190), which
+  replaced its counties in 2022; the CDE still reports Connecticut agencies by
+  traditional county (09001-09015). The two vocabularies do not join, so all
+  seven CT metros -- Bridgeport-Stamford-Danbury, Hartford-West
+  Hartford-East Hartford, New Haven, Norwich-New London-Willimantic, Putnam,
+  Torrington, and Waterbury-Shelton -- resolve to zero counties.
+  `metro_agencies()` warns explicitly rather than returning a silent empty
+  frame, because a quiet zero-row result would read as "no agencies report in
+  Hartford", which is false. Tracked as Gitea issue #52.
+- Puerto Rico's 10 CBSAs are unmapped too, but that is academic: the CDE has
+  exactly one PR agency.
+- Agencies whose `county_name` is `"N/A"` (state police, tribal agencies, and
+  the District of Columbia) cannot be reached from any county-keyed geography,
+  so a metro that includes one is incomplete even when its counties join
+  cleanly -- Washington-Arlington-Alexandria, DC-VA-MD-WV lists 23 counties
+  but only 22 resolve, because DC's 3 agencies all carry `county_name = "N/A"`.
+
 ## Place/municipal membership (v0.4)
 
 - Added `place_agencies()` — a pure, offline resolver mapping a municipality to
