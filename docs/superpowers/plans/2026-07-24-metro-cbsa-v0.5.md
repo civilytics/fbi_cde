@@ -388,8 +388,11 @@ test_that("metro_agencies unions agencies across member counties", {
   out <- metro_agencies("Pittsburgh, PA")
 
   expect_s3_class(out, "data.frame")
-  expect_gt(nrow(out), 100L)
-  expect_gt(length(unique(out$county_name)), 1L)
+  # Measured against the real data: Pittsburgh, PA is 8 counties / 336
+  # agencies. Asserting a floor rather than the exact count leaves room for
+  # CDE agency-table updates without making the test meaningless.
+  expect_gt(nrow(out), 300L)
+  expect_equal(length(unique(out$county_fips)), 8L)
   expect_equal(unique(out$cbsa_title), "Pittsburgh, PA")
   expect_equal(unique(out$cbsa_type), "metro")
   expect_true(all(nchar(out$county_fips) == 5L))
@@ -426,6 +429,26 @@ test_that("metro_agencies resolves a single-county micro area", {
   expect_gt(nrow(out), 0L)
   expect_equal(unique(out$cbsa_type), "micro")
   expect_equal(length(unique(out$county_name)), 1L)
+})
+
+test_that("a Connecticut metro warns rather than returning silently empty", {
+  # The 2023 delineation uses CT planning regions (09110-09190); the CDE
+  # reports traditional CT counties (09001-09015). They do not join, so all
+  # five CT metros resolve to nothing. That MUST be loud: a quiet zero-row
+  # frame would read as "no agencies report in Hartford", which is false.
+  expect_warning(
+    out <- metro_agencies("Hartford-West Hartford-East Hartford, CT"),
+    "Connecticut"
+  )
+  expect_equal(nrow(out), 0L)
+  expect_equal(names(out), .METRO_AGENCY_COLS)
+})
+
+test_that("partial county coverage warns with the counts", {
+  expect_warning(
+    metro_agencies("New Haven, CT"),
+    "counties but only"
+  )
 })
 ```
 
@@ -562,6 +585,26 @@ metro_agencies <- function(metro, state = NULL) {
     ag
   })
 
+  # Coverage must never be silent. A CBSA whose counties do not join our
+  # crosswalk would otherwise return a quiet zero-row frame, which reads as
+  # "no agencies report here" — false, and materially misleading. The live case
+  # is Connecticut: the 2023 delineation uses planning regions (09110-09190)
+  # while the CDE reports traditional counties (09001-09015), so all five CT
+  # metros resolve to nothing.
+  resolved <- sum(hit$county_fips %in% names(fips_to_county))
+  if (resolved < nrow(hit)) {
+    warning("Metro '", hit$cbsa_title[1], "' lists ", nrow(hit),
+            " counties but only ", resolved,
+            " could be matched to CDE county names",
+            if (any(substr(hit$county_fips, 1L, 2L) == "09")) {
+              paste0(". Connecticut is delineated by planning regions, which ",
+                     "the CDE does not use, so its metros are not supported")
+            } else {
+              ""
+            },
+            ". Results are incomplete.", call. = FALSE)
+  }
+
   out <- rbind_fill(parts)
   if (is.null(out) || nrow(out) == 0) {
     return(.empty_metro_agency_frame())
@@ -574,9 +617,20 @@ metro_agencies <- function(metro, state = NULL) {
 
 # Map 5-digit county FIPS back to the (county_name, state_abbr) pair
 # county_agencies() takes, using the bundled county FIPS crosswalk.
+#
+# The crosswalk is keyed by the CDE's raw county_name, which includes
+# multi-county strings ("FAIRFIELD; LICKING"), so county_fips is NOT unique
+# across all rows. Filtering to names without a semicolon gives the canonical
+# entry: 3,131 such rows for 3,131 distinct FIPS — an exact 1:1, with every
+# FIPS represented. Skipping that filter would sometimes pick a multi-county
+# row, and county_agencies() matches county_name exactly, so it would return a
+# subset of the county rather than the county.
 .cbsa_county_lookup <- function(fips) {
   cw <- crosswalk
-  sel <- cw[cw$county_fips %in% fips, , drop = FALSE]
+  sel <- cw[!is.na(cw$county_fips) &
+              !grepl(";", cw$county_name, fixed = TRUE) &
+              cw$county_fips %in% fips, , drop = FALSE]
+  sel <- sel[!duplicated(sel$county_fips), , drop = FALSE]
   stats::setNames(
     lapply(seq_len(nrow(sel)), function(i) {
       list(county_name = sel$county_name[i], state_abbr = sel$state_abbr[i])

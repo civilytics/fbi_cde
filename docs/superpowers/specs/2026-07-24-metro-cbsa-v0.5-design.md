@@ -63,6 +63,36 @@ the expensive cases are exactly the metros users will reach for first.
 construction; that is what "metropolitan or micropolitan statistical area"
 means.
 
+### Connecticut is unsupported in v0.5, and must say so
+
+Added 2026-07-24 after probing against the corrected FIPS crosswalk (#50).
+
+84 of the 1,915 county↔CBSA rows do not join to our county crosswalk, and **17
+of 935 CBSAs resolve to zero counties**. They fall into two groups:
+
+- **Connecticut (5 metros).** The 2023 delineation delineates Connecticut by
+  **planning regions** (FIPS `09110`–`09190`), which replaced its counties in
+  2022. The CDE still reports Connecticut agencies by **traditional county**
+  (`09001`–`09015`). The two vocabularies do not join, so
+  `Hartford-West Hartford-East Hartford, CT`, `New Haven, CT`,
+  `Bridgeport-Stamford-Danbury, CT`, `Norwich-New London-Willimantic, CT`, and
+  `Torrington, CT` map to nothing at all.
+
+  Planning regions were redrawn from towns, not aggregated from counties, so
+  there is no exact county mapping — any crosswalk would be an approximation.
+  Shipping an approximation silently would violate this package's central
+  discipline, so v0.5 **does not support Connecticut metros** and says so
+  loudly. Proper support is its own research task and gets its own issue.
+- **Puerto Rico (12 metros).** Academic here: the CDE has exactly **1** PR
+  agency, so these CBSAs would be near-empty regardless.
+
+**Design consequence.** A CBSA resolving to zero counties, or to fewer counties
+than the delineation lists, must **never** return quietly. `metro_agencies()`
+warns in both cases, naming how many of the metro's counties resolved. A silent
+zero-row frame for "Hartford" would read as "no agencies report in Hartford",
+which is false and materially misleading — the same class of error the
+`reported` flag exists to prevent at the county level.
+
 ## 2. Architecture
 
 Mirrors the shipped county and place layers:
