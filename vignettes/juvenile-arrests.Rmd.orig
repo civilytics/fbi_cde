@@ -144,9 +144,9 @@ ggplot(state_sf) +
 ### Read this map carefully
 
 The spread runs from about 1.6% to 14.5% — a ninefold difference. That is far
-too wide to be a real difference in how often children commit crimes, and the
-honest reading is that **it substantially measures reporting practice rather
-than behaviour.**
+too wide to be credible as a real difference in how often children commit
+crimes, so **something other than behaviour is driving most of it.** The next
+step is to find out what.
 
 The obvious suspect is incomplete reporting, so check it:
 
@@ -170,10 +170,19 @@ cols <- c("state", "juvenile", "total", "share", "participation")
 head(state_juvenile[order(state_juvenile$share), cols], 5)
 ```
 
-The likelier cause is structural: states differ in whether a juvenile taken
-into custody is recorded as an *arrest* in the UCR sense at all, because
-juvenile justice systems are separate and their dispositions differ. This map
-is a map of measurement as much as of crime, and should be captioned that way.
+What the data does establish is narrow but useful: **the spread is not
+explained by how completely a state's agencies report.** It does not tell us
+what does explain it.
+
+One plausible hypothesis is structural -- states differ in whether a juvenile
+taken into custody is recorded as an *arrest* in the UCR sense at all, since
+juvenile justice systems are separate and their dispositions differ. That is a
+hypothesis this data cannot confirm, and it is offered as a direction to
+investigate rather than a finding.
+
+The defensible conclusion is the conservative one: this map should not be read
+as a ranking of juvenile offending, and any use of it needs to establish what
+each state actually counts before comparing them.
 
 Always keep participation beside the number:
 
@@ -402,8 +411,10 @@ head(sizable[order(-sizable$share), c("agency", "juvenile", "total", "share")], 
 - **`reported == 0` is not the same as "did not report".** The arrest endpoint
   does not distinguish them; `get_county_crime_detail()` and its siblings do,
   via a `reported` flag. Prefer those when the distinction matters.
-- **Juvenile share measures reporting practice as much as behaviour.** The
-  ninefold spread across states is not credible as pure behavioural variation.
+- **Juvenile share is not a clean behavioural measure.** The ninefold spread
+  across states is not credible as pure behavioural variation, and reporting
+  completeness does not explain it. What does remains an open question, so do
+  not rank states on this figure.
 - **Offence-by-age is unavailable from the API.** Any juvenile-by-offence figure
   you see elsewhere came from bulk files or a different vintage.
 - **Metro membership is attribution, not spatial truth.** An agency is included
