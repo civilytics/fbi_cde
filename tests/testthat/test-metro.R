@@ -117,3 +117,30 @@ test_that("EVERY CBSA containing a Connecticut county warns", {
     expect_warning(metro_agencies(title), info = title)
   }
 })
+
+# ---- No double-count from multi-county agencies (#56) ----------------------
+#
+# A multi-county agency legitimately matches several counties, which is correct
+# at county level. But a metro unions its member counties, and the Columbus
+# CBSA contains all three of Columbus PD's counties -- so without dedup the
+# agency would appear three times and get_metro_crime_detail() would
+# triple-count its crime. That would break the metro layer's core invariant.
+
+test_that("metro_agencies includes a multi-county agency exactly once", {
+  out <- metro_agencies("Columbus, OH")
+
+  expect_true("OHCOP0000" %in% out$ori)
+  expect_equal(sum(out$ori == "OHCOP0000"), 1L)
+})
+
+test_that("no metro returns a duplicated ORI", {
+  # Metros whose member counties overlap a multi-county agency's list.
+  metros <- c("Columbus, OH", "Dallas-Fort Worth-Arlington, TX",
+              "Portland-Vancouver-Hillsboro, OR-WA")
+
+  for (m in metros) {
+    out <- suppressWarnings(metro_agencies(m))
+    expect_gt(nrow(out), 0L)
+    expect_false(any(duplicated(out$ori)), info = paste("metro:", m))
+  }
+})
