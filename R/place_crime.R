@@ -1,10 +1,10 @@
 # Layer 1 of the place geography model: itemized, unsummed place-crime detail.
-# Reuses `parse_agency_detail()` (comparison-row stripping) as-is and mirrors
-# the *structure* of the county fan-out (R/county_crime.R): the loop,
-# per-agency column projection, empty-frame handling, and drop-record
-# bookkeeping are duplicated here rather than shared, because the place and
-# county column contracts differ (place carries `place_name`/`attribution`;
-# county does not). Keep the two loops in sync by hand if either changes.
+#
+# The fan-out itself lives in R/fanout.R and is shared with the county and
+# metro levels; this file supplies only the place column contract, the place
+# metadata columns (`place_name`/`attribution`), and the `agencies` escape
+# hatch. The loops were previously kept in sync by hand and drifted five ways
+# (Gitea #54).
 
 # Columns a caller-supplied `agencies` frame (or a place_agencies() result)
 # must carry for the fan-out loop below to work.
@@ -127,68 +127,24 @@ get_place_crime_detail <- function(place, state, county = NULL, offense = "V",
   }
 
   pre_filter_n <- nrow(agencies)
-  if (!is.null(agency_class)) {
-    agencies <- agencies[agencies$agency_class %in% agency_class, , drop = FALSE]
-  } else if (isTRUE(default_only)) {
-    agencies <- agencies[agencies$default_member, , drop = FALSE]
-  }
+  agencies <- .filter_agency_members(agencies, agency_class, default_only)
 
   if (nrow(agencies) == 0) {
     if (pre_filter_n > 0) {
-      filter_desc <- if (!is.null(agency_class)) {
-        paste0("agency_class = ", paste(agency_class, collapse = ", "))
-      } else {
-        "default_only = TRUE"
-      }
       warning("No agencies to query for place '", place, "', ", state,
-              " after filtering (", filter_desc, ")", call. = FALSE)
+              " after filtering (", .filter_desc(agency_class), ")",
+              call. = FALSE)
     }
     return(.empty_place_detail_frame())
   }
 
-  dropped <- character(0)
-  parts <- vector("list", nrow(agencies))
-  for (i in seq_len(nrow(agencies))) {
-    ori <- agencies$ori[i]
-    if (isTRUE(progress)) {
-      message(sprintf("[%d/%d] %s", i, nrow(agencies), ori))
-    }
-    path <- cde_path("summarized", paste0("agency/", ori), offense)
-    query <- list(from = from, to = to, type = "counts")
-
-    res <- tryCatch(
-      parse_agency_detail(cde_request(path, query), ori, offense, from, to),
-      error = function(e) e
-    )
-    if (inherits(res, "error")) {
-      dropped <- c(dropped, ori)
-      next
-    }
-    res$agency_name <- agencies$agency_name[i]
-    res$agency_type_name <- agencies$agency_type_name[i]
-    res$agency_class <- agencies$agency_class[i]
-    res$default_member <- agencies$default_member[i]
-    res$place_name <- agencies$place_name[i]
-    res$county_name <- agencies$county_name[i]
-    res$state_abbr <- agencies$state_abbr[i]
-    res$attribution <- agencies$attribution[i]
-    parts[[i]] <- res
-  }
-
-  out <- rbind_fill(parts)
-  out <- out[, intersect(.PLACE_DETAIL_COLS, names(out)), drop = FALSE]
-  rownames(out) <- NULL
-
-  if (nrow(out) == 0 || ncol(out) == 0) {
-    out <- .empty_place_detail_frame()
-  }
-
-  if (length(dropped) > 0) {
-    warning("Dropped ", length(dropped),
-            " agenc", if (length(dropped) == 1) "y" else "ies",
-            " that returned no data: ", paste(dropped, collapse = ", "),
-            call. = FALSE)
-    attr(out, "dropped") <- dropped
-  }
-  out
+  .fanout_agency_detail(
+    agencies = agencies,
+    meta_cols = c("agency_name", "agency_type_name", "agency_class",
+                  "default_member", "place_name", "county_name", "state_abbr",
+                  "attribution"),
+    cols = .PLACE_DETAIL_COLS,
+    empty_fn = .empty_place_detail_frame,
+    offense = offense, from = from, to = to, progress = progress
+  )
 }
