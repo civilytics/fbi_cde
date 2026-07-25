@@ -1,0 +1,551 @@
+---
+title: "Worked example: juvenile arrests from state to street"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Worked example: juvenile arrests from state to street}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+
+
+This vignette works a single question all the way down the geographic ladder:
+**how many people under 18 are arrested, and where?**
+
+It starts with all 50 states, narrows to one city police department, and ends
+with every department in that city's metropolitan area. Along the way it shows
+what the CDE API can and cannot answer, because both matter when you are
+building an analysis you intend to defend.
+
+
+``` r
+library(fbi)
+```
+
+## 1. What counts as a juvenile arrest?
+
+The CDE reports arrestee age in buckets, split by sex. Pull them for one state
+and look at what comes back:
+
+
+``` r
+oh <- get_arrest_demographics(state_abb = "OH", from = "01-2023", to = "12-2023")
+
+unique(oh$demographic_type)
+#> [1] "Arrestee Sex"          "Arrestee Race"         "Male Arrests By Age"  
+#> [4] "Female Arrests By Age"
+
+age <- oh[grepl("By Age", oh$demographic_type), ]
+sort(unique(age$demographic_value))
+#>  [1] "10-12"          "11-12"          "13-14"          "15"            
+#>  [5] "16"             "17"             "18"             "19"            
+#>  [9] "20"             "21"             "22"             "23"            
+#> [13] "24"             "25-29"          "30-34"          "35-39"         
+#> [17] "40-44"          "45-49"          "50-54"          "55-59"         
+#> [21] "60-64"          "65 and over"    "Adult Other"    "Juvenile Other"
+#> [25] "Under 10"       "Under 11"
+```
+
+A juvenile is anyone under 18, which here means every bucket up to and
+including `17`, plus the explicit `Juvenile Other` category.
+
+Two traps are worth knowing about before you sum anything.
+
+**The API emits two bucket vintages at once.** You will see both `Under 10` and
+`Under 11`, and both `10-12` and `11-12`. These overlap. In practice only one
+vintage is populated and the other is zero-filled, so including all of them is
+safe — but if you hand-pick a subset you can easily double count. Check before
+you trust it:
+
+
+``` r
+overlap <- age[age$demographic_value %in% c("Under 10", "Under 11", "10-12", "11-12"), ]
+stats::aggregate(count ~ demographic_value, data = overlap, FUN = sum)
+#>   demographic_value count
+#> 1             10-12  2159
+#> 2             11-12     0
+#> 3          Under 10   131
+#> 4          Under 11     0
+```
+
+**`Adult Other` is not a juvenile bucket** despite sitting next to
+`Juvenile Other` alphabetically.
+
+With that established, a small helper:
+
+
+``` r
+JUVENILE_BUCKETS <- c(
+  "Under 10", "Under 11", "10-12", "11-12",
+  "13-14", "15", "16", "17", "Juvenile Other"
+)
+
+juvenile_summary <- function(demographics) {
+  age <- demographics[grepl("By Age", demographics$demographic_type), ]
+  data.frame(
+    juvenile = sum(age$count[age$demographic_value %in% JUVENILE_BUCKETS]),
+    total    = sum(age$count)
+  )
+}
+
+juvenile_summary(oh)
+#>   juvenile  total
+#> 1    22260 187940
+```
+
+Ohio reported about 22,000 arrests of under-18s in 2023, out of roughly 188,000
+arrests in total.
+
+## 2. All 50 states
+
+`get_arrest_demographics()` takes a state abbreviation, so the national picture
+is one call per state:
+
+
+``` r
+states <- datasets::state.abb
+
+state_juvenile <- do.call(rbind, lapply(states, function(s) {
+  d <- get_arrest_demographics(state_abb = s, from = "01-2023", to = "12-2023")
+  cbind(state = s, juvenile_summary(d))
+}))
+
+state_juvenile$share <- state_juvenile$juvenile / state_juvenile$total
+head(state_juvenile[order(-state_juvenile$share), ], 5)
+#>    state juvenile  total     share
+#> 49    WI    28896 199010 0.1451987
+#> 50    WY     2675  19000 0.1407895
+#> 27    NE     6642  48185 0.1378437
+#> 26    MT     4152  30319 0.1369438
+#> 34    ND     4050  32866 0.1232277
+```
+
+### Why share, and not a rate per capita
+
+Mapping raw counts would mostly draw a population map — California would win
+every year. The obvious fix is arrests per 100,000 juveniles, but the CDE does
+not publish a juvenile population, and inventing one from another source
+introduces a denominator whose vintage and geography may not match.
+
+**Juvenile share of all arrests** avoids that entirely. It is self-normalising,
+uses only figures from the same response, and answers a question people
+actually ask: of everyone arrested here, what fraction were children?
+
+
+``` r
+library(ggplot2)
+
+state_sf <- tigris::states(cb = TRUE, resolution = "20m", progress_bar = FALSE)
+state_sf <- state_sf[state_sf$STUSPS %in% state_juvenile$state, ]
+state_sf <- merge(state_sf, state_juvenile, by.x = "STUSPS", by.y = "state")
+
+# shift_geometry() repositions Alaska and Hawaii; without it a CONUS-centred
+# projection throws them into the corners at the wrong scale.
+state_sf <- tigris::shift_geometry(state_sf)
+
+ggplot(state_sf) +
+  geom_sf(aes(fill = share), colour = "white", linewidth = 0.15) +
+  scale_fill_viridis_c(
+    labels = scales::percent, name = "Under-18\nshare",
+    option = "magma", direction = -1
+  ) +
+  labs(
+    title = "Under-18 share of all reported arrests, 2023",
+    subtitle = "Juvenile arrests as a share of each state's reported total",
+    caption = "Source: FBI Crime Data Explorer via the fbi R package"
+  ) +
+  theme_void(base_size = 11) +
+  theme(plot.title = element_text(face = "bold"))
+```
+
+<div class="figure">
+<img src="figures/juvenile-choropleth-1.png" alt="Choropleth map of the United States shading each state by the share of its reported 2023 arrests in which the arrestee was under 18. Shares range from about 1.6 percent in Kentucky to about 14.5 percent in Wisconsin. Upper-midwest and mountain states including Wisconsin, Wyoming, Nebraska, Montana and North Dakota are darkest; Kentucky, West Virginia and Alabama are lightest." width="100%" />
+<p class="caption">plot of chunk choropleth</p>
+</div>
+
+### Read this map carefully
+
+The spread runs from about 1.6% to 14.5% — a ninefold difference. That is far
+too wide to be a real difference in how often children commit crimes, and the
+honest reading is that **it substantially measures reporting practice rather
+than behaviour.**
+
+The obvious suspect is incomplete reporting, so check it:
+
+
+``` r
+participation <- do.call(rbind, lapply(state_juvenile$state, function(s) {
+  p <- get_state_participation(state_abb = s)
+  data.frame(state = s, participation = p$participation_rate[1])
+}))
+
+state_juvenile <- merge(state_juvenile, participation, by = "state")
+
+round(cor(state_juvenile$share, state_juvenile$participation), 3)
+#> [1] 0.11
+```
+
+The correlation is near zero, so coverage is *not* the explanation. Kentucky
+reports the lowest juvenile share in the country while nearly all its agencies
+participate:
+
+
+``` r
+cols <- c("state", "juvenile", "total", "share", "participation")
+head(state_juvenile[order(state_juvenile$share), cols], 5)
+#>    state juvenile  total      share participation
+#> 17    KY     3267 202297 0.01614952     0.9891775
+#> 49    WV      669  32484 0.02059475     0.9902439
+#> 2     AL     3679 142269 0.02585946     0.9593679
+#> 5     CA    30981 778158 0.03981325     0.8823529
+#> 34    NY    16126 372549 0.04328558     0.4674115
+```
+
+The likelier cause is structural: states differ in whether a juvenile taken
+into custody is recorded as an *arrest* in the UCR sense at all, because
+juvenile justice systems are separate and their dispositions differ. This map
+is a map of measurement as much as of crime, and should be captioned that way.
+
+Always keep participation beside the number:
+
+
+``` r
+low <- state_juvenile[state_juvenile$participation < 0.6, cols]
+low[order(low$participation), ]
+#>    state juvenile  total      share participation
+#> 38    PA    26290 263720 0.09968906     0.1680556
+#> 11    HI     2001  35468 0.05641705     0.3076923
+#> 9     FL    15284 234309 0.06523010     0.3457383
+#> 34    NY    16126 372549 0.04328558     0.4674115
+```
+
+## 3. Arrests by offence, and a gap in the API
+
+The natural next question is *which offences* juveniles are arrested for. As of
+2026 the CDE API cannot answer it.
+
+The arrest endpoint returns **independent marginals**, not a cross-tabulation:
+offence totals across all ages, and age totals across all offences. There is no
+offence-by-age table, so `get_arrest_demographics()` accepts only
+`offense = "all"`:
+
+
+``` r
+get_arrest_demographics(state_abb = "OH", offense = "Larceny")
+#> Error:
+#> ! Only offense = "all" is supported for get_arrest_demographics(). The CDE API provides arrest demographics aggregated across all offenses and does not break them down by offense. Use get_arrest_count() for per-offense arrest counts.
+```
+
+This is a change in what the FBI publishes through the API, not a limit on what
+is collected — the underlying records contain both fields. Filling the gap from
+the FBI's bulk downloads is tracked as an open issue in this package.
+
+`get_nibrs_offender()` does give age by offence, but in decadal buckets where
+`10-19` straddles the age of majority, so it cannot isolate under-18s:
+
+
+``` r
+nib <- get_nibrs_offender(
+  state_abb = "OH", offense = "BUR", variable = "age",
+  from = "01-2023", to = "12-2023"
+)
+nib$demographic_value
+#>  [1] "0-9"      "10-19"    "20-29"    "30-39"    "40-49"    "50-59"   
+#>  [7] "60-69"    "70-79"    "80-89"    "Unknown"  "90-Older"
+```
+
+So the offence breakdown below is **all ages**, and is labelled as such. It is
+not a juvenile figure:
+
+`get_arrest_count()` returns a monthly time series when `offense = "all"`, and a
+single total when you name an offence. `list_ucr_arrest_offenses()` lists the
+valid names:
+
+
+``` r
+head(list_ucr_arrest_offenses(), 10)
+#>  [1] "Aggravated Assault"                  "All Other Offenses"                 
+#>  [3] "Arson"                               "Burglary"                           
+#>  [5] "Counterfeiting/Forgery"              "Curfew and Loitering Law Violations"
+#>  [7] "Disorderly Conduct"                  "Drive Under the Influence"          
+#>  [9] "Drug Abuse Violations"               "Drug Possession"
+```
+
+
+``` r
+of_interest <- c(
+  "Simple Assault", "Drive Under the Influence", "Larceny",
+  "Disorderly Conduct", "Aggravated Assault", "Weapons",
+  "Drug Abuse Violations", "Motor Vehicle Theft"
+)
+
+offense_counts <- do.call(rbind, lapply(of_interest, function(o) {
+  get_arrest_count(state_abb = "OH", offense = o,
+                   from = "01-2023", to = "12-2023")
+}))
+
+offense_counts <- offense_counts[order(-offense_counts$count), ]
+offense_counts[, c("offense", "count")]
+#>                     offense count
+#> 1            Simple Assault 35928
+#> 2 Drive Under the Influence 24190
+#> 3                   Larceny 19500
+#> 4        Disorderly Conduct  9150
+#> 5        Aggravated Assault  6372
+#> 6                   Weapons  4694
+#> 8       Motor Vehicle Theft  1321
+#> 7     Drug Abuse Violations   880
+```
+
+
+``` r
+top <- head(offense_counts[order(-offense_counts$count), ], 5)
+top$offense <- factor(top$offense, levels = rev(top$offense))
+
+ggplot(top, aes(x = count, y = offense)) +
+  geom_col(fill = "#4c72b0") +
+  scale_x_continuous(labels = scales::comma) +
+  labs(
+    title = "Ohio's five most common arrest offences, 2023",
+    subtitle = "ALL AGES. The API does not publish offence by age, so this cannot be
+narrowed to under-18s.",
+    x = "Arrests", y = NULL
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(plot.title = element_text(face = "bold"),
+        panel.grid.major.y = element_blank())
+```
+
+<div class="figure">
+<img src="figures/juvenile-offense-plot-1.png" alt="Horizontal bar chart of Ohio's most common arrest offences in 2023 across all ages. Simple assault is largest at about 36,000 arrests, followed by driving under the influence at about 24,000, larceny at about 19,500, disorderly conduct at about 9,000 and aggravated assault at about 6,400." width="100%" />
+<p class="caption">plot of chunk offense-plot</p>
+</div>
+
+## 4. One agency: Columbus Police Department
+
+Agency-level queries use an ORI, the CDE's 9-character agency identifier. Look
+it up rather than guessing:
+
+
+``` r
+agencies <- fbi_api_agencies
+agencies[agencies$state_abbr == "OH" &
+           agencies$agency_name == "Columbus Police Department",
+         c("ori", "agency_name", "agency_type_name", "county_name")]
+#>             ori                agency_name agency_type_name
+#> 12198 OHCOP0000 Columbus Police Department             City
+#>                         county_name
+#> 12198 DELAWARE; FAIRFIELD; FRANKLIN
+```
+
+Two things in that row are worth pausing on.
+
+`OHCOP0000` has letters where you might expect digits. That is normal — many
+ORIs do — and it is a poor guide to what kind of agency you have. Ohio uses the
+same shape for `OHCIP0000` (Cincinnati Police), `OHCLP0000` (Cleveland Police)
+and `OHOHP0000`, which *is* the State Highway Patrol. Use `agency_type_name`,
+not the ORI, to tell them apart.
+
+Second, `county_name` lists **three** counties. Columbus straddles Delaware,
+Fairfield and Franklin. That matters in section 5.
+
+
+``` r
+columbus <- get_arrest_demographics(
+  ori = "OHCOP0000", from = "01-2023", to = "12-2023"
+)
+
+juvenile_summary(columbus)
+#>   juvenile total
+#> 1      751  7693
+```
+
+The full age profile, rather than just the total:
+
+
+``` r
+cbus_age <- columbus[grepl("By Age", columbus$demographic_type), ]
+cbus_age <- stats::aggregate(count ~ demographic_value, data = cbus_age, FUN = sum)
+cbus_age[cbus_age$demographic_value %in% JUVENILE_BUCKETS, ]
+#>    demographic_value count
+#> 1              10-12    49
+#> 2              11-12     0
+#> 3              13-14   217
+#> 4                 15   166
+#> 5                 16   157
+#> 6                 17   162
+#> 24    Juvenile Other     0
+#> 25          Under 10     0
+#> 26          Under 11     0
+```
+
+## 5. Every department in the Columbus area
+
+A city police department is not the same thing as a city. Columbus PD covers
+the incorporated city; the surrounding metro contains dozens of other agencies,
+each reporting separately.
+
+`metro_agencies()` resolves a metropolitan statistical area to the union of its
+member counties' agencies:
+
+
+``` r
+metro <- metro_agencies("Columbus, OH")
+
+nrow(metro)
+#> [1] 96
+head(metro[, c("ori", "agency_name", "agency_class", "county_name")], 5)
+#>         ori                      agency_name   agency_class county_name
+#> 1 OH0210000 Delaware County Sheriff's Office county_primary    DELAWARE
+#> 2 OH0210100       Delaware Police Department      municipal    DELAWARE
+#> 3 OH0210400      Ostrander Police Department      municipal    DELAWARE
+#> 4 OH0210500         Powell Police Department      municipal    DELAWARE
+#> 5 OH0210600  Shawnee Hills Police Department      municipal    DELAWARE
+```
+
+Note Columbus PD appears **once**, even though it polices three counties that
+are all in this metro. Deduplication matters here: without it the city's
+arrests would be counted three times.
+
+
+``` r
+sum(metro$ori == "OHCOP0000")
+#> [1] 1
+any(duplicated(metro$ori))
+#> [1] FALSE
+```
+
+Now fan out. `default_member` restricts to the conservative tier — county
+sheriffs and municipal departments — excluding campus, transit and state
+agencies:
+
+
+``` r
+members <- metro[metro$default_member, ]
+
+metro_juvenile <- do.call(rbind, lapply(seq_len(nrow(members)), function(i) {
+  d <- tryCatch(
+    get_arrest_demographics(ori = members$ori[i], from = "01-2023", to = "12-2023"),
+    error = function(e) NULL
+  )
+  if (is.null(d)) return(NULL)
+  cbind(
+    agency = members$agency_name[i],
+    county = members$county_name[i],
+    juvenile_summary(d)
+  )
+}))
+
+nrow(metro_juvenile)
+#> [1] 87
+sum(metro_juvenile$total > 0)
+#> [1] 62
+```
+
+Not every agency reports. Of the departments queried, a substantial minority
+returned no arrests at all — which may mean a genuine zero or may mean they did
+not report, and the two are not the same claim. Keep them visible rather than
+dropping them silently.
+
+
+``` r
+reporting <- metro_juvenile[metro_juvenile$total > 0, ]
+reporting$share <- reporting$juvenile / reporting$total
+
+top10 <- head(reporting[order(-reporting$juvenile), ], 10)
+top10[, c("agency", "juvenile", "total", "share")]
+#>                              agency juvenile total      share
+#> 10       Columbus Police Department      751  7693 0.09762121
+#> 28      Whitehall Police Department      444  4306 0.10311194
+#> 25     Grove City Police Department      419  1808 0.23174779
+#> 19   Reynoldsburg Police Department      152  1203 0.12635079
+#> 2        Delaware Police Department      149   573 0.26003490
+#> 1  Delaware County Sheriff's Office      123   640 0.19218750
+#> 31      Groveport Police Department      106   170 0.62352941
+#> 23        Gahanna Police Department       89   601 0.14808652
+#> 26       Hilliard Police Department       78   603 0.12935323
+#> 9     Westerville Police Department       77   490 0.15714286
+```
+
+
+``` r
+top10$agency <- factor(top10$agency, levels = rev(top10$agency))
+
+ggplot(top10, aes(x = juvenile, y = agency)) +
+  geom_col(fill = "#55a868") +
+  scale_x_continuous(labels = scales::comma) +
+  labs(
+    title = "Under-18 arrests in the Columbus, OH metro, 2023",
+    subtitle = "Ten agencies reporting the most juvenile arrests",
+    x = "Under-18 arrests", y = NULL
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(plot.title = element_text(face = "bold"),
+        panel.grid.major.y = element_blank())
+```
+
+<div class="figure">
+<img src="figures/juvenile-metro-plot-1.png" alt="Horizontal bar chart of the ten agencies reporting the most under-18 arrests in the Columbus, Ohio metropolitan area in 2023. Columbus Police Department leads with 751, followed by Whitehall with 444 and Grove City with 419, then a long tail of suburban departments each reporting fewer than 160." width="100%" />
+<p class="caption">plot of chunk metro-plot</p>
+</div>
+
+### The payoff
+
+
+``` r
+metro_total <- sum(reporting$juvenile)
+city_total  <- reporting$juvenile[reporting$agency == "Columbus Police Department"]
+
+c(metro = metro_total, city = city_total, city_share = round(city_total / metro_total, 3))
+#>      metro       city city_share 
+#>   3183.000    751.000      0.236
+```
+
+**Columbus PD accounts for under a quarter of juvenile arrests in its own
+metropolitan area.** An analysis that queried only the city department would
+miss roughly three out of four. That is the argument for the geographic layer:
+the boundary you query is a methodological choice, and the CDE will happily let
+you pick the wrong one without complaint.
+
+Note also that share and volume rank differently. Some small suburban agencies
+report juvenile shares several times the city's, on much smaller totals:
+
+
+``` r
+# Restrict to agencies with enough arrests for a share to mean anything.
+sizable <- reporting[reporting$total >= 100, ]
+head(sizable[order(-sizable$share), c("agency", "juvenile", "total", "share")], 5)
+#>                                                  agency juvenile total
+#> 31                          Groveport Police Department      106   170
+#> 60                      Madison County Sheriff's Office       50   185
+#> 2                            Delaware Police Department      149   573
+#> 42 Madison Township  Police Department, Franklin County       65   280
+#> 25                         Grove City Police Department      419  1808
+#>        share
+#> 31 0.6235294
+#> 60 0.2702703
+#> 2  0.2600349
+#> 42 0.2321429
+#> 25 0.2317478
+```
+
+## Caveats worth carrying forward
+
+- **`reported == 0` is not the same as "did not report".** The arrest endpoint
+  does not distinguish them; `get_county_crime_detail()` and its siblings do,
+  via a `reported` flag. Prefer those when the distinction matters.
+- **Juvenile share measures reporting practice as much as behaviour.** The
+  ninefold spread across states is not credible as pure behavioural variation.
+- **Offence-by-age is unavailable from the API.** Any juvenile-by-offence figure
+  you see elsewhere came from bulk files or a different vintage.
+- **Metro membership is attribution, not spatial truth.** An agency is included
+  because it is attributed to a member county, not because its jurisdiction has
+  been intersected with the metro boundary.
+
+## Reproducing this
+
+Every figure here comes from live API calls. The vignette is precomputed —
+`vignettes/juvenile-arrests.Rmd.orig` holds the source and is knitted to
+`.Rmd` by `data-raw/precompute_vignettes.R` — so building the package never
+touches the network. Re-run that script to refresh against current data;
+the numbers will move as agencies backfill.
