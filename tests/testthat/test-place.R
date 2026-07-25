@@ -192,21 +192,21 @@ test_that("place_agencies rejects an invalid state", {
   expect_error(place_agencies("Lufkin", "ZZ"), "Invalid state")
 })
 
-test_that(".empty_place_agency_frame has correctly typed columns", {
+test_that(".empty_place_agency_frame types match a populated result", {
+  # Asserted against the populated frame rather than a hardcoded list: an
+  # earlier version of this test hardcoded numeric latitude/longitude and so
+  # passed while the empty frame disagreed with the populated one, which stores
+  # coordinates as character. The contract is agreement, not a fixed guess.
   empty <- .empty_place_agency_frame()
-  classes <- vapply(empty, class, character(1))
+  populated <- place_agencies("Lufkin", "TX")
 
-  expect_equal(classes[["ori"]], "character")
-  expect_equal(classes[["agency_name"]], "character")
-  expect_equal(classes[["agency_type_name"]], "character")
-  expect_equal(classes[["agency_class"]], "character")
-  expect_equal(classes[["default_member"]], "logical")
-  expect_equal(classes[["place_name"]], "character")
-  expect_equal(classes[["county_name"]], "character")
-  expect_equal(classes[["state_abbr"]], "character")
-  expect_equal(classes[["attribution"]], "character")
-  expect_equal(classes[["latitude"]], "numeric")
-  expect_equal(classes[["longitude"]], "numeric")
+  expect_gt(nrow(populated), 0L)
+  expect_equal(names(empty), names(populated))
+  expect_equal(
+    vapply(empty, function(x) class(x)[1], character(1)),
+    vapply(populated, function(x) class(x)[1], character(1))
+  )
+  expect_equal(vapply(empty, class, character(1))[["default_member"]], "logical")
 })
 
 test_that("an unmatched-place empty frame rbinds cleanly against a real result", {

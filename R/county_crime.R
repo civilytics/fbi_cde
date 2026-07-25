@@ -76,10 +76,27 @@ parse_agency_detail <- function(response, ori, offense, from, to) {
 
 # A 0-row, .DETAIL_COLS-shaped data.frame, used whenever there is no agency
 # data to return (no agencies matched, or every agency's request failed).
+#
+# Built column-by-column rather than from `matrix(nrow = 0, ...)`, whose default
+# mode is `logical`: that types every column `logical(0)`, so `rbind()`ing an
+# empty result onto a populated one — the natural way to stack several counties
+# — errors or silently coerces. Types here must match a populated result.
 .empty_detail_frame <- function() {
-  as.data.frame(
-    matrix(nrow = 0, ncol = length(.DETAIL_COLS),
-           dimnames = list(NULL, .DETAIL_COLS)),
+  data.frame(
+    ori = character(0),
+    agency_name = character(0),
+    agency_type_name = character(0),
+    agency_class = character(0),
+    default_member = logical(0),
+    county_name = character(0),
+    state_abbr = character(0),
+    offense = character(0),
+    period = character(0),
+    count = numeric(0),
+    population = numeric(0),
+    participated_population = numeric(0),
+    rate = numeric(0),
+    reported = logical(0),
     stringsAsFactors = FALSE
   )
 }
@@ -218,6 +235,25 @@ get_county_agency_crime <- function(county, state, offense = "V",
   "rate", "denominator_type", "coverage_fraction"
 )
 
+# A 0-row, .AGGREGATE_COLS-shaped frame whose column types match a populated
+# result. See the note on .empty_detail_frame() for why this is not built from
+# `matrix(nrow = 0, ...)`.
+.empty_aggregate_frame <- function() {
+  data.frame(
+    county_name = character(0),
+    state_abbr = character(0),
+    offense = character(0),
+    period = character(0),
+    count = numeric(0),
+    population = numeric(0),
+    participated_population = numeric(0),
+    rate = numeric(0),
+    denominator_type = character(0),
+    coverage_fraction = numeric(0),
+    stringsAsFactors = FALSE
+  )
+}
+
 #' Aggregate county crime detail into a coverage-transparent rollup
 #'
 #' Sums itemized agency-level detail (from [get_county_crime_detail()]) into a
@@ -294,13 +330,7 @@ get_county_crime <- function(detail, denominator = "jurisdiction_pop") {
 
   # Handle empty input.
   if (nrow(detail) == 0L) {
-    out <- as.data.frame(
-      matrix(nrow = 0, ncol = length(.AGGREGATE_COLS),
-             dimnames = list(NULL, .AGGREGATE_COLS)),
-      stringsAsFactors = FALSE
-    )
-    out$denominator_type <- character(0)
-    return(out)
+    return(.empty_aggregate_frame())
   }
 
   # Group by (county_name, state_abbr, offense, period) and aggregate.
