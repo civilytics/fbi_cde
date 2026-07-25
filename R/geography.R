@@ -17,6 +17,31 @@ agencies_table <- function() {
   "county_name", "state_abbr", "county_fips", "latitude", "longitude"
 )
 
+# A 0-row, .COUNTY_AGENCY_COLS-shaped frame whose column types match those of a
+# populated result. Built column-by-column rather than from `matrix(nrow = 0,
+# ...)`, whose default mode is `logical`: that types every column `logical(0)`,
+# so `rbind()`ing an empty result onto a populated one — the natural way to
+# stack several counties — errors or silently coerces.
+#
+# `latitude`/`longitude` are character here because that is how the bundled
+# agency table stores them (545 rows hold the literal string "NULL"). These
+# types must track the populated frame, not what the columns ideally would be.
+.empty_county_agency_frame <- function() {
+  data.frame(
+    ori = character(0),
+    agency_name = character(0),
+    agency_type_name = character(0),
+    agency_class = character(0),
+    default_member = logical(0),
+    county_name = character(0),
+    state_abbr = character(0),
+    county_fips = character(0),
+    latitude = character(0),
+    longitude = character(0),
+    stringsAsFactors = FALSE
+  )
+}
+
 #' List the law-enforcement agencies attributed to a county
 #'
 #' Returns every agency in the bundled agency table whose county and state match,
@@ -54,14 +79,7 @@ county_agencies <- function(county, state) {
   if (nrow(sel) == 0) {
     warning("No agencies match county '", county, "' in state '", state, "'",
             call. = FALSE)
-    empty <- as.data.frame(
-      matrix(nrow = 0, ncol = length(.COUNTY_AGENCY_COLS),
-             dimnames = list(NULL, .COUNTY_AGENCY_COLS)),
-      stringsAsFactors = FALSE
-    )
-    empty$default_member <- logical(0)
-    empty$county_fips <- character(0)
-    return(empty)
+    return(.empty_county_agency_frame())
   }
 
   sel$agency_class <- classify_agency(sel$agency_type_name)
