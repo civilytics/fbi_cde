@@ -26,8 +26,8 @@ redistribution restriction.
 
 | measure | value |
 |---|---|
-| county↔CBSA rows | 1,918 |
-| distinct CBSAs | 938 (393 Metropolitan, 542 Micropolitan) |
+| county↔CBSA rows | 1,915 |
+| distinct CBSAs | 935 (393 Metropolitan, 542 Micropolitan) |
 | counties per CBSA | median 1, mean 2.0, **max 40** |
 | our counties in a CBSA | 2,280 / 3,733 (**61.1%**) |
 | CBSAs spanning >1 state | 59 |

@@ -224,10 +224,18 @@ test_that("list_metros carries the delineation vintage", {
   expect_equal(attr(list_metros(), "vintage"), CBSA_VINTAGE)
 })
 
-test_that("New York is the largest metro by county count", {
+test_that("the largest metros carry the expected county counts", {
   out <- list_metros(type = "metro")
-  top <- out[order(-out$n_counties), , drop = FALSE]
-  expect_match(top$cbsa_title[1], "New York")
+
+  expect_gt(max(out$n_counties), 20L)
+
+  # New York is 22 counties in the 2023 delineation — a specific, checkable
+  # anchor that catches drift. Note it is NOT the largest CBSA: San Juan, PR
+  # has 40 municipios, and Atlanta 29. Territories are part of the official
+  # delineation and are deliberately retained.
+  ny <- out[out$cbsa_title == "New York-Newark-Jersey City, NY-NJ", , drop = FALSE]
+  expect_equal(nrow(ny), 1L)
+  expect_equal(ny$n_counties, 22L)
 })
 ```
 
@@ -322,7 +330,7 @@ git commit -m "feat: add county-to-CBSA crosswalk and list_metros()
 
 Derived at build time from the public-domain 2023 OMB/Census delineation
 file (Bulletin 23-01) and bundled in R/sysdata.rda, following the county
-FIPS crosswalk precedent. 938 CBSAs over 1,918 county rows, covering 61%
+FIPS crosswalk precedent. 935 CBSAs over 1,915 county rows, covering 61%
 of known counties - rural counties belong to no CBSA by construction.
 
 The build script re-saves every internal object, because sysdata.rda holds
@@ -1108,8 +1116,8 @@ Insert immediately below the `# fbi 0.1.0.9000 (development version)` heading in
 - Added `list_metros()` — the discovery counterpart: every CBSA with its county
   count, filterable by type.
 - Added an internal county→CBSA crosswalk derived from the public-domain
-  **2023** OMB/Census delineation file (Bulletin 23-01): 938 CBSAs (393
-  metropolitan, 542 micropolitan) over 1,918 county rows. It covers 61% of known
+  **2023** OMB/Census delineation file (Bulletin 23-01): 935 CBSAs (393
+  metropolitan, 542 micropolitan) over 1,915 county rows. It covers 61% of known
   counties — rural counties belong to no CBSA by construction, which is a
   property of the delineation, not a gap in the data. The vintage is pinned and
   exposed as `CBSA_VINTAGE` and as an attribute on `list_metros()`, since CBSA
