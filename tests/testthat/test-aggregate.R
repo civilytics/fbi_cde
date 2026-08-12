@@ -241,9 +241,20 @@ test_that("get_county_crime output has all .AGGREGATE_COLS", {
 
 # ---- Census join tests (offline, no network) ------------------------------
 
+# This test verifies that when censusapi is NOT installed (or not available),
+# join_census_pop returns the detail frame with an all-NA census_population
+# column and a message — rather than erroring. We inject census_fun = NULL
+# and simulate the "not available" condition by mocking .census_deps_available().
+#
+# This runs on CI too: it does NOT depend on whether censusapi happens to be
+# installed in the CI environment, because we control that via local_mocked_bindings.
+# NOTE: mocking base::requireNamespace() directly (.package = "base") does NOT
+# work here — it doesn't intercept the unqualified call inside join_census_pop(),
+# so the check silently falls through to the real requireNamespace() result. The
+# dependency check is isolated into .census_deps_available() (see R/census.R)
+# specifically so it can be mocked within the package's own namespace, mirroring
+# .spatial_deps_available() in R/place_spatial.R.
 test_that("join_census_pop adds NA column when censusapi is not available", {
-  skip_on_ci()  # CI may have censusapi installed; test is environment-dependent.
-
   a <- make_detail(
     ori = "CA9990001",
     periods = "01-2021",
@@ -251,7 +262,11 @@ test_that("join_census_pop adds NA column when censusapi is not available", {
   )
   a$county_fips <- "06001"
 
-  # censusapi is in Suggests and likely not installed; expect NA column + message.
+  local_mocked_bindings(
+    .census_deps_available = function() FALSE,
+    .package = "fbiCDE"
+  )
+
   out <- suppressMessages(join_census_pop(a))
   expect_true("census_population" %in% names(out))
   expect_true(is.na(out$census_population))

@@ -111,6 +111,17 @@
 
 ## Bug fixes
 
+- Fixed `R CMD check` failure on CI (and CRAN win-builder): the test for
+  `join_census_pop()` adding an NA column when `censusapi` is unavailable was
+  environment-dependent — `skip_on_ci()` alone didn't make it deterministic,
+  and when `censusapi` happens to be installed (as it is in CI, via
+  `setup-r-dependencies`), the function proceeds past the availability check
+  and errors on the missing Census API key. The dependency check is now
+  isolated into `.census_deps_available()` (mirroring the existing
+  `.spatial_deps_available()` pattern for `sf`/`tigris`), which the test mocks
+  directly via `local_mocked_bindings(.package = "fbiCDE")` — mocking
+  `requireNamespace()` itself does not work here because it doesn't intercept
+  the unqualified call inside the package's own namespace.
 - Fixed `impute_reporting_gaps()` writing interpolated values to the wrong rows
   when `detail` was not already sorted by period within an agency. The function
   sorts each `(ori, offense)` group internally but mapped results back using the

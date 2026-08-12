@@ -11,6 +11,13 @@
 # ACS total-population variable (table B01003, estimate 001).
 .ACS_POP_VAR <- "B01003_001E"
 
+# Isolated so tests can force the unavailable-dependency branch regardless of
+# whether censusapi actually happens to be installed (mirrors
+# .spatial_deps_available() in R/place_spatial.R).
+.census_deps_available <- function() {
+  requireNamespace("censusapi", quietly = TRUE)
+}
+
 #' Join Census ACS population estimates to county crime detail
 #'
 #' Fetches an American Community Survey (ACS) total-population estimate for each
@@ -73,7 +80,7 @@ join_census_pop <- function(detail,
   # Resolve the API seam. censusapi lives in Suggests, so only touch its
   # namespace when the caller did not inject a replacement.
   if (is.null(census_fun)) {
-    if (!requireNamespace("censusapi", quietly = TRUE)) {
+    if (!.census_deps_available()) {
       message("Package 'censusapi' is required for join_census_pop().\n",
               "Install it with: install.packages('censusapi')")
       detail$census_population <- NA_integer_
