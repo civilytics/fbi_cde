@@ -4,7 +4,7 @@
 
 test_that("cde_base_url() returns the default URL", {
   withr::with_options(
-    list(fbi.cde.base_url = NULL),
+    list(fbiCDE.cde.base_url = NULL),
     withr::with_envvar(
       list(FBI_CDE_BASE_URL = ""),
       expect_equal(cde_base_url(), "https://cde.ucr.cjis.gov/LATEST/")
@@ -14,7 +14,7 @@ test_that("cde_base_url() returns the default URL", {
 
 test_that("cde_base_url() respects option override", {
   withr::with_options(
-    list(fbi.cde.base_url = "https://custom.example.com/PATH/"),
+    list(fbiCDE.cde.base_url = "https://custom.example.com/PATH/"),
     withr::with_envvar(
       list(FBI_CDE_BASE_URL = "https://env.example.com/"),
       expect_equal(cde_base_url(), "https://custom.example.com/PATH/")
@@ -24,7 +24,7 @@ test_that("cde_base_url() respects option override", {
 
 test_that("cde_base_url() falls back to env var when option is unset", {
   withr::with_options(
-    list(fbi.cde.base_url = NULL),
+    list(fbiCDE.cde.base_url = NULL),
     withr::with_envvar(
       list(FBI_CDE_BASE_URL = "https://env.example.com/"),
       expect_equal(cde_base_url(), "https://env.example.com/")
