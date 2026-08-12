@@ -14,6 +14,7 @@
 ^\.Rhistory$
 ^\.git$
 ^\.gitea$
+^\.github$
 ^\.playwright-mcp$
 ^\.\.Rcheck$
 ^pkgdown$
@@ -22,4 +23,5 @@
 ^\.superpowers$
 ^\.claude$
 ^CLAUDE\.md$
+^CONTRIBUTING\.md$
 ^data-raw$

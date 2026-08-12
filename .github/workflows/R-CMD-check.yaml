@@ -1,58 +1,65 @@
-name: R-CMD-check
-
+# Multi-platform R CMD check, running on the GitHub mirror.
+#
+# The canonical Gitea CI (.gitea/workflows/R-CMD-check.yaml) only runs on
+# Linux. fbi's hard Imports (httr, jsonlite) are pure R with no compiled
+# toolchain, but the optional geography features
+# (add_place_spatial_members()) pull sf and tigris from Suggests, and sf's
+# GDAL/GEOS/PROJ dependency chain is exactly the kind of thing that behaves
+# differently across Windows/macOS/Linux. This package targets CRAN, where
+# that variance gets caught either way -- better to catch it here first.
+#
+# Gitea reads .gitea/workflows and GitHub reads .github/workflows, so this
+# file is inert on the canonical repo and coexists with the Gitea CI that
+# remains authoritative for deploys.
 on:
   push:
-    branches: [master, main]
+    branches: [main, master]
   pull_request:
-    branches: [master, main]
   workflow_dispatch:
 
-permissions:
-  contents: read
+name: R-CMD-check
+
+permissions: read-all
 
 jobs:
   R-CMD-check:
-    runs-on: ubuntu-latest
-    # NOTE: do NOT use a `container:` here. JS actions (checkout, setup-r) need
-    # `node` in the runtime; minimal R images (e.g. rocker/r2u) lack it, which
-    # fails with exit 127 (`node: not found`). The default host runner image
-    # provides node, and r-lib/actions installs R on top of it.
+    runs-on: ${{ matrix.config.os }}
+    name: ${{ matrix.config.os }} (${{ matrix.config.r }})
+
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {os: macos-latest,   r: 'release'}
+          - {os: windows-latest, r: 'release'}
+          - {os: ubuntu-latest,  r: 'devel', http-user-agent: 'release'}
+          - {os: ubuntu-latest,  r: 'release'}
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      R_KEEP_PKG_SOURCE: yes
       _R_CHECK_CRAN_INCOMING_: false
       _R_CHECK_FORCE_SUGGESTS_: false
+      # Live FBI API tests skip on CI; do not set FBI_API_KEY here yet.
+      _R_CHECK_TESTS_NLINES_: 0
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup R
-        uses: r-lib/actions/setup-r@v2
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
         with:
+          r-version: ${{ matrix.config.r }}
+          http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
 
-      - name: Install dependencies
-        uses: r-lib/actions/setup-r-dependencies@v2
+      - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: any::rcmdcheck
           needs: check
 
-      - name: R CMD check
-        env:
-          # Live FBI API tests skip on CI; do not set FBI_API_KEY here yet.
-          _R_CHECK_TESTS_NLINES_: 0
-        run: |
-          options(crayon.enabled = TRUE)
-          rcmdcheck::rcmdcheck(
-            args = c("--no-manual", "--as-cran"),
-            error_on = "error",
-            check_dir = "check"
-          )
-        shell: Rscript {0}
-
-      - name: Show check logs on failure
-        if: failure()
-        run: |
-          find check -name "*.log" -exec echo "===== {} =====" \; -exec cat {} \;
-        shell: bash
+      - uses: r-lib/actions/check-r-package@v2
+        with:
+          upload-snapshots: true
+          build_args: 'c("--no-manual")'
