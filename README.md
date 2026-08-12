@@ -6,8 +6,9 @@
 <!-- badges: start -->
 
 [![R-CMD-check](https://github.com/Civilytics/fbi_cde/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Civilytics/fbi_cde/actions/workflows/R-CMD-check.yaml)
-[![r-universe](https://civilytics.r-universe.dev/badges/uscogdata)](https://civilytics.r-universe.dev/uscogdata)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
+[![r-universe](https://civilytics.r-universe.dev/badges/fbi_cde)](https://civilytics.r-universe.dev/packages/fbi_cde)
+[![License:
+MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
 <!-- badges: end -->
 
 An R wrapper for the [FBI Crime Data Explorer (CDE)

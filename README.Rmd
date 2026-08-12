@@ -16,8 +16,10 @@ knitr::opts_chunk$set(
 # fbi: R Wrapper for the FBI Crime Data Explorer (CDE) API
 
 <!-- badges: start -->
-[![R-CMD-check](https://github.com/Civilytics/fbi_cde/actions/workflows/R-CMD-check.yml/badge.svg)](https://github.com/Civilytics/fbi_cde/actions/workflows/R-CMD-check.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+[![R-CMD-check](https://github.com/Civilytics/fbi_cde/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Civilytics/fbi_cde/actions/workflows/R-CMD-check.yaml)
+[![r-universe](https://civilytics.r-universe.dev/badges/fbi_cde)](https://civilytics.r-universe.dev/packages/fbi_cde)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
 <!-- badges: end -->
 
 An R wrapper for the [FBI Crime Data Explorer (CDE) API](https://cde.ucr.cjis.gov/LATEST/) providing access to UCR and NIBRS crime data. The package offers a unified interface for querying summarized crime statistics, arrest demographics, NIBRS incident-level data, Supplemental Homicide Reports (SHR), and police employment statistics.
