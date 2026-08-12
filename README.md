@@ -1,12 +1,12 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# fbi: R Wrapper for the FBI Crime Data Explorer (CDE) API
+# fbiCDE: R Wrapper for the FBI Crime Data Explorer (CDE) API
 
 <!-- badges: start -->
 
-[![R-CMD-check](https://github.com/Civilytics/fbi_cde/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Civilytics/fbi_cde/actions/workflows/R-CMD-check.yaml)
-[![r-universe](https://civilytics.r-universe.dev/badges/fbi_cde)](https://civilytics.r-universe.dev/packages/fbi_cde)
+[![R-CMD-check](https://github.com/Civilytics/fbiCDE/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Civilytics/fbiCDE/actions/workflows/R-CMD-check.yaml)
+[![r-universe](https://civilytics.r-universe.dev/badges/fbiCDE)](https://civilytics.r-universe.dev/packages/fbiCDE)
 [![License:
 MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
 <!-- badges: end -->
@@ -27,13 +27,13 @@ for the package. **No API key is required** for the current CDE host at
 The package is not on CRAN. Install the development version from GitHub:
 
 ``` r
-remotes::install_github("Civilytics/fbi_cde")
+remotes::install_github("Civilytics/fbiCDE")
 ```
 
 ## Quick Start
 
 ``` r
-library(fbi)
+library(fbiCDE)
 
 # Get all states available in the API
 get_states()

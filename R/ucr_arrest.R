@@ -68,7 +68,7 @@ get_arrest_count <- function(ori = NULL,
     return(parse_arrest_counts_response(response, geography))
   }
 
-  valid <- fbi::ucr_arrest_offenses
+  valid <- fbiCDE::ucr_arrest_offenses
   if (!tolower(offense) %in% tolower(valid)) {
     stop(
       "Invalid arrest offense: ", offense,
@@ -367,5 +367,5 @@ parse_arrest_demographics_response <- function(response, geography, offense) {
 #' @examples
 #' list_ucr_arrest_offenses()
 list_ucr_arrest_offenses <- function() {
-  fbi::ucr_arrest_offenses
+  fbiCDE::ucr_arrest_offenses
 }

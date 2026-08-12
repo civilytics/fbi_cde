@@ -1,8 +1,8 @@
 ---
-title: "Getting Started with fbi"
+title: "Getting Started with fbiCDE"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Getting Started with fbi}
+  %\VignetteIndexEntry{Getting Started with fbiCDE}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -26,7 +26,7 @@ the data at the agency, state, and national level.
 
 
 ``` r
-library(fbi)
+library(fbiCDE)
 ```
 
 ## Lookups
@@ -234,7 +234,7 @@ get_nibrs_victim("CA0010900", offense = "robbery", variable = "race")
 As of this package version, the live NIBRS demographic-detail endpoint
 returns no data for any agency, offense, or date range -- this is a known,
 tracked upstream issue
-(<https://gitea.civilytics.org/Civilytics/fbi_cde/issues/33>), not a bug in
+(<https://gitea.civilytics.org/Civilytics/fbiCDE/issues/33>), not a bug in
 this package. Calling these functions today will emit a message saying so
 and return a 0-row data frame; the chunk above is not evaluated in this
 vignette for that reason. Use `list_nibrs_offenses()`,

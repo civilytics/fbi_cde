@@ -42,7 +42,7 @@ test_that("get_nibrs_victim returns empty for missing section", {
   # the live API's current all-null NIBRS payload for a genuine zero count.
   local_mocked_bindings(
     cde_request = function(...) list(),
-    .package = "fbi"
+    .package = "fbiCDE"
   )
   expect_message(result <- get_nibrs_victim("CA0010900"), "returned no data")
 
@@ -53,7 +53,7 @@ test_that("get_nibrs_victim returns empty for missing section", {
 test_that("get_nibrs_victim returns empty for missing variable", {
   local_mocked_bindings(
     cde_request = function(...) list(victim = list()),
-    .package = "fbi"
+    .package = "fbiCDE"
   )
   expect_message(result <- get_nibrs_victim("CA0010900"), "returned no data")
 
@@ -91,7 +91,7 @@ test_that("get_nibrs_offender returns correct demographic_type for variable", {
 test_that("get_nibrs_offender returns empty for missing section", {
   local_mocked_bindings(
     cde_request = function(...) list(),
-    .package = "fbi"
+    .package = "fbiCDE"
   )
   expect_message(result <- get_nibrs_offender("CA0010900"), "returned no data")
 
@@ -129,7 +129,7 @@ test_that("get_nibrs_offense returns correct demographic_type for variable", {
 test_that("get_nibrs_offense returns empty for missing section", {
   local_mocked_bindings(
     cde_request = function(...) list(),
-    .package = "fbi"
+    .package = "fbiCDE"
   )
   expect_message(result <- get_nibrs_offense("CA0010900"), "returned no data")
 

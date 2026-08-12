@@ -156,7 +156,7 @@ test_that(".fanout_agency_detail copies exactly the requested metadata columns",
 
   testthat::local_mocked_bindings(
     cde_request = function(...) response,
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   out <- .fanout_agency_detail(
@@ -188,7 +188,7 @@ test_that(".fanout_agency_detail returns the typed empty frame when all fail", {
 
   testthat::local_mocked_bindings(
     cde_request = function(...) stop("503"),
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   expect_warning(
@@ -220,7 +220,7 @@ test_that(".fanout_agency_detail keeps survivors when only some agencies fail", 
       if (grepl("CA0000002", path)) stop("503")
       make_response("Alpha PD", c("01-2021" = 10))
     },
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   expect_warning(

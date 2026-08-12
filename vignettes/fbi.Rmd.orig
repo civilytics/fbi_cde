@@ -30,7 +30,7 @@ agencies drawn from several different states, so you can see the shape of
 the data at the agency, state, and national level.
 
 ```{r setup}
-library(fbi)
+library(fbiCDE)
 ```
 
 ## Lookups

@@ -25,7 +25,7 @@ nibrs_empty_result <- function() {
     "returned no data for every combination of agency/offense/date range ",
     "tested -- this may indicate an upstream API issue rather than a ",
     "genuine zero count. See https://gitea.civilytics.org/Civilytics/",
-    "fbi_cde/issues/33 for tracking."
+    "fbiCDE/issues/33 for tracking."
   )
   data.frame(
     geography = character(),
@@ -85,7 +85,7 @@ parse_nibrs_response <- function(response, geography, offense, section, variable
 #' @description
 #' **Known issue:** as of this package version, the live endpoint returns no
 #' data for any input tested (see
-#' <https://gitea.civilytics.org/Civilytics/fbi_cde/issues/33>). A message is
+#' <https://gitea.civilytics.org/Civilytics/fbiCDE/issues/33>). A message is
 #' emitted whenever the result is empty.
 #'
 #' @family NIBRS functions
@@ -158,7 +158,7 @@ get_nibrs_victim <- function(ori = NULL,
 #' @description
 #' **Known issue:** as of this package version, the live endpoint returns no
 #' data for any input tested (see
-#' <https://gitea.civilytics.org/Civilytics/fbi_cde/issues/33>). A message is
+#' <https://gitea.civilytics.org/Civilytics/fbiCDE/issues/33>). A message is
 #' emitted whenever the result is empty.
 #'
 #' @family NIBRS functions
@@ -226,7 +226,7 @@ get_nibrs_offender <- function(ori = NULL,
 #' @description
 #' **Known issue:** as of this package version, the live endpoint returns no
 #' data for any input tested (see
-#' <https://gitea.civilytics.org/Civilytics/fbi_cde/issues/33>). A message is
+#' <https://gitea.civilytics.org/Civilytics/fbiCDE/issues/33>). A message is
 #' emitted whenever the result is empty.
 #'
 #' @family NIBRS functions
@@ -298,7 +298,7 @@ get_nibrs_offense <- function(ori = NULL,
 #' @examples
 #' list_nibrs_offenses()
 list_nibrs_offenses <- function() {
-  fbi::nibrs_offenses
+  fbiCDE::nibrs_offenses
 }
 
 
@@ -313,7 +313,7 @@ list_nibrs_offenses <- function() {
 #' @examples
 #' list_nibrs_victim_variables()
 list_nibrs_victim_variables <- function() {
-  fbi::nibrs_victim_variables
+  fbiCDE::nibrs_victim_variables
 }
 
 
@@ -328,7 +328,7 @@ list_nibrs_victim_variables <- function() {
 #' @examples
 #' list_nibrs_offender_variables()
 list_nibrs_offender_variables <- function() {
-  fbi::nibrs_offender_variables
+  fbiCDE::nibrs_offender_variables
 }
 
 
@@ -343,7 +343,7 @@ list_nibrs_offender_variables <- function() {
 #' @examples
 #' list_nibrs_offense_variables()
 list_nibrs_offense_variables <- function() {
-  fbi::nibrs_offense_variables
+  fbiCDE::nibrs_offense_variables
 }
 
 
@@ -358,5 +358,5 @@ list_nibrs_offense_variables <- function() {
 #' @examples
 #' list_regions()
 list_regions <- function() {
-  fbi::regions
+  fbiCDE::regions
 }

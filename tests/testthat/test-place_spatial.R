@@ -15,7 +15,7 @@ test_that("add_place_spatial_members returns input unchanged when sf is absent",
   # Force the unavailable-dependency branch regardless of what is installed.
   testthat::local_mocked_bindings(
     .spatial_deps_available = function() FALSE,
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   expect_message(out <- add_place_spatial_members(x), "sf")
@@ -98,7 +98,7 @@ test_that("add_place_spatial_members attributes an embedded agency inside the pl
   # sit inside a 1-degree box around Lufkin.
   testthat::local_mocked_bindings(
     agencies_table = function() fake_agencies,
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   out <- add_place_spatial_members(x, places_fun = function(state, vintage) fixture_places())
@@ -133,7 +133,7 @@ test_that("add_place_spatial_members excludes agencies outside the polygon", {
   # sit inside a 1-degree box around Lufkin.
   testthat::local_mocked_bindings(
     agencies_table = function() fake_agencies,
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   out <- add_place_spatial_members(x, places_fun = function(state, vintage) fixture_places())
@@ -161,7 +161,7 @@ test_that("add_place_spatial_members never attributes sheriffs or state police",
   # sit inside a 1-degree box around Lufkin.
   testthat::local_mocked_bindings(
     agencies_table = function() fake_agencies,
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   out <- add_place_spatial_members(x, places_fun = function(state, vintage) fixture_places())
@@ -190,7 +190,7 @@ test_that("add_place_spatial_members flags a CDP match via place_type", {
   # sit inside a 1-degree box around Lufkin.
   testthat::local_mocked_bindings(
     agencies_table = function() fake_agencies,
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   out <- add_place_spatial_members(x, places_fun = function(state, vintage) fixture_places())
@@ -217,7 +217,7 @@ test_that("add_place_spatial_members skips agencies with unusable coordinates", 
   )
   testthat::local_mocked_bindings(
     agencies_table = function() fake_agencies,
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   out <- add_place_spatial_members(x, places_fun = function(state, vintage) fixture_places())
@@ -263,7 +263,7 @@ test_that("add_place_spatial_members resolves the containing polygon when a name
   )
   testthat::local_mocked_bindings(
     agencies_table = function() fake_agencies,
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   out <- add_place_spatial_members(
@@ -327,7 +327,7 @@ test_that("add_place_spatial_members does not produce a phantom match from an NA
   )
   testthat::local_mocked_bindings(
     agencies_table = function() fake_agencies,
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   expect_warning(

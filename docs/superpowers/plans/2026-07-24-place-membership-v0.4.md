@@ -572,7 +572,7 @@ fake_agency_response <- function(label = "Lufkin Police Department",
 test_that("get_place_crime_detail returns per-period rows for the place's agency", {
   testthat::local_mocked_bindings(
     cde_request = function(...) fake_agency_response(),
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   out <- get_place_crime_detail("Lufkin", "TX", from = "01-2021", to = "02-2021")
@@ -590,7 +590,7 @@ test_that("get_place_crime_detail returns per-period rows for the place's agency
 test_that("get_place_crime_detail returns the documented columns in order", {
   testthat::local_mocked_bindings(
     cde_request = function(...) fake_agency_response(),
-    .package = "fbi"
+    .package = "fbiCDE"
   )
   out <- get_place_crime_detail("Lufkin", "TX", from = "01-2021", to = "02-2021")
   expect_equal(names(out), .PLACE_DETAIL_COLS)
@@ -599,7 +599,7 @@ test_that("get_place_crime_detail returns the documented columns in order", {
 test_that("get_place_crime_detail strips state comparison rows", {
   testthat::local_mocked_bindings(
     cde_request = function(...) fake_agency_response(),
-    .package = "fbi"
+    .package = "fbiCDE"
   )
   out <- get_place_crime_detail("Lufkin", "TX", from = "01-2021", to = "02-2021")
   # The Texas comparison series carries 999; it must never reach the output.
@@ -611,7 +611,7 @@ test_that("get_place_crime_detail flags a non-reporting period rather than zero"
     cde_request = function(...) fake_agency_response(
       counts = list(`01-2021` = 10)  # 02-2021 absent entirely
     ),
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   out <- get_place_crime_detail("Lufkin", "TX", from = "01-2021", to = "02-2021")
@@ -623,7 +623,7 @@ test_that("get_place_crime_detail flags a non-reporting period rather than zero"
 test_that("get_place_crime_detail drops a failing ORI with a warning and records it", {
   testthat::local_mocked_bindings(
     cde_request = function(...) stop("503"),
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   expect_warning(
@@ -880,7 +880,7 @@ test_that("add_place_spatial_members returns input unchanged when sf is absent",
   # Force the unavailable-dependency branch regardless of what is installed.
   testthat::local_mocked_bindings(
     .spatial_deps_available = function() FALSE,
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   expect_message(out <- add_place_spatial_members(x), "sf")
@@ -930,7 +930,7 @@ test_that("add_place_spatial_members attributes an embedded agency inside the pl
   # sit inside a 1-degree box around Lufkin.
   testthat::local_mocked_bindings(
     agencies_table = function() fake_agencies,
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   out <- add_place_spatial_members(x, places_fun = function(state, vintage) fixture_places())
@@ -965,7 +965,7 @@ test_that("add_place_spatial_members excludes agencies outside the polygon", {
   # sit inside a 1-degree box around Lufkin.
   testthat::local_mocked_bindings(
     agencies_table = function() fake_agencies,
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   out <- add_place_spatial_members(x, places_fun = function(state, vintage) fixture_places())
@@ -993,7 +993,7 @@ test_that("add_place_spatial_members never attributes sheriffs or state police",
   # sit inside a 1-degree box around Lufkin.
   testthat::local_mocked_bindings(
     agencies_table = function() fake_agencies,
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   out <- add_place_spatial_members(x, places_fun = function(state, vintage) fixture_places())
@@ -1022,7 +1022,7 @@ test_that("add_place_spatial_members flags a CDP match via place_type", {
   # sit inside a 1-degree box around Lufkin.
   testthat::local_mocked_bindings(
     agencies_table = function() fake_agencies,
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   out <- add_place_spatial_members(x, places_fun = function(state, vintage) fixture_places())
@@ -1049,7 +1049,7 @@ test_that("add_place_spatial_members skips agencies with unusable coordinates", 
   )
   testthat::local_mocked_bindings(
     agencies_table = function() fake_agencies,
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   out <- add_place_spatial_members(x, places_fun = function(state, vintage) fixture_places())

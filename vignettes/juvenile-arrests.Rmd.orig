@@ -29,7 +29,7 @@ what the CDE API can and cannot answer, because both matter when you are
 building an analysis you intend to defend.
 
 ```{r setup}
-library(fbi)
+library(fbiCDE)
 ```
 
 ## 1. What counts as a juvenile arrest?

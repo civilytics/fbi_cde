@@ -44,7 +44,7 @@ test_that("the guard errors before issuing ANY request", {
       called <<- called + 1L
       stop("must not be reached")
     },
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   expect_error(
@@ -62,7 +62,7 @@ test_that("the guard error names the metro and the agency count", {
 
   testthat::local_mocked_bindings(
     metro_agencies = function(metro, state = NULL) big,
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   err <- tryCatch(
@@ -80,7 +80,7 @@ test_that("max_agencies = Inf disables the guard", {
     metro_agencies = function(metro, state = NULL) agencies,
     cde_request = function(...) make_metro_response("Alpha PD",
                                                     c("01-2021" = 5)),
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   out <- get_metro_crime_detail("Pittsburgh, PA", max_agencies = Inf,
@@ -98,7 +98,7 @@ test_that("get_metro_crime_detail returns per-agency-period rows", {
     cde_request = function(path, query = list(), ...) {
       make_metro_response("Alpha PD", c("01-2021" = 10, "02-2021" = 12))
     },
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   out <- get_metro_crime_detail("Pittsburgh, PA", from = "01-2021",
@@ -119,7 +119,7 @@ test_that("a failing ORI is dropped with a warning and recorded", {
       if (grepl("PA0000002", path)) stop("503")
       make_metro_response("Alpha PD", c("01-2021" = 10))
     },
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   expect_warning(
@@ -134,7 +134,7 @@ test_that("a failing ORI is dropped with a warning and recorded", {
 test_that("an unknown metro returns a typed empty frame", {
   testthat::local_mocked_bindings(
     metro_agencies = function(metro, state = NULL) .empty_metro_agency_frame(),
-    .package = "fbi"
+    .package = "fbiCDE"
   )
   out <- get_metro_crime_detail("Nowhere", from = "01-2021", to = "01-2021",
                                 progress = FALSE)
@@ -151,7 +151,7 @@ test_that("a filter that empties a non-empty agency set warns (I2)", {
   agencies <- fake_metro_agencies()
   testthat::local_mocked_bindings(
     metro_agencies = function(metro, state = NULL) agencies,
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   expect_warning(
@@ -170,7 +170,7 @@ test_that("no filter warning when metro_agencies() already returned nothing", {
   # on top when the frame was already empty before any filtering happened.
   testthat::local_mocked_bindings(
     metro_agencies = function(metro, state = NULL) .empty_metro_agency_frame(),
-    .package = "fbi"
+    .package = "fbiCDE"
   )
   expect_no_warning(
     out <- get_metro_crime_detail("Nowhere", from = "01-2021", to = "01-2021",

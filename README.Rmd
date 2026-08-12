@@ -13,12 +13,12 @@ knitr::opts_chunk$set(
 )
 ```
 
-# fbi: R Wrapper for the FBI Crime Data Explorer (CDE) API
+# fbiCDE: R Wrapper for the FBI Crime Data Explorer (CDE) API
 
 <!-- badges: start -->
 
-[![R-CMD-check](https://github.com/Civilytics/fbi_cde/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Civilytics/fbi_cde/actions/workflows/R-CMD-check.yaml)
-[![r-universe](https://civilytics.r-universe.dev/badges/fbi_cde)](https://civilytics.r-universe.dev/packages/fbi_cde)
+[![R-CMD-check](https://github.com/Civilytics/fbiCDE/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Civilytics/fbiCDE/actions/workflows/R-CMD-check.yaml)
+[![r-universe](https://civilytics.r-universe.dev/badges/fbiCDE)](https://civilytics.r-universe.dev/packages/fbiCDE)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
 <!-- badges: end -->
 
@@ -31,13 +31,13 @@ All network requests go through `cde_request()`, the single network seam for the
 The package is not on CRAN. Install the development version from GitHub:
 
 ```r
-remotes::install_github("Civilytics/fbi_cde")
+remotes::install_github("Civilytics/fbiCDE")
 ```
 
 ## Quick Start
 
 ```{r example, eval=FALSE}
-library(fbi)
+library(fbiCDE)
 
 # Get all states available in the API
 get_states()

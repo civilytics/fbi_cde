@@ -39,7 +39,7 @@ jobs:
               "Thanks for this — and one thing worth knowing before it happens.",
               "",
               "**This repository is a mirror.** Development happens on Gitea at",
-              "`gitea.civilytics.org/Civilytics/fbi_cde`. Your pull request will be fetched",
+              "`gitea.civilytics.org/Civilytics/fbiCDE`. Your pull request will be fetched",
               "from here, landed there, and synced back.",
               "",
               "Because that merge preserves your commits at their original SHAs, **GitHub will",
@@ -51,7 +51,7 @@ jobs:
               "",
               "If it is *not* going to be merged, you will get an actual reply saying so.",
               "",
-              "Full details: [CONTRIBUTING.md](https://github.com/civilytics/fbi_cde/blob/main/CONTRIBUTING.md).",
+              "Full details: [CONTRIBUTING.md](https://github.com/civilytics/fbiCDE/blob/main/CONTRIBUTING.md).",
             ].join("\n");
 
             await github.rest.issues.createComment({

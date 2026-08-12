@@ -846,7 +846,7 @@ test_that("get_county_crime_detail fans out, filters, and reports drops", {
       if (is.null(r)) stop("no data for ", ori)
       r
     },
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   out <- get_county_crime_detail("Testonia", "CA", offense = "V",
@@ -881,7 +881,7 @@ test_that("get_county_crime_detail default_only keeps only default members", {
       ori <- sub("^summarized/agency/([A-Za-z0-9]{9})/.*$", "\\1", path)
       responses[[ori]]
     },
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   out <- get_county_crime_detail("Testonia", "CA", from = "01-2021",
@@ -1069,7 +1069,7 @@ test_that("get_county_agency_crime resolves the county_primary ORI", {
       data.frame(geography = ori, offense = "x", period = "01-2021",
                  count = 1, rate = 1, stringsAsFactors = FALSE)
     },
-    .package = "fbi"
+    .package = "fbiCDE"
   )
   out <- get_county_agency_crime("Testonia", "CA")
   expect_equal(called$ori, "CA0000009")   # the sheriff, not the city
@@ -1084,7 +1084,7 @@ test_that("get_county_agency_crime errors when no county_primary exists", {
     latitude = 0, longitude = 0, stringsAsFactors = FALSE
   )
   testthat::local_mocked_bindings(
-    county_agencies = function(county, state) agencies, .package = "fbi")
+    county_agencies = function(county, state) agencies, .package = "fbiCDE")
   expect_error(get_county_agency_crime("Testonia", "CA"),
                "No county-primary")
 })

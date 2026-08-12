@@ -63,7 +63,7 @@ test_that("get_arrest_demographics rejects a specific offense", {
 test_that("get_arrest_demographics returns empty for no totals data", {
   local_mocked_bindings(
     cde_request = function(...) list(cde_properties = list()),
-    .package = "fbi"
+    .package = "fbiCDE"
   )
   result <- get_arrest_demographics("CA0010900")
 

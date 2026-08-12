@@ -65,7 +65,7 @@ flatten_cde_json <- function(obj) {
 #' Get the FBI CDE API base URL
 #'
 #' Returns the base URL for the FBI Crime Data Explorer API.
-#' Can be overridden via `getOption("fbi.cde.base_url")` or
+#' Can be overridden via `getOption("fbiCDE.cde.base_url")` or
 #' `Sys.getenv("FBI_CDE_BASE_URL")` (for tests).
 #'
 #' @return A character string with the base URL.
@@ -76,7 +76,7 @@ flatten_cde_json <- function(obj) {
 cde_base_url <- function() {
   default_url <- "https://cde.ucr.cjis.gov/LATEST/"
 
-  option_url <- getOption("fbi.cde.base_url")
+  option_url <- getOption("fbiCDE.cde.base_url")
   if (!is.null(option_url) && nzchar(option_url)) {
     return(option_url)
   }
@@ -107,8 +107,8 @@ cde_request <- function(path, query = list(), get_fun = httr::GET) {
   full_url <- httr::modify_url(paste0(base, path), query = query)
 
   useragent <- paste0(
-    "Mozilla/5.0 (compatible; a bot using the R fbi",
-    " package; https://github.com/Civilytics/fbi_cde)"
+    "Mozilla/5.0 (compatible; a bot using the R fbiCDE",
+    " package; https://github.com/Civilytics/fbiCDE)"
   )
 
   response <- get_fun(full_url, httr::user_agent(useragent))

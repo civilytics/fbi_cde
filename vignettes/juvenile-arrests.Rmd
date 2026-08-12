@@ -19,7 +19,7 @@ building an analysis you intend to defend.
 
 
 ``` r
-library(fbi)
+library(fbiCDE)
 ```
 
 ## 1. What counts as a juvenile arrest?

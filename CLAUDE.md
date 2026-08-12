@@ -97,7 +97,7 @@ spec → plan → implementation cycle; tracked as Gitea issues):
 
 ## Workflow
 
-- **Issue-driven** on Gitea (`gitea.civilytics.org/Civilytics/fbi_cde`); default
+- **Issue-driven** on Gitea (`gitea.civilytics.org/Civilytics/fbiCDE`); default
   branch `main`. Conventional commits (`feat:`/`fix:`/`refactor:`/`test:`/`docs:`).
   Record changes in `NEWS.md`. CI: `.gitea/workflows/R-CMD-check.yaml`.
 - **Known issue #33:** NIBRS demographic detail

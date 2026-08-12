@@ -169,16 +169,16 @@ get_state_participation <- function(state_abb, key = get_api_key()) {
 #' get_region_participation("South")
 #' }
 get_region_participation <- function(region_name, key = get_api_key()) {
-  if (!region_name %in% fbi::regions) {
+  if (!region_name %in% fbiCDE::regions) {
     stop(
       "Invalid region_name: ", region_name,
-      ". Must be one of: ", paste(fbi::regions, collapse = ", "),
+      ". Must be one of: ", paste(fbiCDE::regions, collapse = ", "),
       call. = FALSE
     )
   }
 
   states_in_region <- unique(
-    fbi::fbi_api_agencies$state_abbr[fbi::fbi_api_agencies$region_name == region_name]
+    fbiCDE::fbi_api_agencies$state_abbr[fbiCDE::fbi_api_agencies$region_name == region_name]
   )
   states_in_region <- states_in_region[!is.na(states_in_region)]
 

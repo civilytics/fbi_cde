@@ -169,11 +169,11 @@ get_agency_info <- function(agency,
                             ori_only = FALSE,
                             exact_match = TRUE) {
   if (exact_match) {
-    data <- fbi::fbi_api_agencies[tolower(fbi::fbi_api_agencies$agency_name) %in%
+    data <- fbiCDE::fbi_api_agencies[tolower(fbiCDE::fbi_api_agencies$agency_name) %in%
                                     tolower(agency), ]
   } else {
-    data <- fbi::fbi_api_agencies[grep(tolower(agency),
-                                       tolower(fbi::fbi_api_agencies$agency_name)), ]
+    data <- fbiCDE::fbi_api_agencies[grep(tolower(agency),
+                                       tolower(fbiCDE::fbi_api_agencies$agency_name)), ]
   }
   if (!is.null(state)) {
     data <- data[tolower(data$state_name) %in% tolower(state), ]

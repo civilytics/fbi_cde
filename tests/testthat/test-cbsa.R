@@ -23,10 +23,10 @@ test_that("sysdata still carries at least the known internal objects", {
   expect_true(all(c("crosswalk", "cbsa_crosswalk") %in% objs))
   expect_gte(length(objs), 2L)
 
-  expect_true(is.data.frame(fbi:::crosswalk))
-  expect_gt(nrow(fbi:::crosswalk), 3000L)
-  expect_true(is.data.frame(fbi:::cbsa_crosswalk))
-  expect_gt(nrow(fbi:::cbsa_crosswalk), 1800L)
+  expect_true(is.data.frame(fbiCDE:::crosswalk))
+  expect_gt(nrow(fbiCDE:::crosswalk), 3000L)
+  expect_true(is.data.frame(fbiCDE:::cbsa_crosswalk))
+  expect_gt(nrow(fbiCDE:::cbsa_crosswalk), 1800L)
 })
 
 test_that("cbsa_crosswalk has the expected shape", {
@@ -47,7 +47,7 @@ test_that("CBSA titles are unique per code", {
 
 test_that("the crosswalk covers the expected share of known counties", {
   cw <- .cbsa_table()
-  counties <- fbi:::crosswalk$county_fips
+  counties <- fbiCDE:::crosswalk$county_fips
   expect_gt(length(counties), 3000L)
   covered <- mean(counties %in% cw$county_fips)
   # ~61% as of the 2023 delineation; rural counties belong to no CBSA.
@@ -94,7 +94,7 @@ test_that("CBSA_VINTAGE matches the shipped data, not just itself (I4)", {
   # constant. Comparing against the shipped data directly -- rather than
   # against list_metros(), which itself just stamps CBSA_VINTAGE -- is the
   # only way this test can fail if the two ever diverge.
-  expect_equal(CBSA_VINTAGE, attr(fbi:::cbsa_crosswalk, "vintage"))
+  expect_equal(CBSA_VINTAGE, attr(fbiCDE:::cbsa_crosswalk, "vintage"))
 })
 
 test_that("the largest metros carry the expected county counts", {

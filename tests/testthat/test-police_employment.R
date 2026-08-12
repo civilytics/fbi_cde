@@ -59,7 +59,7 @@ test_that("get_police_employment returns empty data.frame for empty response", {
   # Mock an empty response
   testthat::local_mocked_bindings(
     cde_request = function(...) list(),
-    .package = "fbi"
+    .package = "fbiCDE"
   )
   result <- get_police_employment("CA0010900")
   expect_s3_class(result, "data.frame")

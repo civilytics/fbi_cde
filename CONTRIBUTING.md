@@ -1,9 +1,9 @@
-# Contributing to fbi
+# Contributing to fbiCDE
 
 ## This repository is a mirror
 
 Development happens on Gitea at
-[gitea.civilytics.org/Civilytics/fbi_cde](https://gitea.civilytics.org/Civilytics/fbi_cde).
+[gitea.civilytics.org/Civilytics/fbiCDE](https://gitea.civilytics.org/Civilytics/fbiCDE).
 This GitHub repository mirrors that repo and exists for CRAN/r-universe
 visibility and for the Windows/macOS coverage GitHub Actions gives us that
 our Linux-only Gitea runner cannot.
@@ -18,7 +18,7 @@ you'll get an actual reply saying so.
 ## Issues
 
 File bugs and feature requests on Gitea:
-<https://gitea.civilytics.org/Civilytics/fbi_cde/issues>. GitHub issues work
+<https://gitea.civilytics.org/Civilytics/fbiCDE/issues>. GitHub issues work
 too and get triaged the same way, but Gitea is where the discussion happens.
 
 ## House rules

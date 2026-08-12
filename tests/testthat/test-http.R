@@ -95,7 +95,7 @@ test_that("cde_request() is the only httr request caller in the package", {
   # files are not shipped with an installed package, so a file-based scan finds
   # nothing and silently passes. Every HTTP verb must funnel through
   # cde_request() (see the single-network-seam rule in CLAUDE.md).
-  ns <- asNamespace("fbi")
+  ns <- asNamespace("fbiCDE")
   verbs <- c("GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "RETRY", "VERB")
   pattern <- paste0("httr::(", paste(verbs, collapse = "|"), ")\\b")
 

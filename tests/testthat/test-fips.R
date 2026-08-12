@@ -85,13 +85,13 @@ test_that("county_to_fips is case-insensitive", {
 # not only when the crosswalk is regenerated.
 
 test_that("every crosswalk FIPS begins with its own state's FIPS prefix", {
-  cw <- fbi:::crosswalk
+  cw <- fbiCDE:::crosswalk
   cw <- cw[!is.na(cw$county_fips), , drop = FALSE]
 
   # Guard against the guard: an empty crosswalk would pass trivially.
   expect_gt(nrow(cw), 3000L)
 
-  expected <- suppressWarnings(fbi:::.state_abbr_to_fips(cw$state_abbr))
+  expected <- suppressWarnings(fbiCDE:::.state_abbr_to_fips(cw$state_abbr))
   mismatched <- cw[substr(cw$county_fips, 1L, 2L) != expected, , drop = FALSE]
 
   # Name the offenders, so a failure is diagnosable without re-deriving it.

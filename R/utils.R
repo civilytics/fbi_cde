@@ -41,7 +41,7 @@ make_year <- function() {
 read.csv_system_file <- function(file) {
   data <- utils::read.csv(system.file("testdata",
                                       file,
-                                      package = "fbi"))
+                                      package = "fbiCDE"))
   data$ori <- as.character(data$ori)
   rownames(data) <- 1:nrow(data)
   return(data)

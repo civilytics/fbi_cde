@@ -17,7 +17,7 @@ test_that("get_offense_codes parses offense lookup response", {
 test_that("get_offense_codes returns empty data.frame when crimeGroups is null", {
   testthat::local_mocked_bindings(
     cde_request = function(...) list(crimeGroups = NULL),
-    .package = "fbi"
+    .package = "fbiCDE"
   )
   result <- get_offense_codes("nibrs")
 
@@ -51,7 +51,7 @@ test_that("get_agencies parses agency lookup response by state", {
         read_fixture("agency-byStateAbbr-CA.json")
       }
     },
-    .package = "fbi"
+    .package = "fbiCDE"
   )
   result <- get_agencies()
 

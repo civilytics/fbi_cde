@@ -142,7 +142,7 @@ cat("wrote R/sysdata.rda with", nrow(crosswalk), "county FIPS rows and",
 
 - [ ] **Step 2: Run the build script**
 
-Run: `cd /home/jared/Nextcloud/Civilytics/Code/Civilytics/fbi_cde && Rscript data-raw/cbsa_crosswalk.R`
+Run: `cd /home/jared/Nextcloud/Civilytics/Code/Civilytics/fbiCDE && Rscript data-raw/cbsa_crosswalk.R`
 
 Expected: it prints the existing sysdata objects (should include `crosswalk`), then confirms it wrote both. If `crosswalk` is missing from the existing file, STOP — do not write, and report.
 
@@ -160,10 +160,10 @@ test_that("sysdata still carries BOTH internal crosswalks", {
   # Regression guard: R/sysdata.rda holds multiple objects and save()
   # overwrites wholesale, so a careless rebuild can destroy the county FIPS
   # table. Both must survive.
-  expect_true(is.data.frame(fbi:::crosswalk))
-  expect_gt(nrow(fbi:::crosswalk), 3000L)
-  expect_true(is.data.frame(fbi:::cbsa_crosswalk))
-  expect_gt(nrow(fbi:::cbsa_crosswalk), 1800L)
+  expect_true(is.data.frame(fbiCDE:::crosswalk))
+  expect_gt(nrow(fbiCDE:::crosswalk), 3000L)
+  expect_true(is.data.frame(fbiCDE:::cbsa_crosswalk))
+  expect_gt(nrow(fbiCDE:::cbsa_crosswalk), 1800L)
 })
 
 test_that("cbsa_crosswalk has the expected shape", {
@@ -184,7 +184,7 @@ test_that("CBSA titles are unique per code", {
 
 test_that("the crosswalk covers the expected share of known counties", {
   cw <- .cbsa_table()
-  counties <- fbi:::crosswalk$county_fips
+  counties <- fbiCDE:::crosswalk$county_fips
   expect_gt(length(counties), 3000L)
   covered <- mean(counties %in% cw$county_fips)
   # ~61% as of the 2023 delineation; rural counties belong to no CBSA.
@@ -735,7 +735,7 @@ test_that("the guard errors before issuing ANY request", {
       called <<- called + 1L
       stop("must not be reached")
     },
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   expect_error(
@@ -753,7 +753,7 @@ test_that("the guard error names the metro and the agency count", {
 
   testthat::local_mocked_bindings(
     metro_agencies = function(metro, state = NULL) big,
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   err <- tryCatch(
@@ -771,7 +771,7 @@ test_that("max_agencies = Inf disables the guard", {
     metro_agencies = function(metro, state = NULL) agencies,
     cde_request = function(...) make_metro_response("Alpha PD",
                                                     c("01-2021" = 5)),
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   out <- get_metro_crime_detail("Pittsburgh, PA", max_agencies = Inf,
@@ -789,7 +789,7 @@ test_that("get_metro_crime_detail returns per-agency-period rows", {
     cde_request = function(path, query = list(), ...) {
       make_metro_response("Alpha PD", c("01-2021" = 10, "02-2021" = 12))
     },
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   out <- get_metro_crime_detail("Pittsburgh, PA", from = "01-2021",
@@ -810,7 +810,7 @@ test_that("a failing ORI is dropped with a warning and recorded", {
       if (grepl("PA0000002", path)) stop("503")
       make_metro_response("Alpha PD", c("01-2021" = 10))
     },
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   expect_warning(
@@ -825,7 +825,7 @@ test_that("a failing ORI is dropped with a warning and recorded", {
 test_that("an unknown metro returns a typed empty frame", {
   testthat::local_mocked_bindings(
     metro_agencies = function(metro, state = NULL) .empty_metro_agency_frame(),
-    .package = "fbi"
+    .package = "fbiCDE"
   )
   out <- get_metro_crime_detail("Nowhere", from = "01-2021", to = "01-2021",
                                 progress = FALSE)
@@ -1085,7 +1085,7 @@ test_that("get_metro_crime_detail empty frame agrees with its populated frame", 
   testthat::local_mocked_bindings(
     metro_agencies = function(metro, state = NULL) agencies,
     cde_request = function(path, query = list(), ...) response,
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   populated <- get_metro_crime_detail("Pittsburgh, PA", from = "01-2021",

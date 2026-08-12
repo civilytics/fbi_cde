@@ -19,7 +19,7 @@ fake_agency_response <- function(label = "Lufkin Police Department",
 test_that("get_place_crime_detail returns per-period rows for the place's agency", {
   testthat::local_mocked_bindings(
     cde_request = function(...) fake_agency_response(),
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   out <- get_place_crime_detail("Lufkin", "TX", from = "01-2021", to = "02-2021")
@@ -37,7 +37,7 @@ test_that("get_place_crime_detail returns per-period rows for the place's agency
 test_that("get_place_crime_detail returns the documented columns in order", {
   testthat::local_mocked_bindings(
     cde_request = function(...) fake_agency_response(),
-    .package = "fbi"
+    .package = "fbiCDE"
   )
   out <- get_place_crime_detail("Lufkin", "TX", from = "01-2021", to = "02-2021")
   expect_equal(names(out), .PLACE_DETAIL_COLS)
@@ -46,7 +46,7 @@ test_that("get_place_crime_detail returns the documented columns in order", {
 test_that("get_place_crime_detail strips state comparison rows", {
   testthat::local_mocked_bindings(
     cde_request = function(...) fake_agency_response(),
-    .package = "fbi"
+    .package = "fbiCDE"
   )
   out <- get_place_crime_detail("Lufkin", "TX", from = "01-2021", to = "02-2021")
   # The Texas comparison series carries 999; it must never reach the output.
@@ -58,7 +58,7 @@ test_that("get_place_crime_detail flags a non-reporting period rather than zero"
     cde_request = function(...) fake_agency_response(
       counts = list(`01-2021` = 10)  # 02-2021 absent entirely
     ),
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   out <- get_place_crime_detail("Lufkin", "TX", from = "01-2021", to = "02-2021")
@@ -70,7 +70,7 @@ test_that("get_place_crime_detail flags a non-reporting period rather than zero"
 test_that("get_place_crime_detail drops a failing ORI with a warning and records it", {
   testthat::local_mocked_bindings(
     cde_request = function(...) stop("503"),
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   expect_warning(
@@ -125,11 +125,11 @@ test_that("get_place_crime_detail uses a supplied agencies frame instead of re-r
       called <<- TRUE
       stop("place_agencies() should not be called when agencies is supplied")
     },
-    .package = "fbi"
+    .package = "fbiCDE"
   )
   testthat::local_mocked_bindings(
     cde_request = function(...) fake_agency_response(),
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   out <- get_place_crime_detail("Lufkin", "TX", from = "01-2021", to = "02-2021",
@@ -143,7 +143,7 @@ test_that("get_place_crime_detail uses a supplied agencies frame instead of re-r
 test_that("get_place_crime_detail can reach campus agencies via a supplied agencies frame", {
   testthat::local_mocked_bindings(
     cde_request = function(...) fake_agency_response(label = "Angelina College"),
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   out <- get_place_crime_detail("Lufkin", "TX", from = "01-2021", to = "02-2021",
@@ -186,7 +186,7 @@ test_that("get_place_crime_detail: with 2 supplied agencies, one failing ORI is 
       }
       fake_agency_response()
     },
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   expect_warning(

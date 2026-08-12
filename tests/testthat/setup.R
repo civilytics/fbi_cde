@@ -1,6 +1,6 @@
 load(system.file("testdata",
                  "state_level_estimated_crime.rda",
-                 package = "fbi"))
+                 package = "fbiCDE"))
 
 
 police_matching_columns <- c("year",

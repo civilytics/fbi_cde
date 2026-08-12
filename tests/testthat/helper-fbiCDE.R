@@ -1,4 +1,4 @@
-# Test helpers for the fbi package.
+# Test helpers for the fbiCDE package.
 #
 # Two testing modes are supported:
 #
@@ -55,7 +55,7 @@ local_fbi_fixture <- function(fixture, env = parent.frame()) {
   data <- read_fixture(fixture)
   testthat::local_mocked_bindings(
     cde_request = function(...) data,
-    .package = "fbi",
+    .package = "fbiCDE",
     .env = env
   )
 }

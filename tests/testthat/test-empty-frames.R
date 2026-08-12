@@ -72,7 +72,7 @@ test_that("get_county_crime_detail empty frame agrees with its populated frame",
   testthat::local_mocked_bindings(
     county_agencies = function(county, state) agencies,
     cde_request = function(path, query = list(), ...) response,
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   populated <- get_county_crime_detail("Testonia", "CA", offense = "V",
@@ -113,7 +113,7 @@ test_that("get_place_crime_detail empty frame agrees with its populated frame", 
 
   testthat::local_mocked_bindings(
     cde_request = function(path, query = list(), ...) response,
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   populated <- get_place_crime_detail("Lufkin", "TX",
@@ -154,7 +154,7 @@ test_that("get_metro_crime_detail empty frame agrees with its populated frame", 
   testthat::local_mocked_bindings(
     metro_agencies = function(metro, state = NULL) agencies,
     cde_request = function(path, query = list(), ...) response,
-    .package = "fbi"
+    .package = "fbiCDE"
   )
 
   populated <- get_metro_crime_detail("Pittsburgh, PA", from = "01-2021",

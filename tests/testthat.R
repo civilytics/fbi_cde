@@ -1,4 +1,4 @@
 library(testthat)
-library(fbi)
+library(fbiCDE)
 
-test_check("fbi")
+test_check("fbiCDE")

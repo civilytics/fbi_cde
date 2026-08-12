@@ -7,7 +7,7 @@ test_that("get_leoka parses year-to-date totals", {
       expect_equal(query$year, 2020)
       read_fixture("leoka-ytd-2020.json")
     },
-    .package = "fbi"
+    .package = "fbiCDE"
   )
   result <- get_leoka(2020, 2020)
 
@@ -24,7 +24,7 @@ test_that("get_leoka parses year-to-date totals", {
 test_that("get_leoka loops over a year range", {
   local_mocked_bindings(
     cde_request = function(path, query = list(), ...) read_fixture("leoka-ytd-2020.json"),
-    .package = "fbi"
+    .package = "fbiCDE"
   )
   result <- get_leoka(2019, 2020)
 
@@ -44,7 +44,7 @@ test_that("get_leoka_monthly parses a single month", {
       expect_equal(query$month, "01")
       read_fixture("leoka-monthly-2020-01.json")
     },
-    .package = "fbi"
+    .package = "fbiCDE"
   )
   result <- get_leoka_monthly(2020, 1)
 
