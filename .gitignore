@@ -5,5 +5,7 @@
 
 # Editor / agent scratch
 .playwright-mcp/
+.opencode/
 .DS_Store
 *~
+README.html

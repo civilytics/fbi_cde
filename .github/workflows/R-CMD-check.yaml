@@ -1,0 +1,58 @@
+name: R-CMD-check
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  R-CMD-check:
+    runs-on: ubuntu-latest
+    # NOTE: do NOT use a `container:` here. JS actions (checkout, setup-r) need
+    # `node` in the runtime; minimal R images (e.g. rocker/r2u) lack it, which
+    # fails with exit 127 (`node: not found`). The default host runner image
+    # provides node, and r-lib/actions installs R on top of it.
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      _R_CHECK_CRAN_INCOMING_: false
+      _R_CHECK_FORCE_SUGGESTS_: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - name: Install dependencies
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::rcmdcheck
+          needs: check
+
+      - name: R CMD check
+        env:
+          # Live FBI API tests skip on CI; do not set FBI_API_KEY here yet.
+          _R_CHECK_TESTS_NLINES_: 0
+        run: |
+          options(crayon.enabled = TRUE)
+          rcmdcheck::rcmdcheck(
+            args = c("--no-manual", "--as-cran"),
+            error_on = "error",
+            check_dir = "check"
+          )
+        shell: Rscript {0}
+
+      - name: Show check logs on failure
+        if: failure()
+        run: |
+          find check -name "*.log" -exec echo "===== {} =====" \; -exec cat {} \;
+        shell: bash
