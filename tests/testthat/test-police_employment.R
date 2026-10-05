@@ -4,6 +4,12 @@
 # pe-agency-CA0010900.json and pe-national.json were recorded live from
 # pe/{level}?from=2018&to=2020 (see tests/testthat/fixtures/README.md).
 
+police_matching_columns <- c(
+  "year", "male_officers", "female_officers", "male_civilians",
+  "female_civilians", "ori", "male_total", "female_total", "civilians_total",
+  "officers_total", "employees_total"
+)
+
 test_that("get_police_employment parses agency-level response", {
   local_fbi_fixture("pe-agency-CA0010900.json")
   result <- get_police_employment("CA0010900", from = "2018", to = "2020")

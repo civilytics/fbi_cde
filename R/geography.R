@@ -4,7 +4,10 @@
 # applied (no filtering, summation, or fetching).
 
 # `fbi_api_agencies` is a lazy-loaded package dataset; declare it to satisfy
-# R CMD check's global-variable analysis.
+# R CMD check's global-variable analysis. The import keeps `utils` (in Imports)
+# visibly used: a top-level `utils::` call does not count as a use.
+#' @importFrom utils globalVariables
+NULL
 utils::globalVariables("fbi_api_agencies")
 
 # Internal accessor so the source of the agency table is swappable in tests.

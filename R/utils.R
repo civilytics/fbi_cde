@@ -38,15 +38,6 @@ make_year <- function() {
   as.numeric(format(Sys.Date(), "%Y"))
 }
 
-read.csv_system_file <- function(file) {
-  data <- utils::read.csv(system.file("testdata",
-                                      file,
-                                      package = "fbiCDE"))
-  data$ori <- as.character(data$ori)
-  rownames(data) <- 1:nrow(data)
-  return(data)
-}
-
 clean_column_names <- function(.data) {
   names(.data) <- tolower(names(.data))
   names(.data) <- gsub("-", "_", names(.data))
