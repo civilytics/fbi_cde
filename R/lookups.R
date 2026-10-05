@@ -1,8 +1,18 @@
 #' Get all agencies from the CDE API
 #'
-#' Iterates over all state lookup endpoints to rebuild the full agency table.
+#' Iterates over every state in [get_states()] and fetches its agency directory
+#' from the CDE endpoint `agency/byStateAbbr/{state}` (the same endpoint the
+#' participation functions use) to rebuild the full agency table. This issues
+#' one request per state.
 #'
-#' @return A data.frame with agency information (ORI, name, state, county, etc.).
+#' @return A data.frame with one row per agency and one column per field the
+#'   API returns (currently `ori`, `counties`, `is_nibrs`, `latitude`,
+#'   `longitude`, `state_abbr`, `state_name`, `agency_name`, `agency_type_name`,
+#'   `nibrs_start_date`), all stored as character and sorted by `ori`. These
+#'   field names follow the live API and differ from the bundled
+#'   [fbi_api_agencies] snapshot (e.g. `counties` rather than `county_name`).
+#'   States whose request fails are skipped with a warning and listed in
+#'   `attr(x, "failed_states")`.
 #' @export
 #'
 #' @examples
@@ -13,29 +23,68 @@
 get_agencies <- function() {
   states <- get_states()
   all_agencies <- list()
+  failed <- character(0)
 
   for (state_abbr in states$stateAbbreviation) {
-    path <- cde_path("agency", state_abbr)
-    response <- cde_request(path)
-
-    if (!is.null(response) && length(response) > 0) {
-      all_agencies[[state_abbr]] <- response
+    # This used to request `agency/{state}` and coerce the response with
+    # as.data.frame(), which on the live county-keyed shape produced one junk
+    # row per state rather than one row per agency.
+    path <- cde_path("agency/byStateAbbr", state_abbr)
+    response <- tryCatch(cde_request(path), error = function(e) e)
+    if (inherits(response, "error")) {
+      failed <- c(failed, state_abbr)
+      next
     }
+    all_agencies[[state_abbr]] <- .flatten_agency_directory(response)
   }
 
-  if (length(all_agencies) == 0) {
-    return(data.frame())
+  if (length(failed) > 0) {
+    warning("Could not fetch the agency directory for ", length(failed),
+            " state", if (length(failed) == 1) "" else "s", ": ",
+            paste(failed, collapse = ", "), call. = FALSE)
   }
 
-  # Combine all agency lists into a single data.frame
-  combined <- rbind_fill(lapply(all_agencies, function(x) {
-    as.data.frame(x, stringsAsFactors = FALSE)
-  }))
+  combined <- rbind_fill(all_agencies)
+  if (nrow(combined) == 0 || !"ori" %in% names(combined)) {
+    out <- data.frame()
+  } else {
+    combined[] <- lapply(combined, as.character)
+    # An agency filed under more than one county key would otherwise repeat;
+    # a record without an ORI is not an agency.
+    combined <- combined[!is.na(combined$ori) & !duplicated(combined$ori), ,
+                         drop = FALSE]
+    out <- combined[order(combined$ori), , drop = FALSE]
+    rownames(out) <- NULL
+  }
+  if (length(failed) > 0) {
+    attr(out, "failed_states") <- failed
+  }
+  out
+}
 
-  combined <- combined[order(combined$ori), , drop = FALSE]
-  combined[] <- lapply(combined, as.character)
-  rownames(combined) <- NULL
-  combined
+# Flatten one `agency/byStateAbbr/{state}` response -- a named list of county
+# -> array of agency records -- into one row per agency, keeping every scalar
+# field. Handles both the live nested-list shape (`simplifyVector = FALSE`) and
+# the data.frame-per-county shape offline fixtures produce.
+.flatten_agency_directory <- function(response) {
+  if (is.null(response) || length(response) == 0) {
+    return(NULL)
+  }
+  rows <- lapply(response, function(county_data) {
+    if (is.data.frame(county_data)) {
+      return(county_data)
+    }
+    rbind_fill(lapply(county_data, function(agency) {
+      if (!is.list(agency)) {
+        return(NULL)
+      }
+      agency <- lapply(agency, function(v) {
+        if (is.null(v) || length(v) != 1) NA else v
+      })
+      as.data.frame(agency, stringsAsFactors = FALSE)
+    }))
+  })
+  rbind_fill(rows)
 }
 
 #' Get offense codes from the CDE API

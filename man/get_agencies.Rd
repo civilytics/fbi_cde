@@ -7,10 +7,20 @@
 get_agencies()
 }
 \value{
-A data.frame with agency information (ORI, name, state, county, etc.).
+A data.frame with one row per agency and one column per field the
+  API returns (currently `ori`, `counties`, `is_nibrs`, `latitude`,
+  `longitude`, `state_abbr`, `state_name`, `agency_name`, `agency_type_name`,
+  `nibrs_start_date`), all stored as character and sorted by `ori`. These
+  field names follow the live API and differ from the bundled
+  [fbi_api_agencies] snapshot (e.g. `counties` rather than `county_name`).
+  States whose request fails are skipped with a warning and listed in
+  `attr(x, "failed_states")`.
 }
 \description{
-Iterates over all state lookup endpoints to rebuild the full agency table.
+Iterates over every state in [get_states()] and fetches its agency directory
+from the CDE endpoint `agency/byStateAbbr/{state}` (the same endpoint the
+participation functions use) to rebuild the full agency table. This issues
+one request per state.
 }
 \examples{
 \dontrun{
