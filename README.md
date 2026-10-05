@@ -241,8 +241,11 @@ calls route through this function, which:
 4.  Returns a list for downstream parsing
 
 Tests mock `cde_request()` itself, so the whole suite runs offline. Live
-tests against the real API run only when `FBI_CDE_LIVE=true` is set, and
-weekly in the `live-api` GitHub Actions workflow.
+tests against the real API run only when `FBI_CDE_LIVE=true` is set:
+
+``` sh
+FBI_CDE_LIVE=true NOT_CRAN=true Rscript -e 'testthat::test_local()'
+```
 
 ### Network settings
 

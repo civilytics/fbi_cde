@@ -13,7 +13,8 @@ Targeting CRAN. Based on the original `fbi` package by Jacob Kaplan.
 - **Test discipline.** Every data path gets **both** an offline fixture test that
   runs on CI (mocks `cde_request` via `local_fbi_fixture()`; fixtures in
   `tests/testthat/fixtures/`) **and** a `skip_if_no_fbi_api()`-guarded live test
-  (runs only with `FBI_CDE_LIVE=true`; weekly in `.github/workflows/live-api.yaml`).
+  (runs only with `FBI_CDE_LIVE=true`; never on GitHub infrastructure. A
+  scheduled Gitea workflow is provided as `.gitea/live-api.yaml.example`).
   See `tests/testthat/helper-fbiCDE.R`. `R CMD check` must stay clean.
   Fixtures are verbatim recorded responses, never synthetic.
 - **Lean dependencies, base R.** `R >= 3.5.0`. Imports are only `httr`,

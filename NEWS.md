@@ -16,8 +16,9 @@
   branches that existed only for that shape are removed.
 - Live API tests are switched on with `FBI_CDE_LIVE=true`. They used to require
   `FBI_API_KEY` (the CDE needs no key) and always skipped on CI, so nothing
-  automated ever ran them. A new `live-api` GitHub Actions workflow runs them
-  weekly and on demand, to catch upstream schema drift.
+  automated ever ran them. `.gitea/live-api.yaml.example` is a ready-made
+  weekly Gitea workflow for them (inert until moved into `.gitea/workflows/`);
+  they deliberately do not run on GitHub.
 - Removed the legacy test scaffolding inherited from the original package:
   `tests/testthat/setup.R` and the 86 CSVs plus one `.rda` in `inst/testdata`
   (recorded from the retired `api.usa.gov` API, shipped in every build, and

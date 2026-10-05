@@ -49,5 +49,6 @@ Guidelines:
 - Pair every offline fixture test with a `skip_if_no_fbi_api()`-guarded live
   test that asserts the real endpoint still returns the expected shape. Live
   tests run when `FBI_CDE_LIVE=true` (for example
-  `FBI_CDE_LIVE=true NOT_CRAN=true Rscript -e 'testthat::test_local()'`), and
-  weekly in the `live-api` GitHub Actions workflow.
+  `FBI_CDE_LIVE=true NOT_CRAN=true Rscript -e 'testthat::test_local()'`). A
+  weekly Gitea workflow for this is provided, inert, as
+  `.gitea/live-api.yaml.example`; live tests do not run on GitHub.
