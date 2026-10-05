@@ -1,5 +1,28 @@
 # fbi 0.1.0.9000 (development version)
 
+## Network resilience and test infrastructure
+
+- `cde_request()` now retries transient failures with exponential backoff
+  (1, 2, 4 seconds, capped at 30): network errors and timeouts, and HTTP 408,
+  429, 500, 502, 503 and 504. A `Retry-After` header in seconds is honoured
+  (capped at 60); other statuses fail immediately, as before. Each attempt has
+  a timeout. Previously a single dropped connection failed the call, and in a
+  county or metro fan-out silently removed that agency from the totals. Tune
+  with `options(fbiCDE.max_retries = 3)` (`0` disables retries) and
+  `options(fbiCDE.timeout = 60)` (seconds).
+- Offline fixtures are now parsed exactly as `cde_request()` parses live
+  responses (`simplifyVector = FALSE`). They used to be simplified to
+  data.frames, so tests exercised a shape production never sees; the parser
+  branches that existed only for that shape are removed.
+- Live API tests are switched on with `FBI_CDE_LIVE=true`. They used to require
+  `FBI_API_KEY` (the CDE needs no key) and always skipped on CI, so nothing
+  automated ever ran them. A new `live-api` GitHub Actions workflow runs them
+  weekly and on demand, to catch upstream schema drift.
+- Removed the legacy test scaffolding inherited from the original package:
+  `tests/testthat/setup.R` and the 86 CSVs plus one `.rda` in `inst/testdata`
+  (recorded from the retired `api.usa.gov` API, shipped in every build, and
+  unused by any test), along with the internal reader for them.
+
 ## Correctness fixes from the package review
 
 Several of these are regressions from the multi-county matching fix (#56): an
