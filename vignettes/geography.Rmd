@@ -1,0 +1,314 @@
+---
+title: "Counties, cities and metro areas"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Counties, cities and metro areas}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+
+
+The CDE knows three geographies: the nation, a state, and a single agency.
+There is no "county" or "city" endpoint. Crime in a county is reported by the
+sheriff, by each city police department, by campus police, by transit police,
+by the state highway patrol, each under its own agency identifier (ORI).
+
+`fbiCDE` builds county, city and metro-area views by working out which
+agencies belong to a geography and querying each of them. That is an
+*attribution* model: an agency belongs to a county because the CDE attributes
+it there, not because its jurisdiction has been intersected with the county's
+boundary. This vignette shows how membership is decided, what the itemised
+results look like, and how to add them up without fooling yourself.
+
+Everything below was run against the live API on
+2026-10-05.
+
+
+```r
+library(fbiCDE)
+```
+
+## Who polices a county
+
+`county_agencies()` lists every agency attributed to a county, from the
+bundled agency table, with no network call:
+
+
+```r
+alameda <- county_agencies("Alameda", "CA")
+nrow(alameda)
+#> [1] 21
+table(alameda$agency_class)
+#> 
+#>         campus county_primary      municipal        special          state 
+#>              2              1             14              3              1
+```
+
+Each agency gets an `agency_class` from its CDE agency type:
+
+| Class | What it holds | Queried by default? |
+|---|---|---|
+| `county_primary` | the sheriff (or parish) | yes |
+| `municipal` | city and town police | yes |
+| `campus` | university and college police | yes |
+| `state` | state police, highway patrol, other state agencies | with `include_statewide = TRUE` |
+| `special` | transit, school, airport, port, park and railroad police; task forces | only via `agency_class` |
+| `tribal` | tribal police | only via `agency_class` |
+
+The default set is the agencies whose jurisdiction is a specific area below
+the state. Campus police are in it: their students and staff are part of the
+county's population, and leaving their arrests out would understate the
+county. State agencies are opt-in because some of their records are statewide
+headquarters attributed to whichever county they sit in. Special-purpose
+agencies mix single-site forces with multi-county task forces, and how tribal
+agencies should map to counties is unresolved, so both are only queried when
+asked for by name.
+
+
+```r
+alameda[!alameda$agency_class %in% c("county_primary", "municipal", "campus"),
+        c("agency_name", "agency_class")]
+#>                                             agency_name agency_class
+#> 15              East Bay Regional Parks: Alameda County      special
+#> 17               Union Pacific Railroad: Alameda County      special
+#> 18 San Francisco Bay Area Rapid Transit: Alameda County      special
+#> 21                       Highway Patrol: Alameda County        state
+```
+
+## Crime, agency by agency
+
+`get_county_crime_detail()` queries each member agency and returns the results
+**unsummed**: one row per agency per month.
+
+
+```r
+detail <- get_county_crime_detail("Alameda", "CA", offense = "V",
+                                  from = "01-2020", to = "12-2021")
+nrow(detail)
+#> [1] 408
+head(detail[, c("agency_name", "period", "count", "population",
+                "participated_population", "reported")])
+#>                       agency_name  period count population
+#> 1 Alameda County Sheriff's Office 01-2020    60     130662
+#> 2 Alameda County Sheriff's Office 02-2020    62     130662
+#> 3 Alameda County Sheriff's Office 03-2020    52     130662
+#> 4 Alameda County Sheriff's Office 04-2020    59     130662
+#> 5 Alameda County Sheriff's Office 05-2020    65     130662
+#> 6 Alameda County Sheriff's Office 06-2020    75     130662
+#>   participated_population reported
+#> 1                  130662     TRUE
+#> 2                  130662     TRUE
+#> 3                  130662     TRUE
+#> 4                  130662     TRUE
+#> 5                  130662     TRUE
+#> 6                  130662     TRUE
+```
+
+`reported` separates "reported zero" from "did not report". That distinction
+is the whole story for California in 2021, when agencies moved to NIBRS and
+many stopped reporting for months:
+
+
+```r
+reporting <- stats::aggregate(reported ~ period, data = detail, FUN = sum)
+reporting$agencies <- length(unique(detail$ori))
+reporting[reporting$period %in% c("06-2020", "12-2020", "01-2021",
+                                  "06-2021", "12-2021"), ]
+#>     period reported agencies
+#> 2  01-2021        0       17
+#> 11 06-2020       17       17
+#> 12 06-2021        1       17
+#> 23 12-2020       17       17
+#> 24 12-2021        5       17
+```
+
+## Adding it up
+
+`get_county_crime()` sums the detail into one county series, and never hands
+back a bare rate: each row carries the denominator it used and the
+`coverage_fraction`, the share of the population whose agencies reported that
+month.
+
+
+```r
+county <- get_county_crime(detail)
+county[county$period %in% c("06-2020", "06-2021"),
+       c("period", "count", "population", "rate", "coverage_fraction")]
+#>     period count population       rate coverage_fraction
+#> 11 06-2020   792    1673000 47.3401076       1.000000000
+#> 12 06-2021    11    1663468  0.6612691       0.007255324
+```
+
+
+
+In June 2020 the reporting agencies covered 100% of Alameda's
+population; in June 2021, 1%. The 2021 count is not a crime
+drop, and its rate against the full population is not comparable to 2020's.
+`denominator = "participated_pop"` divides by the covered population instead,
+which keeps the rate meaningful wherever coverage is partial.
+
+## Filling gaps
+
+`impute_reporting_gaps()` fills a month an agency missed *between* months it
+reported, by interpolating its rate and scaling by its population. It never
+fills before an agency's first report or after its last, and flags every
+filled row:
+
+
+```r
+filled <- impute_reporting_gaps(detail)
+table(reported = filled$reported, imputed = filled$imputed)
+#>         imputed
+#> reported FALSE TRUE
+#>    FALSE   145   39
+#>    TRUE    224    0
+```
+
+Imputation is opt-in and visible: the raw detail is never altered, and
+`participated_population` stays missing on imputed rows, so coverage still
+shows the month as unreported.
+
+## Agencies in more than one county
+
+Some agencies police several counties. Columbus PD covers parts of Delaware,
+Fairfield and Franklin counties, and is attributed to each:
+
+
+```r
+franklin <- county_agencies("Franklin", "OH")
+franklin[franklin$ori == "OHCOP0000",
+         c("agency_name", "county_name", "agency_county_names")]
+#>                   agency_name county_name           agency_county_names
+#> 35 Columbus Police Department    FRANKLIN DELAWARE; FAIRFIELD; FRANKLIN
+```
+
+`county_name` is the county you asked about; `agency_county_names` keeps the
+agency's full list. Because such an agency counts in full in each of its
+counties, **do not add counties together** to get a larger area: the shared
+agencies would be counted more than once. Use a metro area instead.
+
+## A city
+
+A city's crime is reported by its own police department, so
+`place_agencies()` resolves a place by name:
+
+
+```r
+place_agencies("Lufkin", "TX")[, c("ori", "agency_name", "agency_class", "county_name")]
+#>         ori              agency_name  agency_class county_name
+#> 1 TX0030400 Lufkin Police Department place_primary    ANGELINA
+
+lufkin <- get_place_crime_detail("Lufkin", "TX", from = "01-2023", to = "06-2023")
+lufkin[, c("agency_name", "period", "count", "reported")]
+#>                agency_name  period count reported
+#> 1 Lufkin Police Department 01-2023    10     TRUE
+#> 2 Lufkin Police Department 02-2023    13     TRUE
+#> 3 Lufkin Police Department 03-2023    19     TRUE
+#> 4 Lufkin Police Department 04-2023    17     TRUE
+#> 5 Lufkin Police Department 05-2023    22     TRUE
+#> 6 Lufkin Police Department 06-2023    22     TRUE
+```
+
+Campus police inside a city cannot be found by name. With the `sf` and `tigris`
+packages installed, `add_place_spatial_members()` adds them by locating each
+agency's headquarters within the city's boundary; they are then queried along
+with the city's own department:
+
+
+```r
+berkeley <- add_place_spatial_members(place_agencies("Berkeley", "CA"))
+get_place_crime_detail("Berkeley", "CA", agencies = berkeley,
+                       from = "01-2023", to = "12-2023")
+```
+
+## Metro areas
+
+A metro area (a Core Based Statistical Area) is a set of whole counties, so
+`metro_agencies()` is the union of its counties' agencies, with each agency
+counted once:
+
+
+```r
+head(list_metros(type = "metro"))
+#>   cbsa_code                  cbsa_title cbsa_type n_counties
+#> 1     10180                 Abilene, TX     metro          3
+#> 2     10380               Aguadilla, PR     metro          7
+#> 3     10420                   Akron, OH     metro          2
+#> 4     10500                  Albany, GA     metro          4
+#> 5     10540                  Albany, OR     metro          1
+#> 6     10580 Albany-Schenectady-Troy, NY     metro          5
+
+columbus <- metro_agencies("Columbus, OH")
+nrow(columbus)
+#> [1] 96
+sum(columbus$ori == "OHCOP0000")
+#> [1] 1
+```
+
+Large metros mean hundreds of requests, so `get_metro_crime_detail()` refuses
+to start above `max_agencies` (150 by default) before sending anything:
+
+
+```r
+get_metro_crime_detail("New York-Newark-Jersey City, NY-NJ",
+                       from = "01-2023", to = "12-2023")
+#> Warning: Metro 'New York-Newark-Jersey City, NY-NJ' lists 22 counties but only
+#> 20 could be matched to CDE county names. Results are incomplete.
+#> Error: Metro 'New York-Newark-Jersey City, NY-NJ' resolves to 454 agencies, above max_agencies = 150. Each agency is a separate request, so this would take a while. Raise the limit (max_agencies = Inf), or narrow the set with agency_class.
+```
+
+A small area runs quickly:
+
+
+```r
+aberdeen <- get_metro_crime_detail("Aberdeen, WA", from = "01-2023",
+                                   to = "03-2023", progress = FALSE)
+aberdeen[, c("agency_name", "agency_class", "period", "count", "reported")]
+#>                             agency_name   agency_class  period count reported
+#> 1  Grays Harbor County Sheriff's Office county_primary 01-2023     4     TRUE
+#> 2  Grays Harbor County Sheriff's Office county_primary 02-2023     9     TRUE
+#> 3  Grays Harbor County Sheriff's Office county_primary 03-2023     8     TRUE
+#> 4            Aberdeen Police Department      municipal 01-2023    10     TRUE
+#> 5            Aberdeen Police Department      municipal 02-2023     5     TRUE
+#> 6            Aberdeen Police Department      municipal 03-2023     5     TRUE
+#> 7                Elma Police Department      municipal 01-2023     0     TRUE
+#> 8                Elma Police Department      municipal 02-2023     0     TRUE
+#> 9                Elma Police Department      municipal 03-2023     0     TRUE
+#> 10            Hoquiam Police Department      municipal 01-2023     3     TRUE
+#> 11            Hoquiam Police Department      municipal 02-2023     1     TRUE
+#> 12            Hoquiam Police Department      municipal 03-2023     0     TRUE
+#> 13           McCleary Police Department      municipal 01-2023    NA    FALSE
+#> 14           McCleary Police Department      municipal 02-2023    NA    FALSE
+#> 15           McCleary Police Department      municipal 03-2023    NA    FALSE
+#> 16          Montesano Police Department      municipal 01-2023     0     TRUE
+#> 17          Montesano Police Department      municipal 02-2023     1     TRUE
+#> 18          Montesano Police Department      municipal 03-2023     1     TRUE
+#> 19         Cosmopolis Police Department      municipal 01-2023    NA    FALSE
+#> 20         Cosmopolis Police Department      municipal 02-2023    NA    FALSE
+#> 21         Cosmopolis Police Department      municipal 03-2023    NA    FALSE
+#> 22           Oakville Police Department      municipal 01-2023     1     TRUE
+#> 23           Oakville Police Department      municipal 02-2023     0     TRUE
+#> 24           Oakville Police Department      municipal 03-2023     0     TRUE
+#> 25       Ocean Shores Police Department      municipal 01-2023     0     TRUE
+#> 26       Ocean Shores Police Department      municipal 02-2023     0     TRUE
+#> 27       Ocean Shores Police Department      municipal 03-2023     0     TRUE
+#> 28           Westport Police Department      municipal 01-2023     0     TRUE
+#> 29           Westport Police Department      municipal 02-2023     0     TRUE
+#> 30           Westport Police Department      municipal 03-2023     0     TRUE
+```
+
+## Census populations
+
+The CDE's own populations are usually the right denominator. To use an
+external one, `join_census_pop()` adds an American Community Survey county
+population (it needs the `censusapi` package and a free Census API key), and
+`get_county_crime(denominator = "census_pop")` divides by it:
+
+
+```r
+detail <- get_county_crime_detail("Alameda", "CA",
+                                  from = "01-2019", to = "12-2019")
+with_pop <- join_census_pop(detail)
+get_county_crime(with_pop, denominator = "census_pop")
+```

@@ -1,5 +1,36 @@
 # fbi 0.1.0.9000 (development version)
 
+## Vignettes
+
+All three vignettes were re-run against the live API, and their prose now
+reads its numbers from the results instead of hard-coding them.
+
+- **Getting Started** (`vignette("fbi")`) was rewritten around the current
+  interface: offense codes, the `comparison` argument, reporting coverage,
+  arrest offense levels, NIBRS codes (with the error an offense name now
+  gives), SHR's reporting gaps (Florida sent 9 homicides for 2019; Georgia
+  484), police employment being agency-level only, and LEOKA counting
+  officers killed, not assaulted.
+- **Juvenile arrests** (`vignette("juvenile-arrests")`) corrected:
+  - Reporting coverage comes from `participated_population / population`, not
+    the share of agencies on NIBRS, which measured something else.
+  - The offense ranking covers all 34 offense names at one level, instead of
+    a hand-picked list that left out the largest ("All Other Offenses") and
+    counted drugs through "Drug Abuse Violations" (880 Ohio arrests in 2023),
+    which is only the remainder not classed as possession or sale. The drug
+    total, "Drug/Narcotic Offenses", was 20,997.
+  - The Columbus profile checks that all 12 months reported before using the
+    annual total.
+  - The metro fan-out includes campus police (the default classes), and
+    records the agencies whose requests failed instead of dropping them
+    silently.
+  - Figure alt text is built from the data.
+- **Counties, cities and metro areas** (`vignette("geography")`) is new. It
+  covers membership and agency classes, `get_county_crime_detail()` and the
+  `reported` flag through California's 2021 NIBRS transition, coverage in
+  `get_county_crime()`, `impute_reporting_gaps()`, multi-county agencies,
+  places, metro areas and the `max_agencies` guard.
+
 ## Reporting coverage and arrest offense levels
 
 - `get_agency_crime()`, `get_estimated_crime()`, `get_estimated_arson()` and

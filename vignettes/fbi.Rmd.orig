@@ -1,8 +1,8 @@
 ---
-title: "Getting Started with fbi"
+title: "Getting Started with fbiCDE"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Getting Started with fbi}
+  %\VignetteIndexEntry{Getting Started with fbiCDE}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -14,20 +14,24 @@ knitr::opts_chunk$set(
 )
 ```
 
-The `fbi` package wraps the FBI's Crime Data Explorer (CDE) API
+The `fbiCDE` package wraps the FBI's Crime Data Explorer (CDE) API
 (<https://cde.ucr.cjis.gov/LATEST/>), giving R users direct access to Uniform
 Crime Reporting (UCR) and National Incident-Based Reporting System (NIBRS)
-data: crime counts and rates, arrests, incident-level NIBRS detail,
-Supplemental Homicide Reports (SHR), police employment, and NIBRS
-participation.
+data: crime counts and rates, arrests, NIBRS victim/offender/offense detail,
+Supplemental Homicide Reports (SHR), police employment, NIBRS participation,
+and officers killed (LEOKA).
 
-No API key is required for the current CDE host. (`get_api_key()` and
-`set_api_key()` are retained only for backward compatibility with the
-package's legacy `api.data.gov`-hosted predecessor and are no-ops today.)
+No API key is required. (`get_api_key()` and `set_api_key()` remain only for
+compatibility with the package's `api.data.gov`-hosted predecessor and do
+nothing.)
 
-This vignette works through the package's main functions using real example
-agencies drawn from several different states, so you can see the shape of
-the data at the agency, state, and national level.
+The CDE itself knows three geographies: the nation, a state, and a single
+agency. This vignette covers those. The package also builds county, city and
+metro-area views on top of them; see `vignette("geography")`.
+
+Everything below was run against the live API on
+`r format(Sys.Date())`. Agencies backfill and revise their
+reports, so re-running it will move some numbers.
 
 ```{r setup}
 library(fbiCDE)
@@ -35,197 +39,220 @@ library(fbiCDE)
 
 ## Lookups
 
-Before requesting crime data you often need to look up a state abbreviation,
-a valid offense code, or an agency's ORI (the 9-character identifier the CDE
-API uses for law enforcement agencies).
+Before requesting crime data you often need a state abbreviation, an offense
+code, or an agency's ORI (the 9-character identifier the CDE uses for law
+enforcement agencies).
 
 ```{r lookups-states}
 states <- get_states()
 head(states)
 ```
 
-```{r lookups-offenses}
-offenses <- get_offense_codes("crime-trend")
-head(offenses)
-```
-
-`get_offense_codes()` also accepts `"arrest"` and `"hate-crime"` for their
-respective offense vocabularies.
-
-`get_agency_info()` looks up agencies by name from the package's bundled
-agency table (`fbi_api_agencies`) -- no network call required:
+`get_agency_info()` looks agencies up by name in the package's bundled agency
+table (`fbi_api_agencies`), with no network call. Note that `state` here is the
+full state name:
 
 ```{r lookups-agency-info}
 get_agency_info("Oakland Police Department", state = "california", ori_only = TRUE)
 ```
 
-Throughout the rest of this vignette we use six agencies spread across six
-states, all validated live against the current API:
+The agencies used below:
 
-| ORI | Agency | State |
+| ORI | Agency | Used for |
 |---|---|---|
-| `CA0010900` | Oakland Police Department | California |
-| `TX0050100` | Archer City Police Department | Texas |
-| `NY0112000` | Homer Village Police Department | New York |
-| `WA0271300` | Orting Police Department | Washington |
-| `FL0010100` | Gainesville Police Department | Florida |
-| `MA0092900` | Maynard Police Department | Massachusetts |
+| `CA0010900` | Oakland Police Department, CA | crime, police employment |
+| `OHCOP0000` | Columbus Police Department, OH | arrests, participation |
+| `GAAPD0000` | Atlanta Police Department, GA | homicide reports |
 
-## Summarized Crime
+## Summarized crime
 
-`get_agency_crime()`, `get_estimated_crime()`, and `get_estimated_arson()`
-wrap the CDE's `summarized/{level}/{offense}` endpoint at the agency, state,
-and national level respectively. ("Estimated" here just means state/national
-level -- there is no separate estimates endpoint.)
+`get_agency_crime()` returns an agency's monthly offenses and clearances;
+`get_estimated_crime()` does the same for a state, or the nation when
+`state_abb` is `NULL`; `get_estimated_arson()` is `get_estimated_crime()` for
+arson. ("Estimated" is a legacy name: these are reported figures, not
+estimates.)
+
+The `offense` argument takes a code. The default `"V"` is violent crime and
+`"P"` property crime; `get_offense_codes()` lists the rest:
+
+```{r lookups-offenses}
+offenses <- get_offense_codes("crime-trend")
+head(offenses, 8)
+```
 
 ```{r summarized-agency}
 oakland_crime <- get_agency_crime("CA0010900", from = "01-2019", to = "03-2019")
 oakland_crime
 ```
 
-Agency- and state-level responses include comparison rows (state and
-national rates alongside the agency's own), so a query for one agency
-returns more than just that agency's offense categories -- rows for
-"California Offenses" or "United States Offenses" carry a real `rate` but no
-agency-specific `count`.
+Each row is one month of one `measure` (offenses or clearances). `rate` is per
+100,000 people for that month. `population` is the population the agency
+serves and `participated_population` the part of it covered by a report that
+month; for a single agency they match whenever it reported.
+
+For an agency or a state, the API also sends its state's and the nation's
+rates for comparison. Those are dropped by default; `comparison = TRUE` keeps
+them, labelled in `series` and `series_name` (they have no `count`):
+
+```{r summarized-comparison}
+with_context <- get_agency_crime("CA0010900", from = "01-2019", to = "01-2019",
+                                 comparison = TRUE)
+with_context[, c("series", "series_name", "measure", "count", "rate")]
+```
 
 ```{r summarized-state}
 texas_crime <- get_estimated_crime("TX", from = "01-2019", to = "03-2019")
 texas_crime
 ```
 
-```{r summarized-national}
-national_crime <- get_estimated_crime(from = "01-2019", to = "03-2019")
-national_crime
-```
+At state and national level, `participated_population / population` is the
+reporting coverage: the count is the sum of the agencies that reported, not an
+estimate for everyone.
 
-```{r summarized-arson}
+```{r summarized-national}
 national_arson <- get_estimated_arson(from = "01-2019", to = "03-2019")
-national_arson
+national_arson[, c("geography", "measure", "period", "count", "rate")]
 ```
 
 ## Arrests
 
-`get_arrest_count()` wraps `arrest/{level}/all?type=counts`. With the default
-`offense = "all"` it returns a monthly time series; requesting a specific
-offense returns a single aggregated total for the whole date range instead,
-since the CDE API no longer exposes a per-offense monthly breakdown.
+`get_arrest_count()` with the default `offense = "all"` returns monthly
+arrest totals:
 
 ```{r arrest-count-agency}
-ny_arrests <- get_arrest_count("NY0112000", from = "01-2019", to = "03-2019")
-ny_arrests
+columbus_arrests <- get_arrest_count("OHCOP0000", from = "01-2023", to = "03-2023")
+columbus_arrests
 ```
+
+Naming an offense returns a single total for the whole range instead: the API
+has no per-offense monthly series. Names come at three levels of detail
+(`list_ucr_arrest_offenses()` lists them); within one level the counts do not
+overlap.
 
 ```{r arrest-count-offense}
-get_arrest_count("NY0112000", from = "01-2019", to = "03-2019", offense = "Robbery")
+head(list_ucr_arrest_offenses(level = "category"))
+
+get_arrest_count(state_abb = "OH", offense = "Drug/Narcotic Offenses",
+                 from = "01-2023", to = "12-2023")
 ```
 
-`get_arrest_demographics()` returns arrestee sex/race/age breakdowns.
+One name to watch: `"Drug Abuse Violations"` is only the drug arrests not
+classed as possession or sale. The category `"Drug/Narcotic Offenses"` above
+is the total.
 
-**Limitation:** demographics are only available aggregated across *all*
-offenses -- the CDE API does not break demographics down by offense.
-`get_arrest_demographics_all()` (a name kept for backward compatibility)
-always warns and ignores any offense you pass it, falling back to
-`offense = "all"`.
+`get_arrest_demographics()` returns arrestees by sex, race and age. The API
+provides these only across *all* offenses, so `offense` must be `"all"`;
+`get_arrest_demographics_all()` is a deprecated alias.
 
 ```{r arrest-demographics}
-wa_arrest_demographics <- get_arrest_demographics(state_abb = "WA", from = "01-2019", to = "03-2019")
-head(wa_arrest_demographics)
+oh_demographics <- get_arrest_demographics(state_abb = "OH",
+                                           from = "01-2023", to = "12-2023")
+head(oh_demographics)
 ```
+
+`vignette("juvenile-arrests")` works through these at state, agency and metro
+level.
 
 ## NIBRS
 
-`get_nibrs_victim()`, `get_nibrs_offender()`, and `get_nibrs_offense()` wrap
-`nibrs/{level}/{offense}?type=totals`, returning victim, offender, and
-offense-characteristic demographic breakdowns.
+`get_nibrs_victim()`, `get_nibrs_offender()` and `get_nibrs_offense()` return
+one NIBRS breakdown for one offense, summed over the date range. The offense
+must be a code: a summary group such as `"V"`, `"ROB"` or `"BUR"`, or a NIBRS
+offense code such as `"13B"` (simple assault):
 
-```{r nibrs, eval = FALSE}
-get_nibrs_victim("CA0010900", offense = "robbery", variable = "race")
+```{r nibrs-offenses}
+head(list_nibrs_offenses(), 10)
 ```
 
-As of this package version, the live NIBRS demographic-detail endpoint
-returns no data for any agency, offense, or date range -- this is a known,
-tracked upstream issue
-(<https://gitea.civilytics.org/Civilytics/fbi_cde/issues/33>), not a bug in
-this package. Calling these functions today will emit a message saying so
-and return a 0-row data frame; the chunk above is not evaluated in this
-vignette for that reason. Use `list_nibrs_offenses()`,
-`list_nibrs_victim_variables()`, `list_nibrs_offender_variables()`, and
-`list_nibrs_offense_variables()` to see the valid `offense`/`variable`
-arguments once the endpoint is working again.
+```{r nibrs-victim}
+get_nibrs_victim(state_abb = "OH", offense = "ROB", variable = "age",
+                 from = "01-2023", to = "12-2023")
+```
+
+The variables differ by function: `list_nibrs_victim_variables()`,
+`list_nibrs_offender_variables()` and `list_nibrs_offense_variables()` list
+them.
+
+```{r nibrs-offense}
+get_nibrs_offense(state_abb = "OH", offense = "ROB", variable = "weapons",
+                  from = "01-2023", to = "12-2023")[, c("demographic_value", "count")]
+```
+
+An offense *name* returns no data from the API, so the package rejects it and
+suggests the code:
+
+```{r nibrs-name, error = TRUE}
+get_nibrs_victim(state_abb = "OH", offense = "robbery")
+```
+
+An agency or state that did not report to NIBRS in the period returns no rows,
+with a message.
 
 ## Supplemental Homicide Reports (SHR)
 
-`get_shr()` wraps `shr/{level}` for expanded homicide data at the agency,
-state, or national level.
+`get_shr()` returns monthly homicide counts from the SHR, for an agency, a
+state, or the nation:
 
 ```{r shr-agency}
-fl_shr <- get_shr(ori = "FL0010100", from = "01-2019", to = "12-2019")
-head(fl_shr)
+get_shr(ori = "GAAPD0000", from = "01-2019", to = "06-2019")
 ```
 
-```{r shr-state}
-ma_shr <- get_shr(state_abb = "MA", from = "01-2019", to = "12-2019")
-head(ma_shr)
+A zero can mean "not reported". Florida, for one, sends almost no SHR data:
+
+```{r shr-florida}
+fl <- get_shr(state_abb = "FL", from = "01-2019", to = "12-2019")
+ga <- get_shr(state_abb = "GA", from = "01-2019", to = "12-2019")
+c(Florida = sum(fl$count), Georgia = sum(ga$count))
 ```
 
-```{r shr-national}
-national_shr <- get_shr(from = "01-2019", to = "12-2019")
-head(national_shr)
-```
+## Police employment
 
-## Police Employment
-
-`get_police_employment()` wraps `pe/{level}`, using 4-digit years rather than
-`MM-YYYY`.
+`get_police_employment()` uses four-digit years rather than `MM-YYYY`:
 
 ```{r pe-agency}
 oakland_pe <- get_police_employment("CA0010900", from = "2018", to = "2020")
 oakland_pe
 ```
 
-**Limitation:** employee *counts* (`actuals`) are suppressed by the CDE API
-above the agency level -- state and national queries only return `rates`
-upstream, so `get_police_employment()` correctly returns 0 rows for them:
+Employee *counts* are agency-level only: for a state or the nation the API
+returns rates without counts, so `get_police_employment()` returns no rows:
 
 ```{r pe-state}
-texas_pe <- get_police_employment(state_abb = "TX", from = "2018", to = "2020")
-nrow(texas_pe)
+nrow(get_police_employment(state_abb = "TX", from = "2018", to = "2020"))
 ```
 
-## NIBRS Participation
+## NIBRS participation
 
-`get_agency_participation()`, `get_state_participation()`, and
-`get_region_participation()` report whether agencies currently report to
-NIBRS, sourced from the live agency directory. This replaces the retired
-year-by-year SRS/NIBRS participation series, which has no live equivalent in
-the current API -- these functions report a live NIBRS-reporting snapshot
-rather than a historical time series.
+`get_agency_participation()`, `get_state_participation()` and
+`get_region_participation()` report whether agencies report to NIBRS *now*,
+from the live agency directory. They are a current snapshot, not a history,
+and they count agencies, not people: a state with few NIBRS agencies can still
+have near-complete reporting coverage through the older summary system (see
+the `participated_population` columns above).
 
 ```{r participation-agency}
-get_agency_participation("NY0112000")
+get_agency_participation("OHCOP0000")
 ```
 
 ```{r participation-state}
-get_state_participation("WA")
+get_state_participation("OH")
 ```
 
 ```{r participation-region}
 get_region_participation("South")
 ```
 
-## LEOKA
+## Officers killed (LEOKA)
 
-`get_leoka()` and `get_leoka_monthly()` wrap `leoka/ytd` and `leoka/monthly`,
-reporting on law enforcement officers killed or assaulted. These are
-**national only** -- the live endpoint ignores state/agency query
-parameters -- and data is only available from 2020 onward.
+`get_leoka()` and `get_leoka_monthly()` return national counts of law
+enforcement officers **feloniously killed**, from 2020 on. Despite the
+program's name (Law Enforcement Officers Killed and Assaulted) these are not
+assault counts. The API returns national figures only.
 
 ```{r leoka}
-leoka <- get_leoka(2020, 2021)
-leoka
+get_leoka(2020, 2021)
 ```
 
 ```{r leoka-monthly}
-get_leoka_monthly(2020, 1)
+get_leoka_monthly(2021, 1)
 ```
