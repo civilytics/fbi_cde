@@ -8,7 +8,8 @@ get_estimated_crime(
   state_abb = NULL,
   from = "01-2015",
   to = "12-2020",
-  offense = "V"
+  offense = "V",
+  comparison = FALSE
 )
 }
 \arguments{
@@ -21,9 +22,13 @@ national data.}
 
 \item{offense}{Offense code (default "V" for violent crime). See
 `get_offense_codes()` for available codes.}
+
+\item{comparison}{If `TRUE`, a state query also returns the national
+comparison series (rate only). Default `FALSE` returns only the state's
+own series. Has no effect on a national query.}
 }
 \value{
-A data.frame with columns: geography, offense, period, count, rate
+A data.frame with the columns described in [get_agency_crime()].
 }
 \description{
 Get state- or national-level estimated crime counts

@@ -9,7 +9,8 @@ get_arrest_count(
   state_abb = NULL,
   from = "01-2015",
   to = "12-2020",
-  offense = "all"
+  offense = "all",
+  comparison = FALSE
 )
 }
 \arguments{
@@ -27,11 +28,21 @@ result is a monthly time series. For a specific offense the CDE API only
 exposes an aggregate count over the whole `from`-`to` range (the endpoint no
 longer accepts a per-offense URL segment, so the offense is selected from
 the all-offenses response). See `list_ucr_arrest_offenses()` for valid names.}
+
+\item{comparison}{If `TRUE` (and `offense = "all"`), also return the
+comparison series the API sends alongside an agency's or state's own: its
+state's and the nation's arrest rates (these have no `count`). Default
+`FALSE` returns only the queried geography's own series. A specific
+offense has no comparison series.}
 }
 \value{
-A data.frame with columns: geography, offense, period, count, rate.
-  For a specific offense, `period` and `rate` are `NA` and a single aggregate
-  `count` row is returned.
+A data.frame with columns `geography`, `offense`, `measure`
+  (`"arrests"`), `period`, `count` and `rate` (per 100,000 population, for
+  that month). With `offense = "all"`, `offense` is `"all"`; with
+  `comparison = TRUE`, `series` and `series_name` columns follow
+  `geography`, as in [get_agency_crime()]. For a specific offense, a single
+  row holds the aggregate `count` for the whole range, with `period` and
+  `rate` `NA` and `offense` set to the API's name for it.
 }
 \description{
 Retrieves arrest counts by offense for an agency, state, or nationally.

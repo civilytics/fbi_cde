@@ -14,10 +14,19 @@
 #'   exposes an aggregate count over the whole `from`-`to` range (the endpoint no
 #'   longer accepts a per-offense URL segment, so the offense is selected from
 #'   the all-offenses response). See `list_ucr_arrest_offenses()` for valid names.
+#' @param comparison If `TRUE` (and `offense = "all"`), also return the
+#'   comparison series the API sends alongside an agency's or state's own: its
+#'   state's and the nation's arrest rates (these have no `count`). Default
+#'   `FALSE` returns only the queried geography's own series. A specific
+#'   offense has no comparison series.
 #'
-#' @return A data.frame with columns: geography, offense, period, count, rate.
-#'   For a specific offense, `period` and `rate` are `NA` and a single aggregate
-#'   `count` row is returned.
+#' @return A data.frame with columns `geography`, `offense`, `measure`
+#'   (`"arrests"`), `period`, `count` and `rate` (per 100,000 population, for
+#'   that month). With `offense = "all"`, `offense` is `"all"`; with
+#'   `comparison = TRUE`, `series` and `series_name` columns follow
+#'   `geography`, as in [get_agency_crime()]. For a specific offense, a single
+#'   row holds the aggregate `count` for the whole range, with `period` and
+#'   `rate` `NA` and `offense` set to the API's name for it.
 #' @export
 #'
 #' @examples
@@ -31,7 +40,8 @@ get_arrest_count <- function(ori = NULL,
                               state_abb = NULL,
                               from = "01-2015",
                               to = "12-2020",
-                              offense = "all") {
+                              offense = "all",
+                              comparison = FALSE) {
   if (!is.null(ori) && !is_valid_ori(ori)) {
     stop(
       "Invalid ORI code: ", ori,
@@ -50,12 +60,15 @@ get_arrest_count <- function(ori = NULL,
   if (!is.null(ori)) {
     level <- paste0("agency/", ori)
     geography <- ori
+    series_level <- "agency"
   } else if (!is.null(state_abb)) {
     level <- paste0("state/", toupper(state_abb))
     geography <- toupper(state_abb)
+    series_level <- "state"
   } else {
     level <- "national"
     geography <- "US"
+    series_level <- "national"
   }
 
   # "all" returns the monthly time series directly. A specific offense is no
@@ -65,7 +78,9 @@ get_arrest_count <- function(ori = NULL,
     path <- cde_path("arrest", level, "all")
     query <- list(from = from, to = to, type = "counts")
     response <- cde_request(path, query)
-    return(parse_arrest_counts_response(response, geography))
+    return(parse_arrest_counts_response(response, geography,
+                                        level = series_level,
+                                        comparison = comparison))
   }
 
   valid <- fbiCDE::ucr_arrest_offenses
@@ -191,8 +206,9 @@ get_arrest_demographics_all <- function(...) {
 parse_arrest_offense_total <- function(response, geography, offense) {
   empty <- function() {
     data.frame(
-      geography = character(), offense = character(), period = character(),
-      count = numeric(), rate = numeric(), stringsAsFactors = FALSE
+      geography = character(), offense = character(), measure = character(),
+      period = character(), count = numeric(), rate = numeric(),
+      stringsAsFactors = FALSE
     )
   }
 
@@ -206,6 +222,7 @@ parse_arrest_offense_total <- function(response, geography, offense) {
       return(data.frame(
         geography = geography,
         offense = names(section)[idx],
+        measure = "arrests",
         period = NA_character_,
         count = as.numeric(cnt),
         rate = NA_real_,
@@ -217,67 +234,21 @@ parse_arrest_offense_total <- function(response, geography, offense) {
   empty()
 }
 
-# Internal: parse arrest counts response into a tidy data.frame
+# Internal: parse an arrest/{level}/all?type=counts response.
 #
-# Response shape:
-#   A list with `offenses` containing `counts` and `rates` sub-objects.
-parse_arrest_counts_response <- function(response, geography) {
-  empty <- function() {
-    data.frame(
-      geography = character(),
-      offense = character(),
-      period = character(),
-      count = numeric(),
-      rate = numeric(),
-      stringsAsFactors = FALSE
-    )
-  }
-
-  # The CDE arrest endpoint dropped the `offenses` wrapper and renamed
-  # `counts` to `actuals`. Accept both: prefer the top-level payload, fall
-  # back to the legacy `offenses` container.
+# The CDE arrest endpoint dropped the `offenses` wrapper and renamed `counts`
+# to `actuals`. Accept both: prefer the top-level payload, fall back to the
+# legacy `offenses` container.
+parse_arrest_counts_response <- function(response, geography, level,
+                                         comparison = FALSE) {
   container <- if (!is.null(response$offenses) && length(response$offenses) > 0) {
     response$offenses
   } else {
     response
   }
-
-  if (is.null(container) || length(container) == 0) {
-    return(empty())
-  }
-
-  counts_obj <- container$actuals %||% container$counts
-  rates_obj <- container$rates
-
-  if ((is.null(counts_obj) || length(counts_obj) == 0) &&
-      (is.null(rates_obj) || length(rates_obj) == 0)) {
-    return(empty())
-  }
-
-  counts_df <- data.frame(
-    offense = character(), period = character(), count = numeric(),
-    stringsAsFactors = FALSE
-  )
-  rates_df <- data.frame(
-    offense = character(), period = character(), rate = numeric(),
-    stringsAsFactors = FALSE
-  )
-
-  if (!is.null(counts_obj) && length(counts_obj) > 0) {
-    counts_df <- flatten_cde_json(counts_obj)
-    names(counts_df) <- c("offense", "period", "count")
-  }
-
-  if (!is.null(rates_obj) && length(rates_obj) > 0) {
-    rates_df <- flatten_cde_json(rates_obj)
-    names(rates_df) <- c("offense", "period", "rate")
-  }
-
-  result <- merge(counts_df, rates_df, by = c("offense", "period"), all = TRUE)
-  result$geography <- geography
-  result <- result[, c("geography", "offense", "period", "count", "rate")]
-  rownames(result) <- NULL
-  result
+  .parse_series(container$actuals %||% container$counts, container$rates,
+                geography = geography, offense = "all", level = level,
+                comparison = comparison)
 }
 
 # Internal: parse arrest demographics response into a tidy data.frame

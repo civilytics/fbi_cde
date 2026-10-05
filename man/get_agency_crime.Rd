@@ -4,7 +4,13 @@
 \alias{get_agency_crime}
 \title{Get agency-level crime data from the UCR Offenses Known and Clearances}
 \usage{
-get_agency_crime(ori, from = "01-2015", to = "12-2020", offense = "V")
+get_agency_crime(
+  ori,
+  from = "01-2015",
+  to = "12-2020",
+  offense = "V",
+  comparison = FALSE
+)
 }
 \arguments{
 \item{ori}{A string of the 9-character ORI code for the desired agency.}
@@ -15,9 +21,19 @@ get_agency_crime(ori, from = "01-2015", to = "12-2020", offense = "V")
 
 \item{offense}{Offense code (default "V" for violent crime). See
 `get_offense_codes()` for available codes.}
+
+\item{comparison}{If `TRUE`, also return the comparison series the API
+sends alongside the agency's own: its state's and the nation's rates
+(these have no `count`). Default `FALSE` returns only the agency's own
+series.}
 }
 \value{
-A data.frame with columns: geography, offense, period, count, rate
+A data.frame with columns `geography`, `offense` (the requested
+  code), `measure` (`"offenses"` or `"clearances"`), `period`, `count` and
+  `rate` (per 100,000 population, for that month). With
+  `comparison = TRUE`, two more columns follow `geography`: `series`
+  (`"agency"`, `"state"` or `"national"`) and `series_name` (e.g.
+  `"Oakland Police Department"`, `"California"`, `"United States"`).
 }
 \description{
 Get agency-level crime data from the UCR Offenses Known and Clearances
@@ -25,6 +41,10 @@ Get agency-level crime data from the UCR Offenses Known and Clearances
 \examples{
 \dontrun{
 get_agency_crime("AK0010100")
+
+# The agency alongside its state and the nation
+get_agency_crime("CA0010900", from = "01-2019", to = "03-2019",
+                 comparison = TRUE)
 }
 }
 \seealso{
