@@ -1,5 +1,49 @@
 # fbi 0.1.0.9000 (development version)
 
+## Fixes found by checking against the live API
+
+- **NIBRS works; it never had an outage (#33).** The `nibrs/` endpoint takes
+  short offense codes -- summary groups (`"V"`, `"P"`, `"ROB"`, `"BUR"`, ...)
+  and NIBRS codes (`"13B"`, `"35A"`, `"120"`, ...) -- and answers anything else
+  with an all-null payload. The package documented long names
+  (`list_nibrs_offenses()` returned `"robbery"`,
+  `"burglary-breaking-and-entering"`, ...) and defaulted to `"robbery"` and
+  `"all"`, so every call with documented arguments returned nothing, which
+  read as an upstream outage. Now:
+  - `list_nibrs_offenses()` returns a data.frame of `code` and `label`.
+  - `get_nibrs_victim()`, `get_nibrs_offender()` and `get_nibrs_offense()`
+    default to `offense = "V"`, take codes case-insensitively, and reject an
+    offense name or `"all"` before any request, suggesting the code
+    (`"robbery"` -> `Did you mean "ROB" (Robbery)?`).
+  - The variable lists now match the response: victim `age`, `ethnicity`,
+    `location`, `race`, `relationship`, `sex`; offender `age`, `ethnicity`,
+    `race`, `sex`; offense `related_offenses`, `weapons`. The old lists
+    offered `count`, `bias` and five other variables that do not exist, and
+    `count` was the offender and offense default. Defaults are now `"race"`
+    (victim, offender) and `"weapons"` (offense); an unknown variable is an
+    error.
+  - The NIBRS test fixtures were hand-written, with variables the API never
+    returns; they are replaced by recorded responses.
+- **`get_arrest_count(offense = )` accepts every name the API reports.** It
+  validated against the 34 offense names only, so the 29 categories and 49
+  breakdowns were rejected -- including `"Drug/Narcotic Offenses"`, the only
+  total of drug arrests. (`"Drug Abuse Violations"` is just the drug arrests
+  not classed as possession or sale: 880 of Ohio's 20,997 in 2023.) Names are
+  now checked against the response itself; `ucr_arrest_offenses` lists all 80.
+- **`impute_reporting_gaps()` now fills real gaps.** It scaled interpolated
+  rates by `participated_population`, which the CDE reports as missing for
+  every month an agency did not report, so it filled nothing on real data
+  (0 of 232 gaps in Alameda County, 2021). It now falls back to the agency's
+  `population` in those months (39 of 184 interior gaps filled for Alameda,
+  2020-2021).
+- `get_leoka()` documents that its totals are officers *feloniously killed*
+  (they match the FBI's published 46 in 2020 and 73 in 2021), not assaults.
+- `R/data.R` defined its own copies of `nibrs_offenses`, `ucr_arrest_offenses`,
+  `regions` and the NIBRS variable lists as package objects, a second, stale
+  source of truth that unqualified references picked up. The bundled datasets
+  are now the only copy, rebuilt from the live API by
+  `data-raw/api_vocabularies.R`.
+
 ## Interface changes (breaking)
 
 - **Comparison rows are stripped by default.** For an agency or state, the
