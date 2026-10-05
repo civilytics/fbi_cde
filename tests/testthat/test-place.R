@@ -111,7 +111,17 @@ test_that("classify_place_agency maps municipal types to place_primary", {
 test_that("classify_place_agency maps embedded types", {
   expect_equal(classify_place_agency("University or College"), "campus")
   expect_equal(classify_place_agency("Other"), "special")
-  expect_equal(classify_place_agency("Other State Agency"), "special")
+  # Other state agencies (a state park's rangers) class as "state", queried
+  # only with include_statewide = TRUE.
+  expect_equal(classify_place_agency("Other State Agency"), "state")
+  # Alaska city police departments carry the "Census Area" type.
+  expect_equal(classify_place_agency("Census Area"), "place_primary")
+})
+
+test_that("an Alaska city police department resolves as a place", {
+  out <- place_agencies("Nome", "AK")
+  expect_equal(out$ori, "AK0010600")
+  expect_equal(out$agency_class, "place_primary")
 })
 
 test_that("classify_place_agency maps non-place types to NA", {
@@ -131,7 +141,7 @@ test_that("place_agencies resolves a place to its own municipal agency", {
   expect_equal(nrow(out), 1L)
   expect_equal(out$place_name, "Lufkin")
   expect_equal(out$agency_class, "place_primary")
-  expect_true(out$default_member)
+  expect_false("default_member" %in% names(out))
   expect_equal(out$attribution, "name_identity")
   expect_equal(out$state_abbr, "TX")
   expect_match(out$ori, "^[A-Z]{2}[A-Z0-9]{7}$")
@@ -206,7 +216,6 @@ test_that(".empty_place_agency_frame types match a populated result", {
     vapply(empty, function(x) class(x)[1], character(1)),
     vapply(populated, function(x) class(x)[1], character(1))
   )
-  expect_equal(vapply(empty, class, character(1))[["default_member"]], "logical")
 })
 
 test_that("an unmatched-place empty frame rbinds cleanly against a real result", {

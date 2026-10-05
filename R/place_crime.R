@@ -9,12 +9,12 @@
 # Columns a caller-supplied `agencies` frame (or a place_agencies() result)
 # must carry for the fan-out loop below to work.
 .PLACE_CRIME_AGENCY_COLS <- c(
-  "ori", "agency_name", "agency_type_name", "agency_class", "default_member",
+  "ori", "agency_name", "agency_type_name", "agency_class",
   "place_name", "county_name", "state_abbr", "attribution"
 )
 
 .PLACE_DETAIL_COLS <- c(
-  "ori", "agency_name", "agency_type_name", "agency_class", "default_member",
+  "ori", "agency_name", "agency_type_name", "agency_class",
   "place_name", "county_name", "state_abbr", "attribution",
   "offense", "period", "count",
   "population", "participated_population", "rate", "reported"
@@ -30,7 +30,6 @@
     agency_name = character(0),
     agency_type_name = character(0),
     agency_class = character(0),
-    default_member = logical(0),
     place_name = character(0),
     county_name = character(0),
     state_abbr = character(0),
@@ -64,18 +63,21 @@
 #' @inheritParams place_agencies
 #' @param offense Offense code (default `"V"`; see `get_offense_codes()`).
 #' @param from,to Date range in `MM-YYYY` format.
-#' @param agency_class Optional character vector; keep only these place classes
-#'   (`"place_primary"`, `"campus"`, `"special"`).
-#' @param default_only If `TRUE` (the default), keep only default members
-#'   (`place_primary`). Ignored if `agency_class` is supplied.
+#' @param agency_class Optional character vector of place classes to query
+#'   instead of the default set (`"place_primary"`, `"campus"`): any of those
+#'   plus `"special"` and `"state"`.
+#' @param include_statewide If `TRUE`, also query state agencies (class
+#'   `"state"`, e.g. a state park's rangers or a capitol police force) found
+#'   inside the place by [add_place_spatial_members()]. Default `FALSE`.
 #' @param agencies Optional pre-resolved agency membership data.frame, e.g. the
 #'   output of [place_agencies()] with [add_place_spatial_members()] applied.
 #'   When supplied, it is used directly instead of calling `place_agencies()`
-#'   internally — this is the only way to reach `agency_class = "campus"` or
-#'   `"special"` rows, since [place_agencies()] alone never returns them. Must
-#'   be a data.frame carrying at least `ori`, `agency_name`,
-#'   `agency_type_name`, `agency_class`, `default_member`, `place_name`,
-#'   `county_name`, `state_abbr`, and `attribution`.
+#'   internally — this is the only way to reach `"campus"`, `"special"` or
+#'   `"state"` rows, since [place_agencies()] alone never returns them. Campus
+#'   rows supplied this way are queried by default. Must be a data.frame
+#'   carrying at least `ori`, `agency_name`, `agency_type_name`,
+#'   `agency_class`, `place_name`, `county_name`, `state_abbr`, and
+#'   `attribution`.
 #'
 #'   Column presence is validated, but membership is **not**: a hand-built frame
 #'   can contain any ORI, including a sheriff or state police agency. The
@@ -88,12 +90,12 @@
 #'   under their own city ORI.
 #' @param progress If `TRUE`, print a simple progress line per agency.
 #' @return A data.frame with one row per agency-period, carrying: `ori`,
-#'   `agency_name`, `agency_type_name`, `agency_class`, `default_member`,
+#'   `agency_name`, `agency_type_name`, `agency_class`,
 #'   `place_name`, `county_name`, `state_abbr`, `attribution`, `offense`,
 #'   `period`, `count`, `population`, `participated_population`, `rate`, and
 #'   `reported`. Agencies whose request or parse fails are dropped with a
 #'   warning and recorded in `attr(x, "dropped")`. If filtering (via
-#'   `agency_class`/`default_only`) empties a non-empty agency set, a warning
+#'   `agency_class`/`include_statewide`) empties a non-empty agency set, a warning
 #'   names the place and the filter responsible, and a zero-row frame is
 #'   returned.
 #' @seealso [place_agencies()], [add_place_spatial_members()],
@@ -103,13 +105,15 @@
 #' \dontrun{
 #' get_place_crime_detail("Lufkin", "TX", from = "01-2019", to = "12-2019")
 #'
-#' # Compose with add_place_spatial_members() to reach campus/special agencies:
+#' # Compose with add_place_spatial_members() to reach campus agencies, which
+#' # are then queried by default alongside the city's own:
 #' x <- add_place_spatial_members(place_agencies("Berkeley", "CA"))
-#' get_place_crime_detail("Berkeley", "CA", agencies = x, agency_class = "campus")
+#' get_place_crime_detail("Berkeley", "CA", agencies = x)
 #' }
 get_place_crime_detail <- function(place, state, county = NULL, offense = "V",
                                    from = "01-2015", to = "12-2020",
-                                   agency_class = NULL, default_only = TRUE,
+                                   agency_class = NULL,
+                                   include_statewide = FALSE,
                                    agencies = NULL, progress = FALSE) {
   cde_validate_dates(from, to, "mm-yyyy")
 
@@ -127,12 +131,13 @@ get_place_crime_detail <- function(place, state, county = NULL, offense = "V",
   }
 
   pre_filter_n <- nrow(agencies)
-  agencies <- .filter_agency_members(agencies, agency_class, default_only)
+  agencies <- .filter_agency_members(agencies, agency_class, include_statewide)
 
   if (nrow(agencies) == 0) {
     if (pre_filter_n > 0) {
       warning("No agencies to query for place '", place, "', ", state,
-              " after filtering (", .filter_desc(agency_class), ")",
+              " after filtering (",
+              .filter_desc(agency_class, include_statewide), ")",
               call. = FALSE)
     }
     return(.empty_place_detail_frame())
@@ -141,7 +146,7 @@ get_place_crime_detail <- function(place, state, county = NULL, offense = "V",
   .fanout_agency_detail(
     agencies = agencies,
     meta_cols = c("agency_name", "agency_type_name", "agency_class",
-                  "default_member", "place_name", "county_name", "state_abbr",
+                  "place_name", "county_name", "state_abbr",
                   "attribution"),
     cols = .PLACE_DETAIL_COLS,
     empty_fn = .empty_place_detail_frame,

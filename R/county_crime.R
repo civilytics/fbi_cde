@@ -73,7 +73,7 @@ parse_agency_detail <- function(response, ori, offense, from, to) {
 }
 
 .DETAIL_COLS <- c(
-  "ori", "agency_name", "agency_type_name", "agency_class", "default_member",
+  "ori", "agency_name", "agency_type_name", "agency_class",
   "county_name", "state_abbr", "county_fips", "offense", "period", "count",
   "population", "participated_population", "rate", "reported"
 )
@@ -91,7 +91,6 @@ parse_agency_detail <- function(response, ori, offense, from, to) {
     agency_name = character(0),
     agency_type_name = character(0),
     agency_class = character(0),
-    default_member = logical(0),
     county_name = character(0),
     state_abbr = character(0),
     county_fips = character(0),
@@ -113,18 +112,29 @@ parse_agency_detail <- function(response, ori, offense, from, to) {
 #' coverage (`population`, `participated_population`, `reported`), and a
 #' per-agency `rate` (`count / participated_population * 1e5`). This is the
 #' transparent, power-user primitive; it applies no aggregation and takes no
-#' stance on denominators. Filter with `agency_class`/`default_only`; the default
-#' returns *every* attributed agency, typed.
+#' stance on denominators.
+#'
+#' By default it queries the agencies whose jurisdiction is a specific area
+#' below the state: the sheriff, city police and campus police. Add state
+#' agencies with `include_statewide = TRUE`. Special-purpose agencies (transit,
+#' school, airport, port, park and railroad police, task forces) and tribal
+#' agencies are queried only when named in `agency_class`: the first group
+#' mixes single-site agencies with multi-county task forces attributed to one
+#' county, and how tribal agencies should attribute to counties is unresolved.
 #'
 #' @param county County name (case-insensitive).
 #' @param state Two-letter state abbreviation.
 #' @param offense Offense code (default `"V"`; see `get_offense_codes()`).
 #' @param from,to Date range in `MM-YYYY` format.
-#' @param agency_class Optional character vector; keep only these classes
-#'   (`"county_primary"`, `"municipal"`, `"campus"`, `"state"`, `"tribal"`,
-#'   `"special"`).
-#' @param default_only If `TRUE`, keep only default members (`county_primary` +
-#'   `municipal`). Ignored if `agency_class` is supplied.
+#' @param agency_class Optional character vector of classes to query instead
+#'   of the default set (`"county_primary"`, `"municipal"`, `"campus"`):
+#'   any of those plus `"special"`, `"state"` and `"tribal"`. See
+#'   [county_agencies()] for what each class holds.
+#' @param include_statewide If `TRUE`, also query state agencies (state police
+#'   and highway patrol, other state agencies). Many of their records are
+#'   county or troop units, but some are headquarters records covering the
+#'   whole state, attributed to the county they sit in, and agency type does
+#'   not tell the two apart. Default `FALSE`.
 #' @param progress If `TRUE`, print a simple progress line per agency.
 #' @return A data.frame with one row per agency-period: the agency metadata from
 #'   [county_agencies()] (including `county_fips`, which [join_census_pop()]
@@ -132,11 +142,6 @@ parse_agency_detail <- function(response, ori, offense, from, to) {
 #'   `participated_population`, `rate`, and `reported`. Agencies whose request
 #'   or parse fails are dropped with a warning; their ORIs are recorded in
 #'   `attr(x, "dropped")` and the errors in `attr(x, "dropped_reasons")`.
-#'   Agencies classed `state` (e.g. Highway Patrol) or `tribal` are attributed
-#'   to a county by HQ location, not jurisdiction; their figures reflect
-#'   statewide/jurisdiction-wide totals, not county-specific crime. They are
-#'   excluded by default (`default_member` is `FALSE` for both classes) and
-#'   should be interpreted with care if opted in via `agency_class`.
 #' @export
 #' @examples
 #' \dontrun{
@@ -144,23 +149,25 @@ parse_agency_detail <- function(response, ori, offense, from, to) {
 #' }
 get_county_crime_detail <- function(county, state, offense = "V",
                                     from = "01-2015", to = "12-2020",
-                                    agency_class = NULL, default_only = FALSE,
+                                    agency_class = NULL,
+                                    include_statewide = FALSE,
                                     progress = FALSE) {
   cde_validate_dates(from, to, "mm-yyyy")
 
   agencies <- county_agencies(county, state)
-  agencies <- .filter_agency_members(agencies, agency_class, default_only)
+  agencies <- .filter_agency_members(agencies, agency_class, include_statewide)
 
   if (nrow(agencies) == 0) {
     warning("No agencies to query for '", county, "', ", state,
-            " after filtering", call. = FALSE)
+            " after filtering (", .filter_desc(agency_class, include_statewide),
+            ")", call. = FALSE)
     return(.empty_detail_frame())
   }
 
   .fanout_agency_detail(
     agencies = agencies,
     meta_cols = c("agency_name", "agency_type_name", "agency_class",
-                  "default_member", "county_name", "state_abbr", "county_fips"),
+                  "county_name", "state_abbr", "county_fips"),
     cols = .DETAIL_COLS,
     empty_fn = .empty_detail_frame,
     offense = offense, from = from, to = to, progress = progress
@@ -175,6 +182,7 @@ get_county_crime_detail <- function(county, state, offense = "V",
 #' (`get_county_crime_detail()`).
 #'
 #' @inheritParams get_county_crime_detail
+#' @inheritParams get_agency_crime
 #' @return The `get_agency_crime()` data.frame for the county's primary agency.
 #' @export
 #' @examples
@@ -182,7 +190,8 @@ get_county_crime_detail <- function(county, state, offense = "V",
 #' get_county_agency_crime("Alameda", "CA")
 #' }
 get_county_agency_crime <- function(county, state, offense = "V",
-                                    from = "01-2015", to = "12-2020") {
+                                    from = "01-2015", to = "12-2020",
+                                    comparison = FALSE) {
   agencies <- county_agencies(county, state)
   prim <- agencies[agencies$agency_class == "county_primary", , drop = FALSE]
 
@@ -194,7 +203,8 @@ get_county_agency_crime <- function(county, state, offense = "V",
     warning("Multiple county-primary agencies for '", county, "', ", state,
             "; using ", prim$ori[1], call. = FALSE)
   }
-  get_agency_crime(prim$ori[1], from = from, to = to, offense = offense)
+  get_agency_crime(prim$ori[1], from = from, to = to, offense = offense,
+                   comparison = comparison)
 }
 
 # ---- Layer 2: county aggregate (v0.3) ------------------------------------
@@ -269,8 +279,7 @@ get_county_agency_crime <- function(county, state, offense = "V",
 #' @examples
 #' \dontrun{
 #' detail <- get_county_crime_detail("Alameda", "CA",
-#'                                   from = "01-2019", to = "12-2019",
-#'                                   default_only = TRUE)
+#'                                   from = "01-2019", to = "12-2019")
 #' get_county_crime(detail)
 #'
 #' # Coverage-consistent rate instead of the full jurisdiction denominator.

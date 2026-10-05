@@ -55,8 +55,7 @@ from [county_agencies()] and a Census join).
 \examples{
 \dontrun{
 detail <- get_county_crime_detail("Alameda", "CA",
-                                  from = "01-2019", to = "12-2019",
-                                  default_only = TRUE)
+                                  from = "01-2019", to = "12-2019")
 get_county_crime(detail)
 
 # Coverage-consistent rate instead of the full jurisdiction denominator.

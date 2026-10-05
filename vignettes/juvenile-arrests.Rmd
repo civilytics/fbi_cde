@@ -424,13 +424,12 @@ any(duplicated(metro$ori))
 #> [1] FALSE
 ```
 
-Now fan out. `default_member` restricts to the conservative tier — county
-sheriffs and municipal departments — excluding campus, transit and state
-agencies:
+Now fan out, keeping only county sheriffs and municipal departments, and
+leaving out campus, transit and state agencies:
 
 
 ``` r
-members <- metro[metro$default_member, ]
+members <- metro[metro$agency_class %in% c("county_primary", "municipal"), ]
 
 metro_juvenile <- do.call(rbind, lapply(seq_len(nrow(members)), function(i) {
   d <- tryCatch(

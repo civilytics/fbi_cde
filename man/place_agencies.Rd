@@ -17,7 +17,7 @@ that occurs in more than one county of the same state.}
 }
 \value{
 A data.frame with columns `ori`, `agency_name`, `agency_type_name`,
-  `agency_class`, `default_member`, `place_name`, `county_name`,
+  `agency_class`, `place_name`, `county_name`,
   `state_abbr`, `attribution`, `latitude`, `longitude`. `attribution` records
   how the row earned membership: `"name_identity"` here, or
   `"point_in_polygon"` for rows added by [add_place_spatial_members()].

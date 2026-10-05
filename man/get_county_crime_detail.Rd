@@ -11,7 +11,7 @@ get_county_crime_detail(
   from = "01-2015",
   to = "12-2020",
   agency_class = NULL,
-  default_only = FALSE,
+  include_statewide = FALSE,
   progress = FALSE
 )
 }
@@ -24,12 +24,16 @@ get_county_crime_detail(
 
 \item{from, to}{Date range in `MM-YYYY` format.}
 
-\item{agency_class}{Optional character vector; keep only these classes
-(`"county_primary"`, `"municipal"`, `"campus"`, `"state"`, `"tribal"`,
-`"special"`).}
+\item{agency_class}{Optional character vector of classes to query instead
+of the default set (`"county_primary"`, `"municipal"`, `"campus"`):
+any of those plus `"special"`, `"state"` and `"tribal"`. See
+[county_agencies()] for what each class holds.}
 
-\item{default_only}{If `TRUE`, keep only default members (`county_primary` +
-`municipal`). Ignored if `agency_class` is supplied.}
+\item{include_statewide}{If `TRUE`, also query state agencies (state police
+and highway patrol, other state agencies). Many of their records are
+county or troop units, but some are headquarters records covering the
+whole state, attributed to the county they sit in, and agency type does
+not tell the two apart. Default `FALSE`.}
 
 \item{progress}{If `TRUE`, print a simple progress line per agency.}
 }
@@ -40,11 +44,6 @@ A data.frame with one row per agency-period: the agency metadata from
   `participated_population`, `rate`, and `reported`. Agencies whose request
   or parse fails are dropped with a warning; their ORIs are recorded in
   `attr(x, "dropped")` and the errors in `attr(x, "dropped_reasons")`.
-  Agencies classed `state` (e.g. Highway Patrol) or `tribal` are attributed
-  to a county by HQ location, not jurisdiction; their figures reflect
-  statewide/jurisdiction-wide totals, not county-specific crime. They are
-  excluded by default (`default_member` is `FALSE` for both classes) and
-  should be interpreted with care if opted in via `agency_class`.
 }
 \description{
 Fans out one request per member agency and returns their crime series
@@ -52,8 +51,16 @@ Fans out one request per member agency and returns their crime series
 coverage (`population`, `participated_population`, `reported`), and a
 per-agency `rate` (`count / participated_population * 1e5`). This is the
 transparent, power-user primitive; it applies no aggregation and takes no
-stance on denominators. Filter with `agency_class`/`default_only`; the default
-returns *every* attributed agency, typed.
+stance on denominators.
+}
+\details{
+By default it queries the agencies whose jurisdiction is a specific area
+below the state: the sheriff, city police and campus police. Add state
+agencies with `include_statewide = TRUE`. Special-purpose agencies (transit,
+school, airport, port, park and railroad police, task forces) and tribal
+agencies are queried only when named in `agency_class`: the first group
+mixes single-site agencies with multi-county task forces attributed to one
+county, and how tribal agencies should attribute to counties is unresolved.
 }
 \examples{
 \dontrun{

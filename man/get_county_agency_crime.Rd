@@ -9,7 +9,8 @@ get_county_agency_crime(
   state,
   offense = "V",
   from = "01-2015",
-  to = "12-2020"
+  to = "12-2020",
+  comparison = FALSE
 )
 }
 \arguments{
@@ -20,6 +21,11 @@ get_county_agency_crime(
 \item{offense}{Offense code (default `"V"`; see `get_offense_codes()`).}
 
 \item{from, to}{Date range in `MM-YYYY` format.}
+
+\item{comparison}{If `TRUE`, also return the comparison series the API
+sends alongside the agency's own: its state's and the nation's rates
+(these have no `count`). Default `FALSE` returns only the agency's own
+series.}
 }
 \value{
 The `get_agency_crime()` data.frame for the county's primary agency.

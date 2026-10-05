@@ -9,7 +9,7 @@
 # unbounded call would hang for minutes with no explanation.
 
 .METRO_DETAIL_COLS <- c(
-  "ori", "agency_name", "agency_type_name", "agency_class", "default_member",
+  "ori", "agency_name", "agency_type_name", "agency_class",
   "county_name", "state_abbr", "county_fips",
   "cbsa_code", "cbsa_title", "cbsa_type", "central_outlying",
   "offense", "period", "count",
@@ -22,7 +22,6 @@
     agency_name = character(0),
     agency_type_name = character(0),
     agency_class = character(0),
-    default_member = logical(0),
     county_name = character(0),
     state_abbr = character(0),
     county_fips = character(0),
@@ -61,9 +60,8 @@
 #' @inheritParams metro_agencies
 #' @param offense Offense code (default `"V"`; see `get_offense_codes()`).
 #' @param from,to Date range in `MM-YYYY` format.
-#' @param agency_class Optional character vector; keep only these classes.
-#' @param default_only If `TRUE` (the default), keep only default members
-#'   (`county_primary` + `municipal`). Ignored if `agency_class` is supplied.
+#' @param agency_class,include_statewide Which agencies to query, as for
+#'   [get_county_crime_detail()].
 #' @param max_agencies Refuse to run if the filtered agency set is larger than
 #'   this (default `150`), erroring **before any request is issued**. Set to
 #'   `Inf` to disable, or narrow the set with `agency_class`.
@@ -71,8 +69,8 @@
 #'   equivalents), print a progress line per agency. At metro scale silence is
 #'   indistinguishable from a hang.
 #' @return A data.frame with one row per agency-period. Agencies whose request
-#'   or parse fails are dropped with a warning and recorded in
-#'   `attr(x, "dropped")`.
+#'   or parse fails are dropped with a warning; their ORIs are recorded in
+#'   `attr(x, "dropped")` and the errors in `attr(x, "dropped_reasons")`.
 #' @seealso [metro_agencies()], [list_metros()], [get_county_crime_detail()].
 #' @export
 #' @examples
@@ -82,7 +80,8 @@
 #' }
 get_metro_crime_detail <- function(metro, state = NULL, offense = "V",
                                    from = "01-2015", to = "12-2020",
-                                   agency_class = NULL, default_only = TRUE,
+                                   agency_class = NULL,
+                                   include_statewide = FALSE,
                                    max_agencies = 150, progress = TRUE) {
   stopifnot(
     is.numeric(max_agencies), length(max_agencies) == 1L, !is.na(max_agencies)
@@ -91,12 +90,13 @@ get_metro_crime_detail <- function(metro, state = NULL, offense = "V",
 
   agencies <- metro_agencies(metro, state)
   pre_filter_n <- nrow(agencies)
-  agencies <- .filter_agency_members(agencies, agency_class, default_only)
+  agencies <- .filter_agency_members(agencies, agency_class, include_statewide)
 
   if (nrow(agencies) == 0) {
     if (pre_filter_n > 0) {
       warning("No agencies to query for metro '", metro,
-              "' after filtering (", .filter_desc(agency_class), ")",
+              "' after filtering (",
+              .filter_desc(agency_class, include_statewide), ")",
               call. = FALSE)
     }
     return(.empty_metro_detail_frame())
@@ -114,7 +114,7 @@ get_metro_crime_detail <- function(metro, state = NULL, offense = "V",
   .fanout_agency_detail(
     agencies = agencies,
     meta_cols = c("agency_name", "agency_type_name", "agency_class",
-                  "default_member", "county_name", "state_abbr", "county_fips",
+                  "county_name", "state_abbr", "county_fips",
                   "cbsa_code", "cbsa_title", "cbsa_type", "central_outlying"),
     cols = .METRO_DETAIL_COLS,
     empty_fn = .empty_metro_detail_frame,

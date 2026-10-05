@@ -27,8 +27,10 @@ Exposed for testing; you should not need to set it.}
       enrichment, not a promised join key** — it is `NA` on `name_identity`
       rows, so it does not cover the municipal tier.
   }
-  Appended rows carry `attribution = "point_in_polygon"` and
-  `default_member = FALSE`.
+  Appended rows carry `attribution = "point_in_polygon"`. Their
+  `agency_class` decides whether [get_place_crime_detail()] queries them by
+  default: `"campus"` rows yes; `"special"` and `"state"` rows only when
+  requested.
 }
 \description{
 Attributes campus and other special-district agencies (any agency of type

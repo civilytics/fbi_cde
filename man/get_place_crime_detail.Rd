@@ -12,7 +12,7 @@ get_place_crime_detail(
   from = "01-2015",
   to = "12-2020",
   agency_class = NULL,
-  default_only = TRUE,
+  include_statewide = FALSE,
   agencies = NULL,
   progress = FALSE
 )
@@ -30,20 +30,23 @@ that occurs in more than one county of the same state.}
 
 \item{from, to}{Date range in `MM-YYYY` format.}
 
-\item{agency_class}{Optional character vector; keep only these place classes
-(`"place_primary"`, `"campus"`, `"special"`).}
+\item{agency_class}{Optional character vector of place classes to query
+instead of the default set (`"place_primary"`, `"campus"`): any of those
+plus `"special"` and `"state"`.}
 
-\item{default_only}{If `TRUE` (the default), keep only default members
-(`place_primary`). Ignored if `agency_class` is supplied.}
+\item{include_statewide}{If `TRUE`, also query state agencies (class
+`"state"`, e.g. a state park's rangers or a capitol police force) found
+inside the place by [add_place_spatial_members()]. Default `FALSE`.}
 
 \item{agencies}{Optional pre-resolved agency membership data.frame, e.g. the
   output of [place_agencies()] with [add_place_spatial_members()] applied.
   When supplied, it is used directly instead of calling `place_agencies()`
-  internally — this is the only way to reach `agency_class = "campus"` or
-  `"special"` rows, since [place_agencies()] alone never returns them. Must
-  be a data.frame carrying at least `ori`, `agency_name`,
-  `agency_type_name`, `agency_class`, `default_member`, `place_name`,
-  `county_name`, `state_abbr`, and `attribution`.
+  internally — this is the only way to reach `"campus"`, `"special"` or
+  `"state"` rows, since [place_agencies()] alone never returns them. Campus
+  rows supplied this way are queried by default. Must be a data.frame
+  carrying at least `ori`, `agency_name`, `agency_type_name`,
+  `agency_class`, `place_name`, `county_name`, `state_abbr`, and
+  `attribution`.
 
   Column presence is validated, but membership is **not**: a hand-built frame
   can contain any ORI, including a sheriff or state police agency. The
@@ -59,12 +62,12 @@ that occurs in more than one county of the same state.}
 }
 \value{
 A data.frame with one row per agency-period, carrying: `ori`,
-  `agency_name`, `agency_type_name`, `agency_class`, `default_member`,
+  `agency_name`, `agency_type_name`, `agency_class`,
   `place_name`, `county_name`, `state_abbr`, `attribution`, `offense`,
   `period`, `count`, `population`, `participated_population`, `rate`, and
   `reported`. Agencies whose request or parse fails are dropped with a
   warning and recorded in `attr(x, "dropped")`. If filtering (via
-  `agency_class`/`default_only`) empties a non-empty agency set, a warning
+  `agency_class`/`include_statewide`) empties a non-empty agency set, a warning
   names the place and the filter responsible, and a zero-row frame is
   returned.
 }
@@ -87,9 +90,10 @@ a city total is a modeling choice, not arithmetic; see the county Layer 2
 \dontrun{
 get_place_crime_detail("Lufkin", "TX", from = "01-2019", to = "12-2019")
 
-# Compose with add_place_spatial_members() to reach campus/special agencies:
+# Compose with add_place_spatial_members() to reach campus agencies, which
+# are then queried by default alongside the city's own:
 x <- add_place_spatial_members(place_agencies("Berkeley", "CA"))
-get_place_crime_detail("Berkeley", "CA", agencies = x, agency_class = "campus")
+get_place_crime_detail("Berkeley", "CA", agencies = x)
 }
 }
 \seealso{

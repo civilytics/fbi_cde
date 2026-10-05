@@ -59,9 +59,9 @@ test_that("metro_agencies preserves county-level classification semantics", {
   out <- metro_agencies("Pittsburgh, PA")
   expect_true(all(out$agency_class %in%
     c("county_primary", "municipal", "campus", "state", "tribal", "special")))
-  # A metro is a set of whole counties, so sheriffs belong and are default.
+  # A metro is a set of whole counties, so sheriffs belong.
   expect_true(any(out$agency_class == "county_primary"))
-  expect_true(all(out$default_member[out$agency_class == "county_primary"]))
+  expect_false("default_member" %in% names(out))
 })
 
 test_that("metro_agencies carries central/outlying from the delineation", {

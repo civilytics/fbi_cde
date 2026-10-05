@@ -1,6 +1,6 @@
 # Layer 0 of the geography model: the membership resolver. Pure, no network.
 # Reads the bundled agency table and returns the classified candidate set for a
-# county. All opinion is *declared* here (agency_class, default_member); none is
+# county. All opinion is *declared* here (agency_class); none is
 # applied (no filtering, summation, or fetching).
 
 # `fbi_api_agencies` is a lazy-loaded package dataset; declare it to satisfy
@@ -31,7 +31,7 @@ agencies_table <- function() {
 }
 
 .COUNTY_AGENCY_COLS <- c(
-  "ori", "agency_name", "agency_type_name", "agency_class", "default_member",
+  "ori", "agency_name", "agency_type_name", "agency_class",
   "county_name", "state_abbr", "county_fips", "latitude", "longitude",
   "agency_county_names"
 )
@@ -50,7 +50,6 @@ agencies_table <- function() {
     agency_name = character(0),
     agency_type_name = character(0),
     agency_class = character(0),
-    default_member = logical(0),
     county_name = character(0),
     state_abbr = character(0),
     county_fips = character(0),
@@ -63,24 +62,29 @@ agencies_table <- function() {
 
 #' List the law-enforcement agencies attributed to a county
 #'
-#' Returns every agency in the bundled agency table whose county and state match,
-#' classified by `agency_class` and flagged with a conservative `default_member`
-#' indicator. This is an *attribution* model, not a spatial one: it reports the
-#' agencies attributed to a county, not crime known to have occurred there.
+#' Returns every agency in the bundled agency table whose county and state
+#' match, classified by `agency_class`. This is an *attribution* model, not a
+#' spatial one: it reports the agencies attributed to a county, not crime known
+#' to have occurred there. It returns every class; the crime functions
+#' ([get_county_crime_detail()], [get_metro_crime_detail()]) then choose which
+#' classes to query.
 #'
 #' @param county County name (case-insensitive; e.g. `"Alameda"`).
 #' @param state Two-letter state abbreviation (e.g. `"CA"`).
 #' @return A data.frame with columns `ori`, `agency_name`, `agency_type_name`,
-#'   `agency_class`, `default_member`, `county_name`, `state_abbr`, `county_fips`,
+#'   `agency_class`, `county_name`, `state_abbr`, `county_fips`,
 #'   `latitude`, `longitude`, `agency_county_names`. `county_name` and
 #'   `county_fips` (5-digit, character, preserving leading zeros) identify the
 #'   queried county on every row. `agency_county_names` is the CDE's own county
 #'   list for the agency: semicolon-separated for an agency that polices several
 #'   counties (e.g. Columbus PD, `"DELAWARE; FAIRFIELD; FRANKLIN"`). Such an
 #'   agency is attributed in full to each of its counties, so summing results
-#'   across counties counts it more than once. `default_member` is `TRUE` for
-#'   `county_primary` and `municipal` agencies. Returns a zero-row frame
-#'   (with a warning) if no agencies match.
+#'   across counties counts it more than once. `agency_class` is one of
+#'   `"county_primary"` (sheriff, parish), `"municipal"` (city police),
+#'   `"campus"`, `"state"` (state police and other state agencies),
+#'   `"special"` (transit, school, airport, port, park and railroad police,
+#'   task forces) or `"tribal"`. Returns a zero-row frame (with a warning) if
+#'   no agencies match.
 #' @export
 #' @examples
 #' \dontrun{
@@ -107,7 +111,6 @@ county_agencies <- function(county, state) {
   }
 
   sel$agency_class <- classify_agency(sel$agency_type_name)
-  sel$default_member <- sel$agency_class %in% DEFAULT_MEMBER_CLASSES
 
   # Attribute every row to the county that was asked for. A multi-county
   # agency's raw county_name ("DELAWARE; FAIRFIELD; FRANKLIN") describes the

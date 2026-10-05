@@ -11,7 +11,7 @@ get_metro_crime_detail(
   from = "01-2015",
   to = "12-2020",
   agency_class = NULL,
-  default_only = TRUE,
+  include_statewide = FALSE,
   max_agencies = 150,
   progress = TRUE
 )
@@ -27,10 +27,8 @@ disambiguate an ambiguous short name.}
 
 \item{from, to}{Date range in `MM-YYYY` format.}
 
-\item{agency_class}{Optional character vector; keep only these classes.}
-
-\item{default_only}{If `TRUE` (the default), keep only default members
-(`county_primary` + `municipal`). Ignored if `agency_class` is supplied.}
+\item{agency_class, include_statewide}{Which agencies to query, as for
+[get_county_crime_detail()].}
 
 \item{max_agencies}{Refuse to run if the filtered agency set is larger than
 this (default `150`), erroring **before any request is issued**. Set to
@@ -42,8 +40,8 @@ indistinguishable from a hang.}
 }
 \value{
 A data.frame with one row per agency-period. Agencies whose request
-  or parse fails are dropped with a warning and recorded in
-  `attr(x, "dropped")`.
+  or parse fails are dropped with a warning; their ORIs are recorded in
+  `attr(x, "dropped")` and the errors in `attr(x, "dropped_reasons")`.
 }
 \description{
 Fans out one request per member agency across the metro's counties and

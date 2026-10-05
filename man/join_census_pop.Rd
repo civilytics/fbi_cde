@@ -57,8 +57,7 @@ correct default for a county denominator.
 \examples{
 \dontrun{
 detail <- get_county_crime_detail("Alameda", "CA",
-                                  from = "01-2019", to = "12-2019",
-                                  default_only = TRUE)
+                                  from = "01-2019", to = "12-2019")
 detail_with_pop <- join_census_pop(detail)
 agg <- get_county_crime(detail_with_pop, denominator = "census_pop")
 }

@@ -3,7 +3,7 @@
 # so this delegates to county_agencies() and adds the CBSA columns.
 
 .METRO_AGENCY_COLS <- c(
-  "ori", "agency_name", "agency_type_name", "agency_class", "default_member",
+  "ori", "agency_name", "agency_type_name", "agency_class",
   "county_name", "state_abbr", "county_fips", "latitude", "longitude",
   "agency_county_names",
   "cbsa_code", "cbsa_title", "cbsa_type", "central_outlying"
@@ -17,7 +17,6 @@
     agency_name = character(0),
     agency_type_name = character(0),
     agency_class = character(0),
-    default_member = logical(0),
     county_name = character(0),
     state_abbr = character(0),
     county_fips = character(0),
@@ -74,9 +73,8 @@
 #'
 #' Resolves a Core Based Statistical Area (CBSA) to the union of its member
 #' counties' agency sets. A metro is a set of *whole counties*, so this simply
-#' stacks [county_agencies()] across them -- `agency_class` and
-#' `default_member` keep exactly the meaning they have at county level,
-#' including that a county sheriff is a default member.
+#' stacks [county_agencies()] across them, and `agency_class` keeps exactly
+#' its county-level meaning.
 #'
 #' CBSA titles are unique nationally, so `state` is only needed to disambiguate
 #' a short name shared by several metros (`"Albany"` matches GA, OR and NY).

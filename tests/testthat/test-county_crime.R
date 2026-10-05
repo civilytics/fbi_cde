@@ -102,7 +102,6 @@ test_that("get_county_crime_detail fans out, filters, and reports drops", {
     agency_name = c("Alpha PD", "Beta University", "Gamma PD"),
     agency_type_name = c("City", "University or College", "City"),
     agency_class = c("municipal", "campus", "municipal"),
-    default_member = c(TRUE, FALSE, TRUE),
     county_name = "TESTONIA",
     state_abbr = "CA",
     county_fips = "06999",
@@ -149,7 +148,6 @@ test_that("get_county_crime_detail returns .DETAIL_COLS-shaped empty frame when 
     agency_name = c("Alpha PD", "Beta University"),
     agency_type_name = c("City", "University or College"),
     agency_class = c("municipal", "campus"),
-    default_member = c(TRUE, FALSE),
     county_name = "TESTONIA", state_abbr = "CA", county_fips = "06999",
     latitude = 0, longitude = 0, stringsAsFactors = FALSE
   )
@@ -174,45 +172,47 @@ test_that("get_county_crime_detail returns .DETAIL_COLS-shaped empty frame when 
   expect_setequal(attr(out, "dropped"), c("CA0000001", "CA0000002"))
 })
 
-test_that("get_county_crime_detail default_only keeps only default members", {
+test_that("get_county_crime_detail queries sub-state agencies by default; others on request", {
   agencies <- data.frame(
-    ori = c("CA0000001", "CA0000002"),
-    agency_name = c("Alpha PD", "Beta University"),
-    agency_type_name = c("City", "University or College"),
-    agency_class = c("municipal", "campus"),
-    default_member = c(TRUE, FALSE),
+    ori = c("CA0000001", "CA0000002", "CA0000003", "CA0000004", "CA0000005"),
+    agency_name = c("Alpha PD", "Beta University", "Gamma Transit",
+                    "Highway Patrol: Testonia County", "Testonia Tribal PD"),
+    agency_type_name = c("City", "University or College", "Other",
+                         "State Police", "Tribal"),
+    agency_class = c("municipal", "campus", "special", "state", "tribal"),
     county_name = "TESTONIA", state_abbr = "CA", county_fips = "06999",
     latitude = 0, longitude = 0, stringsAsFactors = FALSE
-  )
-  responses <- list(
-    CA0000001 = make_agency_response("Alpha PD", c("01-2021" = 10)),
-    CA0000002 = make_agency_response("Beta University", c("01-2021" = 99))
   )
   testthat::local_mocked_bindings(
     county_agencies = function(county, state) agencies,
     cde_request = function(path, query = list(), ...) {
-      ori <- sub("^summarized/agency/([A-Za-z0-9]{9})/.*$", "\\1", path)
-      responses[[ori]]
+      make_agency_response("Any", c("01-2021" = 1))
     },
     .package = "fbiCDE"
   )
+  queried <- function(...) {
+    sort(unique(get_county_crime_detail("Testonia", "CA", from = "01-2021",
+                                        to = "01-2021", ...)$ori))
+  }
 
-  out <- get_county_crime_detail("Testonia", "CA", from = "01-2021",
-                                 to = "01-2021", default_only = TRUE)
-  expect_equal(unique(out$ori), "CA0000001")
-  expect_false("CA0000002" %in% out$ori)
+  # Default: city and campus police; not special, state or tribal.
+  expect_equal(queried(), c("CA0000001", "CA0000002"))
+  expect_equal(queried(include_statewide = TRUE),
+               c("CA0000001", "CA0000002", "CA0000004"))
+  expect_equal(queried(agency_class = "special"), "CA0000003")
+  expect_equal(queried(agency_class = "tribal"), "CA0000005")
 })
 
 test_that("get_county_crime_detail works live for a small county", {
   skip_if_no_fbi_api()
   out <- get_county_crime_detail("Alameda", "CA", offense = "V",
-                                 from = "01-2019", to = "03-2019",
-                                 default_only = TRUE)
+                                 from = "01-2019", to = "03-2019")
   expect_s3_class(out, "data.frame")
   expect_gt(nrow(out), 0L)
   expect_true(all(c("ori", "count", "population", "reported") %in% names(out)))
-  expect_true(all(out$agency_class %in% c("county_primary", "municipal")))
-  # Oakland PD is a default member of Alameda County.
+  expect_true(all(out$agency_class %in%
+                    c("county_primary", "municipal", "campus")))
+  # Oakland PD is queried by default for Alameda County.
   expect_true("CA0010900" %in% out$ori)
 })
 
@@ -222,7 +222,6 @@ test_that("get_county_agency_crime resolves the county_primary ORI", {
     agency_name = c("Alpha PD", "Testonia County Sheriff"),
     agency_type_name = c("City", "County"),
     agency_class = c("municipal", "county_primary"),
-    default_member = c(TRUE, TRUE),
     county_name = "TESTONIA", state_abbr = "CA", county_fips = "06999",
     latitude = 0, longitude = 0, stringsAsFactors = FALSE
   )
@@ -248,7 +247,6 @@ test_that("get_county_agency_crime warns and uses the first ORI when multiple co
                     "Testonia County Police Department"),
     agency_type_name = c("City", "County", "County"),
     agency_class = c("municipal", "county_primary", "county_primary"),
-    default_member = c(TRUE, TRUE, TRUE),
     county_name = "TESTONIA", state_abbr = "CA", county_fips = "06999",
     latitude = 0, longitude = 0, stringsAsFactors = FALSE
   )
@@ -272,7 +270,7 @@ test_that("get_county_agency_crime errors when no county_primary exists", {
   agencies <- data.frame(
     ori = "CA0000001", agency_name = "Alpha PD",
     agency_type_name = "City", agency_class = "municipal",
-    default_member = TRUE, county_name = "TESTONIA", state_abbr = "CA", county_fips = "06999",
+    county_name = "TESTONIA", state_abbr = "CA", county_fips = "06999",
     latitude = 0, longitude = 0, stringsAsFactors = FALSE
   )
   testthat::local_mocked_bindings(

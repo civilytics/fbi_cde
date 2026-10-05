@@ -64,8 +64,10 @@
 #'       enrichment, not a promised join key** — it is `NA` on `name_identity`
 #'       rows, so it does not cover the municipal tier.
 #'   }
-#'   Appended rows carry `attribution = "point_in_polygon"` and
-#'   `default_member = FALSE`.
+#'   Appended rows carry `attribution = "point_in_polygon"`. Their
+#'   `agency_class` decides whether [get_place_crime_detail()] queries them by
+#'   default: `"campus"` rows yes; `"special"` and `"state"` rows only when
+#'   requested.
 #' @seealso [place_agencies()]
 #' @export
 #' @examples
@@ -164,7 +166,6 @@ add_place_spatial_members <- function(x, vintage = NULL, places_fun = NULL) {
     agency_name = cand$agency_name,
     agency_type_name = cand$agency_type_name,
     agency_class = classify_place_agency(cand$agency_type_name),
-    default_member = FALSE,
     place_name = x$place_name[1],
     county_name = cand$county_name,
     state_abbr = cand$state_abbr,

@@ -9,8 +9,9 @@ test_that("classify_agency maps raw agency types to agency_class", {
   expect_equal(classify_agency("State Police"), "state")
   expect_equal(classify_agency("Tribal"), "tribal")
   expect_equal(classify_agency("Other"), "special")
-  expect_equal(classify_agency("Other State Agency"), "special")
-  expect_equal(classify_agency("Census Area"), "special")
+  expect_equal(classify_agency("Other State Agency"), "state")
+  # The CDE's "Census Area" agencies are Alaska city police departments.
+  expect_equal(classify_agency("Census Area"), "municipal")
   # Unknown and NA are conservative (excluded by default).
   expect_equal(classify_agency("Something New"), "special")
   expect_equal(classify_agency(NA_character_), "special")
@@ -23,7 +24,8 @@ test_that("county_agencies resolves and classifies a county (Alameda, CA)", {
   out <- county_agencies("Alameda", "CA")
   expect_s3_class(out, "data.frame")
   expect_equal(nrow(out), 21L)
-  expect_true(all(c("agency_class", "default_member", "county_fips") %in% names(out)))
+  expect_true(all(c("agency_class", "county_fips") %in% names(out)))
+  expect_false("default_member" %in% names(out))
 
   cls <- setNames(out$agency_class, out$ori)
   expect_equal(cls[["CA0010000"]], "county_primary")  # Alameda County Sheriff
@@ -33,11 +35,16 @@ test_that("county_agencies resolves and classifies a county (Alameda, CA)", {
   expect_equal(cls[["CA0019900"]], "state")            # Highway Patrol
   expect_equal(cls[["CA0019700"]], "campus")           # UC Berkeley
 
-  # Default membership = county_primary + municipal = 14 City + 1 County.
-  expect_equal(sum(out$default_member), 15L)
-  dm <- setNames(out$default_member, out$ori)
-  expect_true(dm[["CA0010900"]])
-  expect_false(dm[["CA0012100"]])
+  # 1 sheriff, 14 city police and 2 campus agencies are queried by default;
+  # 3 special-purpose and 1 state agency only on request.
+  counts <- table(out$agency_class)
+  expect_equal(
+    as.vector(counts[c("county_primary", "municipal", "campus", "special",
+                       "state")]),
+    c(1, 14, 2, 3, 1)
+  )
+  expect_equal(nrow(.filter_agency_members(out)), 17L)
+  expect_equal(nrow(.filter_agency_members(out, include_statewide = TRUE)), 18L)
 })
 
 test_that("county_agencies includes county_fips column (Alameda, CA)", {
@@ -49,7 +56,7 @@ test_that("county_agencies includes county_fips column (Alameda, CA)", {
   # Column order: county_fips appears right after state_abbr
   expect_equal(names(out),
                c("ori", "agency_name", "agency_type_name", "agency_class",
-                 "default_member", "county_name", "state_abbr", "county_fips",
+                 "county_name", "state_abbr", "county_fips",
                  "latitude", "longitude", "agency_county_names"))
 })
 

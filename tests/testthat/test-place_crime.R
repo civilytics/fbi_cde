@@ -108,7 +108,6 @@ fake_place_agencies <- function(n = 1) {
       c("Lufkin Police Department", "Angelina College"),
     agency_type_name = if (n == 1) "City" else c("City", "University or College"),
     agency_class = if (n == 1) "place_primary" else c("place_primary", "campus"),
-    default_member = if (n == 1) TRUE else c(TRUE, FALSE),
     place_name = "Lufkin",
     county_name = "ANGELINA",
     state_abbr = "TX",
@@ -153,6 +152,16 @@ test_that("get_place_crime_detail can reach campus agencies via a supplied agenc
   expect_equal(nrow(out), 2L)
   expect_equal(unique(out$agency_class), "campus")
   expect_equal(unique(out$attribution), "point_in_polygon")
+})
+
+test_that("get_place_crime_detail queries supplied campus members by default", {
+  testthat::local_mocked_bindings(
+    cde_request = function(...) fake_agency_response(),
+    .package = "fbiCDE"
+  )
+  out <- get_place_crime_detail("Lufkin", "TX", from = "01-2021", to = "02-2021",
+                                agencies = fake_place_agencies(2))
+  expect_setequal(unique(out$agency_class), c("place_primary", "campus"))
 })
 
 test_that("get_place_crime_detail warns rather than silently returning empty when a filter is unsatisfiable", {

@@ -25,9 +25,8 @@ A data.frame with the [county_agencies()] columns plus `cbsa_code`,
 \description{
 Resolves a Core Based Statistical Area (CBSA) to the union of its member
 counties' agency sets. A metro is a set of *whole counties*, so this simply
-stacks [county_agencies()] across them -- `agency_class` and
-`default_member` keep exactly the meaning they have at county level,
-including that a county sheriff is a default member.
+stacks [county_agencies()] across them, and `agency_class` keeps exactly
+its county-level meaning.
 }
 \details{
 CBSA titles are unique nationally, so `state` is only needed to disambiguate

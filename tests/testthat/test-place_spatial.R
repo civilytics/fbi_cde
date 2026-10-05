@@ -47,7 +47,7 @@ test_that("add_place_spatial_members widens the required-columns check to catch 
   # message rather than dying later with a cryptic subscript error.
   bad <- data.frame(
     ori = "TX1234567", agency_name = "x", agency_type_name = "City",
-    agency_class = "place_primary", default_member = TRUE,
+    agency_class = "place_primary",
     place_name = "Lufkin", county_name = "ANGELINA", state_abbr = "TX",
     attribution = "name_identity",
     offense = "V", period = "01-2021", count = 1,
@@ -108,7 +108,6 @@ test_that("add_place_spatial_members attributes an embedded agency inside the pl
   expect_equal(nrow(added), 1L)
   expect_equal(added$ori, "TX1234567")
   expect_equal(added$agency_class, "campus")
-  expect_false(added$default_member)
   expect_equal(added$place_type, "incorporated")
   expect_equal(added$place_fips, "4845384")
 })

@@ -25,7 +25,8 @@ Targeting CRAN. Based on the original `fbi` package by Jacob Kaplan.
   silently changed shape. Use `%||%` for drift tolerance (e.g.
   `actuals %||% counts`). Agency- and state-level `summarized`/`arrest` responses
   include **comparison rows** (state + national series with a real `rate` but
-  `NA` count) — strip them to the geography's own series.
+  `NA` count). `R/series.R` strips them by default (own series = labels present
+  in the counts map); `comparison = TRUE` keeps them, labelled by `series`.
 - **`cde_request()` uses `simplifyVector = FALSE`** (nested lists), and
   `read_fixture()` parses fixtures the same way, so parsers only ever see that
   shape. Index with `names()` / `[[ ]]`; do not add `is.data.frame()` branches
@@ -62,12 +63,19 @@ model (which agencies are attributed to a geography — not spatial-truth).
 Layers:
 - `county_agencies(county, state)` — pure resolver; classifies each agency into
   `agency_class` (`county_primary`/`municipal`/`campus`/`state`/`tribal`/`special`)
-  with a conservative `default_member` flag (`county_primary` + `municipal`).
+  **by `agency_type_name` only — never by parsing agency names.**
+- **Which classes are queried:** by default `county_primary`, `municipal`,
+  `campus` (place level: `place_primary`, `campus`) — agencies with a specific
+  sub-state jurisdiction. `include_statewide = TRUE` adds `state` (State Police
+  + Other State Agency). `special` ("Other": transit, school, port, railroad,
+  multi-county task forces) and `tribal` (attribution unresolved, deferred)
+  only via `agency_class`. There is no "default member" flag; don't add one.
 - `get_county_crime_detail(...)` — fans out one request per member ORI, returns
   **unsummed** per-agency-period rows with coverage columns and a `reported` flag
   (distinguishes "reported 0" from "did not report" — critical for the 2021 CA
-  NIBRS-transition reporting hole). Filters via `agency_class` / `default_only`;
-  failed ORIs are dropped, warned, and listed in `attr(x, "dropped")`.
+  NIBRS-transition reporting hole). Filters via `agency_class` /
+  `include_statewide`; failed ORIs are dropped, warned, and listed in
+  `attr(x, "dropped")`.
 - `get_county_agency_crime(...)` — the county's own primary (sheriff) series.
 - **Attribution invariant:** a resolver row's `county_name`/`county_fips` is the
   county the row is *attributed* to (the queried county; in a metro, the first

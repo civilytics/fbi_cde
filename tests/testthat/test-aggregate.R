@@ -14,7 +14,6 @@ make_detail <- function(ori, offense = "V", periods, counts,
     agency_name = paste0(substr(ori, 1, 2), " Agency"),
     agency_type_name = "City",
     agency_class = "municipal",
-    default_member = TRUE,
     county_name = "TESTONIA",
     state_abbr = "CA",
     county_fips = "06999",
@@ -464,7 +463,7 @@ test_that("a county containing multi-county agencies aggregates to one row per p
   # Franklin County, OH: Columbus PD is "DELAWARE; FAIRFIELD; FRANKLIN", and
   # several suburbs are also listed under more than one county.
   detail <- get_county_crime_detail("Franklin", "OH", from = "01-2021",
-                                    to = "01-2021", default_only = TRUE)
+                                    to = "01-2021")
   expect_true("OHCOP0000" %in% detail$ori)
   expect_equal(unique(detail$county_name), "FRANKLIN")
 
@@ -478,7 +477,7 @@ test_that("county detail feeds join_census_pop and the census_pop denominator", 
   local_mocked_bindings(cde_request = one_month_response, .package = "fbiCDE")
 
   detail <- get_county_crime_detail("Licking", "OH", from = "01-2021",
-                                    to = "01-2021", default_only = TRUE)
+                                    to = "01-2021")
   # Licking's first matching agency is multi-county ("FAIRFIELD; LICKING;
   # FRANKLIN"); its FIPS was once taken from that row and came out as
   # Fairfield's (39045).
@@ -504,7 +503,7 @@ test_that("get_county_crime warns about and carries agencies the fan-out dropped
 
   expect_warning(
     detail <- get_county_crime_detail("Franklin", "OH", from = "01-2021",
-                                      to = "01-2021", default_only = TRUE),
+                                      to = "01-2021"),
     "request or parse failed: OHCOP0000"
   )
   expect_match(attr(detail, "dropped_reasons")[["OHCOP0000"]], "HTTP 500")

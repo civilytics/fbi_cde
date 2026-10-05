@@ -10,8 +10,8 @@ classify_place_agency(agency_type_name)
 \item{agency_type_name}{Character vector of raw `agency_type_name` values.}
 }
 \value{
-Character vector of `"place_primary"`, `"campus"`, `"special"`, or
-  `NA` for types that are not place members.
+Character vector of `"place_primary"`, `"campus"`, `"special"`,
+  `"state"`, or `NA` for types that are not place members.
 }
 \description{
 Maps the CDE's raw `agency_type_name` to a place-level `agency_class`.

@@ -6,7 +6,8 @@
 # See docs/superpowers/specs/2026-07-24-place-membership-v0.4-design.md §1.
 
 # The four agency_type_name values that constitute the municipal tier.
-.MUNICIPAL_TYPES <- c("City", "Municipality", "Borough", "City and Borough")
+.MUNICIPAL_TYPES <- c("City", "Municipality", "Borough", "City and Borough",
+                      "Census Area")
 
 # Trailing agency-name suffixes stripped to recover the bare place name.
 # The pattern is end-anchored with `$`, so each alternative must consume the
@@ -50,7 +51,7 @@ derive_place_name <- function(agency_name) {
 }
 
 .PLACE_AGENCY_COLS <- c(
-  "ori", "agency_name", "agency_type_name", "agency_class", "default_member",
+  "ori", "agency_name", "agency_type_name", "agency_class",
   "place_name", "county_name", "state_abbr", "attribution",
   "latitude", "longitude"
 )
@@ -67,7 +68,6 @@ derive_place_name <- function(agency_name) {
     agency_name = character(0),
     agency_type_name = character(0),
     agency_class = character(0),
-    default_member = logical(0),
     place_name = character(0),
     county_name = character(0),
     state_abbr = character(0),
@@ -113,7 +113,7 @@ derive_place_name <- function(agency_name) {
 #' @param county Optional county name, needed only to disambiguate a place name
 #'   that occurs in more than one county of the same state.
 #' @return A data.frame with columns `ori`, `agency_name`, `agency_type_name`,
-#'   `agency_class`, `default_member`, `place_name`, `county_name`,
+#'   `agency_class`, `place_name`, `county_name`,
 #'   `state_abbr`, `attribution`, `latitude`, `longitude`. `attribution` records
 #'   how the row earned membership: `"name_identity"` here, or
 #'   `"point_in_polygon"` for rows added by [add_place_spatial_members()].
@@ -165,7 +165,6 @@ place_agencies <- function(place, state, county = NULL) {
   }
 
   sel$agency_class <- classify_place_agency(sel$agency_type_name)
-  sel$default_member <- sel$agency_class %in% "place_primary"
   sel$attribution <- "name_identity"
 
   out <- sel[, .PLACE_AGENCY_COLS, drop = FALSE]
