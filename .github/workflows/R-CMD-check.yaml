@@ -40,7 +40,8 @@ jobs:
       R_KEEP_PKG_SOURCE: yes
       _R_CHECK_CRAN_INCOMING_: false
       _R_CHECK_FORCE_SUGGESTS_: false
-      # Live FBI API tests skip on CI; do not set FBI_API_KEY here yet.
+      # Live CDE API tests are opt-in (FBI_CDE_LIVE=true) and run in the
+      # scheduled live-api workflow, not here.
       _R_CHECK_TESTS_NLINES_: 0
 
     steps:

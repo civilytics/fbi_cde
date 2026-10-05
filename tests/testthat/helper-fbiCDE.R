@@ -6,21 +6,23 @@
 #    single HTTP seam so no network is touched. See `local_fbi_fixture()`.
 #
 # 2. LIVE (opt-in): integration tests that hit the real FBI CDE API. These are
-#    guarded by `skip_if_no_fbi_api()` and only run locally when FBI_API_KEY is
-#    set. They are skipped on CI and CRAN. Use them to (re)record fixtures.
+#    guarded by `skip_if_no_fbi_api()` and run only when FBI_CDE_LIVE=true --
+#    locally, or in the scheduled live-API workflow, which is what catches
+#    upstream schema drift. They never run on CRAN. The CDE needs no API key;
+#    this used to be gated on FBI_API_KEY plus skip_on_ci(), which meant the
+#    live tests could not run anywhere automated.
 
 # ---- Live-API guard -------------------------------------------------------
 
-fbi_has_key <- function() {
-  nzchar(Sys.getenv("FBI_API_KEY"))
+fbi_live_enabled <- function() {
+  tolower(Sys.getenv("FBI_CDE_LIVE")) %in% c("true", "1", "yes")
 }
 
-# Skip a test that requires the live FBI CDE API (network + key).
+# Skip a test that requires the live FBI CDE API (network access).
 skip_if_no_fbi_api <- function() {
   testthat::skip_on_cran()
-  testthat::skip_on_ci()
-  if (!fbi_has_key()) {
-    testthat::skip("FBI_API_KEY not set; skipping live API test")
+  if (!fbi_live_enabled()) {
+    testthat::skip("Set FBI_CDE_LIVE=true to run live CDE API tests")
   }
 }
 

@@ -16,7 +16,6 @@ set_api_key(key)
 **Deprecated.** The current CDE API (`cde.ucr.cjis.gov/LATEST/`) does not
 require an API key. This function is retained only for backward compatibility
 with code that previously used the legacy `api.data.gov`-hosted API.
-`FBI_API_KEY` is kept as an opt-in switch for live integration tests.
 }
 \examples{
 \dontrun{

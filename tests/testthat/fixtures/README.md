@@ -9,14 +9,14 @@ suite run on CI.
 All network access in the package goes through a single internal seam,
 `cde_request()` (defined in the HTTP-core module). It performs the HTTP GET and
 returns the parsed JSON body. Tests stub that one function to return a saved
-fixture instead, using the helper in `../helper-fbi.R`:
+fixture instead, using the helper in `../helper-fbiCDE.R`:
 
 ```r
 test_that("get_estimated_crime parses a national summary", {
   local_fbi_fixture("summarized-national-V.json")   # stubs cde_request()
   out <- get_estimated_crime()
   expect_s3_class(out, "data.frame")
-  expect_true("year" %in% names(out))
+  expect_true(all(c("offense", "period", "count") %in% names(out)))
 })
 ```
 
@@ -28,7 +28,7 @@ code is exercised by the test — only the HTTP call is mocked away.
 Fixtures are recorded from a live response, then committed. To (re)record:
 
 ```r
-# locally, with FBI_API_KEY set in the environment
+# No API key is needed.
 resp <- httr::GET(
   "https://cde.ucr.cjis.gov/LATEST/summarized/national/V?from=01-2015&to=12-2020&type=counts"
 )
@@ -41,9 +41,13 @@ Guidelines:
 - Name fixtures after the endpoint + key parameters, e.g.
   `summarized-national-V.json`, `arrest-agency-CA0010900-all-counts.json`.
 - Keep ranges small (a few years) so fixtures stay readable.
-- The CDE host (`https://cde.ucr.cjis.gov/LATEST/`) does **not** require an API
-  key, so most fixtures can be recorded without one. Strip any key/token from
-  the saved content if present.
+- Save the response body verbatim. Never hand-write or "tidy" a fixture: a
+  synthetic fixture that does not match the endpoint lets a broken parser pass
+  (this happened with `get_agencies()`).
+- `read_fixture()` parses with `simplifyVector = FALSE`, exactly as
+  `cde_request()` does, so parsers see the production shape.
 - Pair every offline fixture test with a `skip_if_no_fbi_api()`-guarded live
-  test that asserts the real endpoint still returns the expected shape, so drift
-  in the upstream API is caught.
+  test that asserts the real endpoint still returns the expected shape. Live
+  tests run when `FBI_CDE_LIVE=true` (for example
+  `FBI_CDE_LIVE=true NOT_CRAN=true Rscript -e 'testthat::test_local()'`), and
+  weekly in the `live-api` GitHub Actions workflow.
