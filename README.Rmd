@@ -49,7 +49,7 @@ get_offense_codes()
 get_agency_crime("CA0010900")
 
 # Get arrest demographics for a state
-get_arrest_demographics(state_abb = "CA", offense = "murder")
+get_arrest_demographics(state_abb = "CA")
 ```
 
 ## Table of Contents
@@ -125,7 +125,7 @@ Functions for querying UCR arrest statistics.
 get_arrest_count(ori = "CA0010900")
 
 # Arrest demographics for a state
-get_arrest_demographics(state_abb = "CA", offense = "murder")
+get_arrest_demographics(state_abb = "CA")
 
 # All arrest offenses
 list_ucr_arrest_offenses()
@@ -151,7 +151,8 @@ Functions for querying National Incident-Based Reporting System data.
 get_nibrs_victim(ori = "CA0010900", variable = "race")
 
 # Offender demographics
-get_nibrs_offender(state_abb = "CA", offense = "murder", variable = "race")
+get_nibrs_offender(state_abb = "OH", offense = "BUR", variable = "age",
+                   from = "01-2023", to = "12-2023")
 
 # Offense characteristics (weapons)
 get_nibrs_offense(state_abb = "CA", offense = "robbery", variable = "weapons")

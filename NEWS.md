@@ -1,5 +1,58 @@
 # fbi 0.1.0.9000 (development version)
 
+## Correctness fixes from the package review
+
+Several of these are regressions from the multi-county matching fix (#56): an
+agency that polices several counties now matches each of them, but its raw
+`county_name` (`"DELAWARE; FAIRFIELD; FRANKLIN"`) was still treated as the
+row's county downstream.
+
+- **Behaviour change:** `county_agencies()` now sets `county_name` to the
+  queried county on every row, and keeps the CDE's own list in a new
+  `agency_county_names` column (also on `metro_agencies()`). Previously a
+  multi-county agency carried its raw list, which:
+  - split `get_county_crime()` into one row per distinct string. Franklin
+    County, OH aggregated to 7 rows per period instead of 1.
+  - gave `county_agencies()` the wrong `county_fips` whenever the first
+    matching agency was multi-county. Licking County, OH got Fairfield's FIPS
+    (39045 instead of 39089), which then fed the wrong population to
+    `join_census_pop()`.
+  - left `metro_agencies()` rows internally inconsistent: `county_fips` and
+    `central_outlying` described one county while `county_name` listed three.
+- `get_county_crime_detail()` now returns `county_fips`. Without it,
+  `join_census_pop()` errored on real detail output, so the documented
+  `denominator = "census_pop"` workflow never worked; the tests had been adding
+  the column by hand.
+- `county_to_fips()` now looks the name up in the bundled crosswalk before
+  applying its patch table. Four Virginia independent cities that share a name
+  with a county resolved to the county: Richmond city gave 51159 (Richmond
+  County) instead of 51760, and likewise Fairfax, Franklin and Roanoke cities.
+  It now agrees with the crosswalk for every county name the CDE uses (a new
+  test checks all 3,733).
+- `counties_with_fips()` returned a zero-row data.frame. It now returns one row
+  per resolvable county (`state_abbr`, `county_name`, `county_fips`).
+- `get_agencies()` requested `agency/{state}` and coerced the response with
+  `as.data.frame()`, which on the live county-keyed shape gave one junk row per
+  state. It now uses `agency/byStateAbbr/{state}` (the endpoint the
+  participation functions already use), returns one row per agency, and skips a
+  failing state with a warning rather than erroring. Its offline fixture
+  (`agency-byStateAbbr-CA.json`) was synthetic and did not match the endpoint's
+  real shape; the test now uses the recorded Rhode Island response, parsed both
+  ways, and checks the request path.
+- `place_agencies(county = )` compared the county exactly, so
+  `place_agencies("Columbus", "OH", county = "Franklin")` found nothing.
+- The agency fan-out behind `get_*_crime_detail()` now keeps each failed
+  agency's error in `attr(x, "dropped_reasons")`, and its warning no longer
+  says "returned no data" for what may be an HTTP or parse error.
+  `get_county_crime()` warns when its input carries dropped agencies and keeps
+  `attr(x, "dropped")`: those agencies are missing from the denominator too,
+  so `coverage_fraction` cannot account for them.
+- README: `get_arrest_demographics(offense = "murder")` always errors (only
+  `"all"` is supported); the NIBRS offender example now uses a call known to
+  return data.
+- `?cde_base_url` named the pre-rename option `fbi.cde.base_url`; it is
+  `fbiCDE.cde.base_url`.
+
 ## Metro (CBSA) geography (v0.5, Issue #45)
 
 - Added `metro_agencies()` -- resolves a Core Based Statistical Area to the union
