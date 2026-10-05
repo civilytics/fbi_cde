@@ -148,14 +148,16 @@ Functions for querying National Incident-Based Reporting System data.
 
 ```{r, eval=FALSE}
 # Victim demographics (race)
-get_nibrs_victim(ori = "CA0010900", variable = "race")
+get_nibrs_victim(state_abb = "OH", offense = "ROB", variable = "race",
+                 from = "01-2023", to = "12-2023")
 
 # Offender demographics
 get_nibrs_offender(state_abb = "OH", offense = "BUR", variable = "age",
                    from = "01-2023", to = "12-2023")
 
 # Offense characteristics (weapons)
-get_nibrs_offense(state_abb = "CA", offense = "robbery", variable = "weapons")
+get_nibrs_offense(state_abb = "OH", offense = "ROB", variable = "weapons",
+                  from = "01-2023", to = "12-2023")
 ```
 
 ### SHR

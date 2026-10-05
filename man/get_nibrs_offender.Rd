@@ -9,8 +9,8 @@ get_nibrs_offender(
   state_abb = NULL,
   from = "01-2015",
   to = "12-2020",
-  offense = "all",
-  variable = "count"
+  offense = "V",
+  variable = "race"
 )
 }
 \arguments{
@@ -23,32 +23,27 @@ national data.}
 
 \item{to}{End date in MM-YYYY format (default "12-2020").}
 
-\item{offense}{Offense code (default "robbery"). See
-`list_nibrs_offenses()` for available codes.}
+\item{offense}{Offense code (default `"V"`, violent crime): a summary group
+such as `"V"`, `"P"`, `"ROB"` or `"BUR"`, or a NIBRS offense code such as
+`"13B"` or `"35A"`. See [list_nibrs_offenses()]. Offense names such as
+`"robbery"` are rejected: the API returns no data for them.}
 
-\item{variable}{A string with the demographic variable to return. Selects
-which sub-object within the offender section to use (e.g., "age", "count",
-"ethnicity", "race", "sex"). By default returns total count of offenders.
-See `list_nibrs_offender_variables()` for available options.}
+\item{variable}{The variable to break offenders down by (default `"race"`).
+See [list_nibrs_offender_variables()].}
 }
 \value{
-A data.frame with columns: geography, offense, period,
-  demographic_type, demographic_value, count
+A data.frame with the columns described in [get_nibrs_victim()].
 }
 \description{
-**Known issue:** as of this package version, the live endpoint returns no
-data for any input tested (see
-<https://gitea.civilytics.org/Civilytics/fbi_cde/issues/33>). A message is
-emitted whenever the result is empty.
-}
-\details{
-Retrieves offender demographics (age, count, ethnicity, race, sex) from the
-CDE API endpoint `nibrs/<level>/<offense>` with `type=totals`.
+Retrieves offender counts by age, ethnicity, race or sex for one offense,
+summed over the date range, from the CDE API endpoint
+`nibrs/<level>/<offense>` with `type=totals`. Ages come in ten-year buckets
+(`"10-19"`, ...).
 }
 \examples{
 \dontrun{
-get_nibrs_offender(ori = "CA0010900")
-get_nibrs_offender(state_abb = "CA", offense = "murder", variable = "race")
+get_nibrs_offender(state_abb = "OH", offense = "BUR", variable = "age",
+                   from = "01-2023", to = "12-2023")
 }
 }
 \seealso{

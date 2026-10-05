@@ -9,7 +9,7 @@ get_nibrs_victim(
   state_abb = NULL,
   from = "01-2015",
   to = "12-2020",
-  offense = "robbery",
+  offense = "V",
   variable = "race"
 )
 }
@@ -23,32 +23,32 @@ national data.}
 
 \item{to}{End date in MM-YYYY format (default "12-2020").}
 
-\item{offense}{Offense code (default "robbery"). See
-`list_nibrs_offenses()` for available codes.}
+\item{offense}{Offense code (default `"V"`, violent crime): a summary group
+such as `"V"`, `"P"`, `"ROB"` or `"BUR"`, or a NIBRS offense code such as
+`"13B"` or `"35A"`. See [list_nibrs_offenses()]. Offense names such as
+`"robbery"` are rejected: the API returns no data for them.}
 
-\item{variable}{A string with the demographic variable to return. Selects
-which sub-object within the victim section to use (e.g., "age", "race",
-"sex", "ethnicity", "relationship", "location"). By default returns total
-count of victims. See `list_nibrs_victim_variables()` for available options.}
+\item{variable}{The variable to break victims down by (default `"race"`).
+See [list_nibrs_victim_variables()].}
 }
 \value{
-A data.frame with columns: geography, offense, period,
-  demographic_type, demographic_value, count
+A data.frame with columns: geography, offense (the code), period,
+  demographic_type (the variable), demographic_value, count.
 }
 \description{
-**Known issue:** as of this package version, the live endpoint returns no
-data for any input tested (see
-<https://gitea.civilytics.org/Civilytics/fbi_cde/issues/33>). A message is
-emitted whenever the result is empty.
+Retrieves victim counts by a demographic or situational variable (age,
+ethnicity, location, race, relationship, sex) for one offense, summed over
+the date range, from the CDE API endpoint `nibrs/<level>/<offense>` with
+`type=totals`.
 }
 \details{
-Retrieves victim demographics (age, race, sex, ethnicity, relationship, location)
-from the CDE API endpoint `nibrs/<level>/<offense>` with `type=totals`.
+An agency or state that did not report to NIBRS in the period returns zero
+rows, with a message.
 }
 \examples{
 \dontrun{
-get_nibrs_victim(ori = "CA0010900")
-get_nibrs_victim(state_abb = "CA", offense = "murder", variable = "race")
+get_nibrs_victim(state_abb = "OH", offense = "ROB", variable = "age",
+                 from = "01-2023", to = "12-2023")
 }
 }
 \seealso{

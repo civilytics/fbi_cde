@@ -5,7 +5,7 @@
 \alias{nibrs_offender_variables}
 \title{All available variables for NIBRS offender data.}
 \format{
-A vector with 5 elements:
+A character vector with 4 elements.
 }
 \source{
 \url{https://cde.ucr.cjis.gov/LATEST/}
@@ -14,8 +14,7 @@ A vector with 5 elements:
 nibrs_offender_variables
 }
 \description{
-The `get_nibrs_offender()` function requires a string input for
-which variable you want data on. This is a vector of strings
-with all possible variables.
+The values `get_nibrs_offender()` accepts for `variable`: the keys of a
+NIBRS response's offender section. Built by `data-raw/api_vocabularies.R`.
 }
 \keyword{datasets}

@@ -1,7 +1,8 @@
 #' Get arrest offense counts from the UCR Crime Data Explorer
 #'
-#' Retrieves arrest counts by offense for an agency, state, or nationally.
-#' Uses the CDE API endpoint `arrest/<level>/<offense>` with `type=counts`.
+#' Retrieves arrest counts for an agency, state, or nationally, from the CDE
+#' API endpoint `arrest/<level>/all`: `type=counts` for the monthly all-offense
+#' series, `type=totals` for a single offense.
 #'
 #' @family UCR arrest functions
 #' @param ori A string of the 9-character ORI code for the desired agency.
@@ -9,11 +10,15 @@
 #'   national data.
 #' @param from Start date in MM-YYYY format (default "01-2015").
 #' @param to End date in MM-YYYY format (default "12-2020").
-#' @param offense Offense name (default "all" for total arrests). With "all" the
-#'   result is a monthly time series. For a specific offense the CDE API only
-#'   exposes an aggregate count over the whole `from`-`to` range (the endpoint no
-#'   longer accepts a per-offense URL segment, so the offense is selected from
-#'   the all-offenses response). See `list_ucr_arrest_offenses()` for valid names.
+#' @param offense `"all"` (the default) for the monthly series of total
+#'   arrests, or an offense name for one aggregate count over the whole
+#'   `from`-`to` range (the API has no per-offense monthly series). Names are
+#'   matched case-insensitively against the API's three levels: offense names
+#'   (`"Robbery"`, `"Drug Possession"`), categories
+#'   (`"Drug/Narcotic Offenses"`) and breakdowns
+#'   (`"Drug Possession - Marijuana"`). Note that `"Drug Abuse Violations"` is
+#'   only the drug arrests not classed as possession or sale; total drug
+#'   arrests are `"Drug/Narcotic Offenses"`. See [list_ucr_arrest_offenses()].
 #' @param comparison If `TRUE` (and `offense = "all"`), also return the
 #'   comparison series the API sends alongside an agency's or state's own: its
 #'   state's and the nation's arrest rates (these have no `count`). Default
@@ -83,15 +88,10 @@ get_arrest_count <- function(ori = NULL,
                                         comparison = comparison))
   }
 
-  valid <- fbiCDE::ucr_arrest_offenses
-  if (!tolower(offense) %in% tolower(valid)) {
-    stop(
-      "Invalid arrest offense: ", offense,
-      ". See list_ucr_arrest_offenses() for valid offense names.",
-      call. = FALSE
-    )
-  }
-
+  # The name is checked against the response itself, which always carries
+  # every name at all three levels, rather than a bundled list that can go
+  # stale (the old list lacked the categories, so "Drug/Narcotic Offenses" --
+  # the only total of drug arrests -- was rejected).
   path <- cde_path("arrest", level, "all")
   query <- list(from = from, to = to, type = "totals")
   response <- cde_request(path, query)
@@ -203,6 +203,7 @@ get_arrest_demographics_all <- function(...) {
 # Internal: pull the aggregate count for a single offense out of an
 # `arrest/{level}/all?type=totals` response. The breakdown lives in three maps
 # of increasing granularity; search them in order for a case-insensitive match.
+# A name absent from maps that are present is not an offense the API reports.
 parse_arrest_offense_total <- function(response, geography, offense) {
   empty <- function() {
     data.frame(
@@ -212,9 +213,11 @@ parse_arrest_offense_total <- function(response, geography, offense) {
     )
   }
 
+  maps_present <- FALSE
   for (map_name in c("Offense Name", "Offense Category", "Offense Breakdown")) {
     section <- response[[map_name]]
     if (is.null(section) || length(section) == 0) next
+    maps_present <- TRUE
     idx <- match(tolower(offense), tolower(names(section)))
     if (!is.na(idx)) {
       cnt <- section[[idx]]
@@ -231,6 +234,10 @@ parse_arrest_offense_total <- function(response, geography, offense) {
     }
   }
 
+  if (maps_present) {
+    stop("Invalid arrest offense: '", offense, "' is not a name the API ",
+         "reports. See list_ucr_arrest_offenses().", call. = FALSE)
+  }
   empty()
 }
 

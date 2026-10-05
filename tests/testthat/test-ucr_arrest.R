@@ -104,7 +104,28 @@ test_that("get_arrest_count is case-insensitive for offense names", {
   expect_equal(result$offense[1], "Robbery")
 })
 
+test_that("get_arrest_count finds category and breakdown names too", {
+  local_fbi_fixture("arrest-national-all-totals.json")
+  totals <- read_fixture("arrest-national-all-totals.json")
+  # A category name (the only total of drug arrests) and a breakdown name.
+  category <- names(totals[["Offense Category"]])[1]
+  breakdown <- names(totals[["Offense Breakdown"]])[1]
+  expect_equal(get_arrest_count(offense = category)$count,
+               as.numeric(totals[["Offense Category"]][[category]]))
+  expect_equal(get_arrest_count(offense = breakdown)$count,
+               as.numeric(totals[["Offense Breakdown"]][[breakdown]]))
+})
+
+test_that("every bundled arrest offense name is in the recorded response", {
+  totals <- read_fixture("arrest-national-all-totals.json")
+  reported <- c(names(totals[["Offense Name"]]),
+                names(totals[["Offense Category"]]),
+                names(totals[["Offense Breakdown"]]))
+  expect_setequal(list_ucr_arrest_offenses(), reported)
+})
+
 test_that("get_arrest_count rejects an unknown offense", {
+  local_fbi_fixture("arrest-national-all-totals.json")
   expect_error(
     get_arrest_count(offense = "jaywalking"),
     "Invalid arrest offense"

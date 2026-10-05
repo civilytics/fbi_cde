@@ -120,6 +120,8 @@ spec → plan → implementation cycle; tracked as Gitea issues):
 - **Issue-driven** on Gitea (`gitea.civilytics.org/Civilytics/fbiCDE`); default
   branch `main`. Conventional commits (`feat:`/`fix:`/`refactor:`/`test:`/`docs:`).
   Record changes in `NEWS.md`. CI: `.gitea/workflows/R-CMD-check.yaml`.
-- **Known issue #33:** NIBRS demographic detail
-  (`get_nibrs_victim/offender/offense`) returns no data from the live API — an
-  upstream outage, not a parser bug.
+- **NIBRS (#33 resolved):** the `nibrs/` endpoint takes short offense codes
+  (`V`, `P`, `ROB`, `BUR`, `13B`, `35A`, ...) and answers anything else — long
+  names, `"all"` — with an all-null payload, which once looked like an outage.
+  Vocabularies come from `data-raw/api_vocabularies.R`; rebuild rather than
+  hand-edit them. A geography with no NIBRS data also returns all-nulls.

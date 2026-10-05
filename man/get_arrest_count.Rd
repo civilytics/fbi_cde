@@ -23,11 +23,15 @@ national data.}
 
 \item{to}{End date in MM-YYYY format (default "12-2020").}
 
-\item{offense}{Offense name (default "all" for total arrests). With "all" the
-result is a monthly time series. For a specific offense the CDE API only
-exposes an aggregate count over the whole `from`-`to` range (the endpoint no
-longer accepts a per-offense URL segment, so the offense is selected from
-the all-offenses response). See `list_ucr_arrest_offenses()` for valid names.}
+\item{offense}{`"all"` (the default) for the monthly series of total
+arrests, or an offense name for one aggregate count over the whole
+`from`-`to` range (the API has no per-offense monthly series). Names are
+matched case-insensitively against the API's three levels: offense names
+(`"Robbery"`, `"Drug Possession"`), categories
+(`"Drug/Narcotic Offenses"`) and breakdowns
+(`"Drug Possession - Marijuana"`). Note that `"Drug Abuse Violations"` is
+only the drug arrests not classed as possession or sale; total drug
+arrests are `"Drug/Narcotic Offenses"`. See [list_ucr_arrest_offenses()].}
 
 \item{comparison}{If `TRUE` (and `offense = "all"`), also return the
 comparison series the API sends alongside an agency's or state's own: its
@@ -45,8 +49,9 @@ A data.frame with columns `geography`, `offense`, `measure`
   `rate` `NA` and `offense` set to the API's name for it.
 }
 \description{
-Retrieves arrest counts by offense for an agency, state, or nationally.
-Uses the CDE API endpoint `arrest/<level>/<offense>` with `type=counts`.
+Retrieves arrest counts for an agency, state, or nationally, from the CDE
+API endpoint `arrest/<level>/all`: `type=counts` for the monthly all-offense
+series, `type=totals` for a single offense.
 }
 \examples{
 \dontrun{
