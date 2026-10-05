@@ -14,10 +14,17 @@ get_leoka(from = 2020, to = 2024)
 \value{
 A data.frame with one row per requested year with data and
   columns: year, month (always `NA`; year-to-date totals have no month),
-  total_officers, total_incidents, total_officers_dod, total_officers_doi,
-  total_incidents_dod, total_incidents_doi.
+  total_officers (officers feloniously killed), total_incidents (incidents
+  in which they were killed), and the `_dod`/`_doi` splits of each. The API
+  does not label those splits (they sum to the totals) and the package does
+  not interpret them.
 }
 \description{
+Counts of law enforcement officers **feloniously killed**, nationally, by
+year. Despite the program's name, these are not assault counts: the totals
+match the FBI's published felonious-killing figures (46 officers in 2020,
+73 in 2021).
+
 National only: the live `leoka/ytd` endpoint ignores state/agency query
 parameters (verified against the live API -- requests with and without
 `state`/`ori` params return identical data), so the current CDE API has no

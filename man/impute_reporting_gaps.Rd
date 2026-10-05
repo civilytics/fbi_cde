@@ -13,8 +13,8 @@ least the columns: \code{ori}, \code{offense}, \code{period}, \code{count},
 
 \item{method}{Imputation method. Currently only `"interpolate"` is supported,
 which uses linear interpolation of \code{rate} across time (in months), then
-scales by each period's own \code{participated_population}. Gaps at the edges
-(before first or after last reported period) are not filled.}
+scales by each gap month's own population as described above. Gaps at the
+edges (before first or after last reported period) are not filled.}
 }
 \value{
 A data.frame with the same rows and columns as \code{detail}, plus two
@@ -30,10 +30,16 @@ A data.frame with the same rows and columns as \code{detail}, plus two
 \description{
 Fills temporal holes within agencies that report some periods but miss others.
 Operates on \code{rate} so a drifting denominator is respected: the rate is
-linearly interpolated across time (in months), then scaled by each period's
-own \code{participated_population} to derive the imputed count. Agencies that
-never report in the window are left unchanged. Every filled value is flagged
-with \code{imputed = TRUE} and \code{impute_method}.
+linearly interpolated across time (in months), then scaled by the gap
+month's own population to derive the imputed count. That is its
+\code{participated_population} when the CDE reports one, and otherwise its
+\code{population}: the CDE reports no participated population for a month
+the agency did not report, which is every gap. Agencies that never report
+in the window, or have no population (e.g. transit or campus police, whose
+rate is undefined), are left unchanged. Every filled value is flagged with
+\code{imputed = TRUE} and \code{impute_method}; its
+\code{participated_population} stays missing, so coverage figures from
+[get_county_crime()] still show the month as unreported.
 }
 \details{
 This is an opt-in transform — the raw detail from [get_county_crime_detail()]

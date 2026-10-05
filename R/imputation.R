@@ -2,17 +2,23 @@
 #
 # Standalone, composable transform that fills within-agency temporal holes.
 # Operates on rate so a drifting denominator is respected: interpolate rate
-# across time (in months), then scale by each period's own participated_population.
+# across time (in months), then scale by each period's own population base.
 # Agencies that never report in-window are left entirely unchanged.
 
 #' Impute reporting gaps in county crime detail data
 #'
 #' Fills temporal holes within agencies that report some periods but miss others.
 #' Operates on \code{rate} so a drifting denominator is respected: the rate is
-#' linearly interpolated across time (in months), then scaled by each period's
-#' own \code{participated_population} to derive the imputed count. Agencies that
-#' never report in the window are left unchanged. Every filled value is flagged
-#' with \code{imputed = TRUE} and \code{impute_method}.
+#' linearly interpolated across time (in months), then scaled by the gap
+#' month's own population to derive the imputed count. That is its
+#' \code{participated_population} when the CDE reports one, and otherwise its
+#' \code{population}: the CDE reports no participated population for a month
+#' the agency did not report, which is every gap. Agencies that never report
+#' in the window, or have no population (e.g. transit or campus police, whose
+#' rate is undefined), are left unchanged. Every filled value is flagged with
+#' \code{imputed = TRUE} and \code{impute_method}; its
+#' \code{participated_population} stays missing, so coverage figures from
+#' [get_county_crime()] still show the month as unreported.
 #'
 #' This is an opt-in transform — the raw detail from [get_county_crime_detail()]
 #' stays pristine. Call this function explicitly when you need continuous series
@@ -24,8 +30,8 @@
 #'   \code{participated_population}, \code{rate}, \code{reported}.
 #' @param method Imputation method. Currently only `"interpolate"` is supported,
 #'   which uses linear interpolation of \code{rate} across time (in months), then
-#'   scales by each period's own \code{participated_population}. Gaps at the edges
-#'   (before first or after last reported period) are not filled.
+#'   scales by each gap month's own population as described above. Gaps at the
+#'   edges (before first or after last reported period) are not filled.
 #' @return A data.frame with the same rows and columns as \code{detail}, plus two
 #'   new columns:
 #'   \itemize{
@@ -122,15 +128,23 @@ impute_reporting_gaps <- function(detail, method = "interpolate") {
 
     if (any(gap_mask)) {
       imputed_rate <- interp$y[gap_mask]
-      participated_pop <- sub$participated_population[gap_mask]
 
-      # Only fill if we have positive population data for the gap period.
-      can_fill <- !is.na(participated_pop) & participated_pop > 0
+      # The CDE reports no participated_population for a month the agency did
+      # not report -- i.e. for every gap -- so requiring it meant nothing was
+      # ever filled on real data (0 of 232 gaps in Alameda County, 2021). Fall
+      # back to the agency's jurisdiction population, which is still reported.
+      participated_pop <- sub$participated_population[gap_mask]
+      jurisdiction_pop <- sub$population[gap_mask]
+      base_pop <- ifelse(!is.na(participated_pop) & participated_pop > 0,
+                         participated_pop, jurisdiction_pop)
+
+      # Only fill if there is a positive population for the gap period.
+      can_fill <- !is.na(base_pop) & base_pop > 0
 
       if (any(can_fill)) {
         # Derive count from interpolated rate and period's own population.
         imputed_count <- round(
-          imputed_rate[can_fill] * participated_pop[can_fill] / 1e5
+          imputed_rate[can_fill] * base_pop[can_fill] / 1e5
         )
 
         # Map back to the original row indices (sorted order, not input order).
