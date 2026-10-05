@@ -22,7 +22,7 @@ fake_metro_agencies <- function() {
     county_name = c("ALLEGHENY", "BUTLER"),
     state_abbr = "PA",
     county_fips = c("42003", "42019"),
-    latitude = "0", longitude = "0",
+    latitude = 0, longitude = 0,
     cbsa_code = "38300",
     cbsa_title = "Pittsburgh, PA",
     cbsa_type = "metro",

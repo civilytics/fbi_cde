@@ -72,11 +72,10 @@ derive_place_name <- function(agency_name) {
     county_name = character(0),
     state_abbr = character(0),
     attribution = character(0),
-    # Character, not numeric: the bundled agency table stores coordinates as
-    # character (545 rows hold the literal string "NULL"), so a populated frame
-    # carries them as character. These types must track the populated frame.
-    latitude = character(0),
-    longitude = character(0),
+    # Numeric, as the bundled agency table stores coordinates. These types
+    # must track the populated frame.
+    latitude = numeric(0),
+    longitude = numeric(0),
     stringsAsFactors = FALSE
   )
 }

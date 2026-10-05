@@ -44,11 +44,9 @@
 #' — a sheriff's HQ point carries no information about its jurisdiction. That
 #' restriction is what makes point-in-polygon defensible for this tier.
 #'
-#' The bundled agency table stores `latitude`/`longitude` as character columns,
-#' and some rows hold the literal string `"NULL"` rather than a real missing
-#' value; this function coerces and drops those defensively. In practice, 270
-#' of the 2,324 embedded-tier agencies (11.6%) have no usable coordinates and
-#' can never be spatially attributed by this function.
+#' Agencies with no coordinates in the bundled table cannot be placed: 271 of
+#' the 2,324 embedded-tier agencies (11.7%) have none and can never be
+#' spatially attributed by this function.
 #'
 #' @param x A data.frame as returned by [place_agencies()].
 #' @param vintage Optional Census boundary year passed to `tigris::places()`.
@@ -185,26 +183,16 @@ add_place_spatial_members <- function(x, vintage = NULL, places_fun = NULL) {
 
 # Embedded-tier agencies in a state, with usable coordinates.
 #
-# The bundled table stores latitude/longitude as CHARACTER, and 545 rows hold
-# the literal string "NULL" rather than a real missing value — so is.na() alone
-# does not catch them and sf::st_as_sf() would error on the coercion. Coerce
-# explicitly and drop whatever fails to parse. This costs real coverage: 270 of
-# the 2,324 embedded-tier agencies (11.6%) have no usable coordinates and can
-# never be spatially attributed.
+# Agencies without coordinates (NA in the bundled table) cannot be placed. This
+# costs real coverage: 271 of the 2,324 embedded-tier agencies (11.7%) have
+# none and can never be spatially attributed.
 .embedded_candidates <- function(state) {
   ag <- agencies_table()
-  lat <- suppressWarnings(as.numeric(as.character(ag$latitude)))
-  lon <- suppressWarnings(as.numeric(as.character(ag$longitude)))
-
   keep <- ag$agency_type_name %in% .EMBEDDED_TYPES &
     toupper(trimws(ag$state_abbr)) == toupper(trimws(state)) &
-    !is.na(lat) & !is.na(lon)
+    !is.na(ag$latitude) & !is.na(ag$longitude)
   keep[is.na(keep)] <- FALSE
-
-  out <- ag[keep, , drop = FALSE]
-  out$latitude <- lat[keep]
-  out$longitude <- lon[keep]
-  out
+  ag[keep, , drop = FALSE]
 }
 
 # For each (lon, lat), the row index of `polys` it falls inside (or NA if

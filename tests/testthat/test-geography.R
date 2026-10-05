@@ -129,3 +129,16 @@ test_that("county_fips comes from the queried county, not the first agency", {
   expect_equal(unique(li$county_fips), "39089")
   expect_equal(unique(li$county_name), "LICKING")
 })
+
+test_that("the bundled agency table has real column types", {
+  ag <- fbi_api_agencies
+  expect_type(ag$nibrs, "logical")
+  expect_type(ag$latitude, "double")
+  expect_type(ag$longitude, "double")
+  expect_s3_class(ag$nibrs_start_date, "Date")
+  # The source's placeholder strings are gone.
+  chr <- vapply(ag, is.character, logical(1))
+  expect_false(any(vapply(ag[chr], function(x) any(x == "NULL"), logical(1))))
+  # Coordinates are plausible where present (the one -9/-9 placeholder is NA).
+  expect_false(any(ag$latitude == -9, na.rm = TRUE))
+})

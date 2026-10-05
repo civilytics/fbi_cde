@@ -203,16 +203,15 @@ test_that("add_place_spatial_members skips agencies with unusable coordinates", 
 
   x <- place_agencies("Lufkin", "TX")
 
-  # The bundled table stores coordinates as character and uses the literal
-  # string "NULL" for missing ones, which is.na() does not catch.
+  # The bundled table stores missing coordinates as NA.
   fake_agencies <- data.frame(
     ori = c("TX4444444", "TX5555555"),
     agency_name = c("Good Coords College", "No Coords College"),
     agency_type_name = "University or College",
     state_abbr = "TX",
     county_name = x$county_name,
-    latitude = c("31.3", "NULL"),
-    longitude = c("-94.7", "NULL"),
+    latitude = c(31.3, NA),
+    longitude = c(-94.7, NA),
     stringsAsFactors = FALSE
   )
   testthat::local_mocked_bindings(

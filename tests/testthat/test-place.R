@@ -194,9 +194,9 @@ test_that("place_agencies rejects an invalid state", {
 
 test_that(".empty_place_agency_frame types match a populated result", {
   # Asserted against the populated frame rather than a hardcoded list: an
-  # earlier version of this test hardcoded numeric latitude/longitude and so
-  # passed while the empty frame disagreed with the populated one, which stores
-  # coordinates as character. The contract is agreement, not a fixed guess.
+  # earlier version of this test hardcoded the coordinate types and so passed
+  # while the empty frame disagreed with the populated one. The contract is
+  # agreement, not a fixed guess.
   empty <- .empty_place_agency_frame()
   populated <- place_agencies("Lufkin", "TX")
 

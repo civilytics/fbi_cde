@@ -42,9 +42,8 @@ agencies_table <- function() {
 # so `rbind()`ing an empty result onto a populated one — the natural way to
 # stack several counties — errors or silently coerces.
 #
-# `latitude`/`longitude` are character here because that is how the bundled
-# agency table stores them (545 rows hold the literal string "NULL"). These
-# types must track the populated frame, not what the columns ideally would be.
+# These types must track the populated frame: `latitude`/`longitude` are
+# numeric because the bundled agency table stores them that way.
 .empty_county_agency_frame <- function() {
   data.frame(
     ori = character(0),
@@ -55,8 +54,8 @@ agencies_table <- function() {
     county_name = character(0),
     state_abbr = character(0),
     county_fips = character(0),
-    latitude = character(0),
-    longitude = character(0),
+    latitude = numeric(0),
+    longitude = numeric(0),
     agency_county_names = character(0),
     stringsAsFactors = FALSE
   )
