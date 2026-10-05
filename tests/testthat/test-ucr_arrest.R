@@ -11,7 +11,8 @@ test_that("get_arrest_count returns only the agency's own series by default", {
   result <- get_arrest_count("CA0010900", from = "01-2019", to = "03-2019")
 
   expect_equal(names(result),
-               c("geography", "offense", "measure", "period", "count", "rate"))
+               c("geography", "offense", "measure", "period", "count", "rate",
+                 "population", "participated_population"))
   expect_equal(nrow(result), 3)
   expect_equal(unique(result$geography), "CA0010900")
   expect_equal(unique(result$offense), "all")
@@ -116,12 +117,19 @@ test_that("get_arrest_count finds category and breakdown names too", {
                as.numeric(totals[["Offense Breakdown"]][[breakdown]]))
 })
 
-test_that("every bundled arrest offense name is in the recorded response", {
+test_that("the bundled arrest offense names match the recorded response, by level", {
   totals <- read_fixture("arrest-national-all-totals.json")
-  reported <- c(names(totals[["Offense Name"]]),
-                names(totals[["Offense Category"]]),
-                names(totals[["Offense Breakdown"]]))
-  expect_setequal(list_ucr_arrest_offenses(), reported)
+  expect_setequal(list_ucr_arrest_offenses("name"),
+                  names(totals[["Offense Name"]]))
+  expect_setequal(list_ucr_arrest_offenses("category"),
+                  names(totals[["Offense Category"]]))
+  expect_setequal(list_ucr_arrest_offenses("breakdown"),
+                  names(totals[["Offense Breakdown"]]))
+  expect_setequal(list_ucr_arrest_offenses(),
+                  unique(c(names(totals[["Offense Name"]]),
+                           names(totals[["Offense Category"]]),
+                           names(totals[["Offense Breakdown"]]))))
+  expect_error(list_ucr_arrest_offenses("subcategory"))
 })
 
 test_that("get_arrest_count rejects an unknown offense", {
@@ -205,4 +213,23 @@ test_that("list_ucr_arrest_offenses returns a character vector", {
   result <- list_ucr_arrest_offenses()
   expect_true(is.character(result))
   expect_true(length(result) > 0)
+})
+
+test_that("arrest series carry population and participated_population", {
+  local_fbi_fixture("arrest-agency-CA0010900-counts.json")
+  fx <- read_fixture("arrest-agency-CA0010900-counts.json")
+  result <- get_arrest_count("CA0010900", from = "01-2019", to = "03-2019")
+  expected <- vapply(result$period, function(p) {
+    as.numeric(fx$populations$participated_population[[
+      "Oakland Police Department"]][[p]])
+  }, numeric(1), USE.NAMES = FALSE)
+  expect_equal(result$participated_population, expected)
+  expect_false(anyNA(result$population))
+})
+
+test_that("a single-offense total has NA population columns", {
+  local_fbi_fixture("arrest-national-all-totals.json")
+  result <- get_arrest_count(offense = "Robbery")
+  expect_true(all(c("population", "participated_population") %in% names(result)))
+  expect_true(is.na(result$population))
 })

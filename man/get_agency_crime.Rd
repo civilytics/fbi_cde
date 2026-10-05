@@ -29,8 +29,12 @@ series.}
 }
 \value{
 A data.frame with columns `geography`, `offense` (the requested
-  code), `measure` (`"offenses"` or `"clearances"`), `period`, `count` and
-  `rate` (per 100,000 population, for that month). With
+  code), `measure` (`"offenses"` or `"clearances"`), `period`, `count`,
+  `rate` (per 100,000 population, for that month), `population` (the
+  population the series covers) and `participated_population` (the
+  population of the agencies that reported that month). Their ratio is the
+  reporting coverage: a state or national count below full coverage is the
+  sum of the agencies that reported, not an estimate for everyone. With
   `comparison = TRUE`, two more columns follow `geography`: `series`
   (`"agency"`, `"state"` or `"national"`) and `series_name` (e.g.
   `"Oakland Police Department"`, `"California"`, `"United States"`).

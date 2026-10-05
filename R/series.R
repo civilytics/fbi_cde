@@ -17,16 +17,19 @@
   "U.S. Virgin Islands", "American Samoa", "Northern Mariana Islands"
 )
 
-.SERIES_COLS <- c("geography", "offense", "measure", "period", "count", "rate")
+.SERIES_COLS <- c("geography", "offense", "measure", "period", "count", "rate",
+                  "population", "participated_population")
 .SERIES_COLS_COMPARISON <- c("geography", "series", "series_name", "offense",
-                             "measure", "period", "count", "rate")
+                             "measure", "period", "count", "rate",
+                             "population", "participated_population")
 
 .empty_series_frame <- function(comparison = FALSE) {
   out <- data.frame(
     geography = character(0), series = character(0),
     series_name = character(0), offense = character(0),
     measure = character(0), period = character(0), count = numeric(0),
-    rate = numeric(0), stringsAsFactors = FALSE
+    rate = numeric(0), population = numeric(0),
+    participated_population = numeric(0), stringsAsFactors = FALSE
   )
   out[, if (comparison) .SERIES_COLS_COMPARISON else .SERIES_COLS,
       drop = FALSE]
@@ -44,6 +47,15 @@
   )
 }
 
+# Look up each row's value in a populations map (series name -> period ->
+# value); NA where the map has no entry.
+.series_population <- function(map, series_name, period) {
+  vapply(seq_along(series_name), function(i) {
+    v <- map[[series_name[i]]][[period[i]]]
+    if (is.null(v)) NA_real_ else as.numeric(v)
+  }, numeric(1))
+}
+
 # "MM-YYYY" -> a sortable month index.
 .period_key <- function(period) {
   year <- suppressWarnings(as.integer(sub("^\\d{2}-", "", period)))
@@ -59,8 +71,11 @@
 # @param offense The offense the caller requested, recorded on every row.
 # @param level The queried level: "agency", "state" or "national".
 # @param comparison Keep the comparison series, labelled by `series`?
+# @param populations The response's `populations` object, holding
+#   `population` and `participated_population` maps keyed like the series
+#   (by series name, then period). Their ratio is the reporting coverage.
 .parse_series <- function(counts_obj, rates_obj, geography, offense, level,
-                          comparison = FALSE) {
+                          comparison = FALSE, populations = NULL) {
   counts_df <- flatten_cde_json(counts_obj)
   names(counts_df) <- c("label", "period", "count")
   rates_df <- flatten_cde_json(rates_obj)
@@ -93,6 +108,11 @@
     count = df$count,
     rate = df$rate,
     stringsAsFactors = FALSE
+  )
+  out$population <- .series_population(populations$population,
+                                       out$series_name, out$period)
+  out$participated_population <- .series_population(
+    populations$participated_population, out$series_name, out$period
   )
 
   if (!comparison) {

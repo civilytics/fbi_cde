@@ -59,10 +59,15 @@
 #' All offenses available to get UCR arrest counts for.
 #'
 #' The offense names `get_arrest_count()` accepts: every key of the three maps
-#' (offense name, category, breakdown) in the CDE's arrest totals response.
+#' in the CDE's arrest totals response, with the map it comes from. A name can
+#' appear at more than one level. Use [list_ucr_arrest_offenses()] to list them.
 #' Built by `data-raw/api_vocabularies.R`.
 #'
-#' @format A character vector with 80 elements.
+#' @format A data frame with 112 rows and 2 variables:
+#' \describe{
+#'   \item{offense}{Offense name, as passed to `get_arrest_count(offense = )`}
+#'   \item{level}{`"name"` (34), `"category"` (29) or `"breakdown"` (49)}
+#' }
 #' @source \url{https://cde.ucr.cjis.gov/LATEST/}
 "ucr_arrest_offenses"
 

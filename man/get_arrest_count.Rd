@@ -41,12 +41,14 @@ offense has no comparison series.}
 }
 \value{
 A data.frame with columns `geography`, `offense`, `measure`
-  (`"arrests"`), `period`, `count` and `rate` (per 100,000 population, for
-  that month). With `offense = "all"`, `offense` is `"all"`; with
+  (`"arrests"`), `period`, `count`, `rate` (per 100,000 population, for
+  that month), and the `population` and `participated_population` described
+  in [get_agency_crime()] (their ratio is the reporting coverage). With `offense = "all"`, `offense` is `"all"`; with
   `comparison = TRUE`, `series` and `series_name` columns follow
   `geography`, as in [get_agency_crime()]. For a specific offense, a single
-  row holds the aggregate `count` for the whole range, with `period` and
-  `rate` `NA` and `offense` set to the API's name for it.
+  row holds the aggregate `count` for the whole range, with `period`,
+  `rate` and the population columns `NA`, and `offense` set to the API's
+  name for it.
 }
 \description{
 Retrieves arrest counts for an agency, state, or nationally, from the CDE

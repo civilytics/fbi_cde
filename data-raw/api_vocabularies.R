@@ -8,7 +8,8 @@
 #   nibrs_victim_variables    keys of a response's `victim` section
 #   nibrs_offender_variables  keys of a response's `offender` section
 #   nibrs_offense_variables   keys of a response's `offense` section
-#   ucr_arrest_offenses       every name in the arrest totals' three maps
+#   ucr_arrest_offenses       every name in the arrest totals' three maps,
+#                             with its level (name, category, breakdown)
 #
 # The previous NIBRS vocabularies did not match the API: offenses were long
 # names ("robbery", "burglary-breaking-and-entering") for which the endpoint
@@ -48,11 +49,16 @@ nibrs_offense_variables <- sort(names(resp$offense))
 # for an agency with no arrests.
 arr <- cde_request(cde_path("arrest", "state/OH", "all"),
                    cde_query("01-2023", "12-2023", type = "totals"))
-ucr_arrest_offenses <- sort(unique(c(
-  names(arr[["Offense Name"]]),
-  names(arr[["Offense Category"]]),
-  names(arr[["Offense Breakdown"]])
-)))
+levels <- c(name = "Offense Name", category = "Offense Category",
+            breakdown = "Offense Breakdown")
+ucr_arrest_offenses <- do.call(rbind, lapply(names(levels), function(lv) {
+  data.frame(offense = names(arr[[levels[[lv]]]]), level = lv,
+             stringsAsFactors = FALSE)
+}))
+ucr_arrest_offenses <- ucr_arrest_offenses[
+  order(match(ucr_arrest_offenses$level, names(levels)),
+        ucr_arrest_offenses$offense), ]
+rownames(ucr_arrest_offenses) <- NULL
 
 for (obj in c("nibrs_offenses", "nibrs_victim_variables",
               "nibrs_offender_variables", "nibrs_offense_variables",

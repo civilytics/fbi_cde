@@ -26,12 +26,14 @@
 #'   offense has no comparison series.
 #'
 #' @return A data.frame with columns `geography`, `offense`, `measure`
-#'   (`"arrests"`), `period`, `count` and `rate` (per 100,000 population, for
-#'   that month). With `offense = "all"`, `offense` is `"all"`; with
+#'   (`"arrests"`), `period`, `count`, `rate` (per 100,000 population, for
+#'   that month), and the `population` and `participated_population` described
+#'   in [get_agency_crime()] (their ratio is the reporting coverage). With `offense = "all"`, `offense` is `"all"`; with
 #'   `comparison = TRUE`, `series` and `series_name` columns follow
 #'   `geography`, as in [get_agency_crime()]. For a specific offense, a single
-#'   row holds the aggregate `count` for the whole range, with `period` and
-#'   `rate` `NA` and `offense` set to the API's name for it.
+#'   row holds the aggregate `count` for the whole range, with `period`,
+#'   `rate` and the population columns `NA`, and `offense` set to the API's
+#'   name for it.
 #' @export
 #'
 #' @examples
@@ -209,6 +211,7 @@ parse_arrest_offense_total <- function(response, geography, offense) {
     data.frame(
       geography = character(), offense = character(), measure = character(),
       period = character(), count = numeric(), rate = numeric(),
+      population = numeric(), participated_population = numeric(),
       stringsAsFactors = FALSE
     )
   }
@@ -229,6 +232,8 @@ parse_arrest_offense_total <- function(response, geography, offense) {
         period = NA_character_,
         count = as.numeric(cnt),
         rate = NA_real_,
+        population = NA_real_,
+        participated_population = NA_real_,
         stringsAsFactors = FALSE
       ))
     }
@@ -255,7 +260,7 @@ parse_arrest_counts_response <- function(response, geography, level,
   }
   .parse_series(container$actuals %||% container$counts, container$rates,
                 geography = geography, offense = "all", level = level,
-                comparison = comparison)
+                comparison = comparison, populations = response$populations)
 }
 
 # Internal: parse arrest demographics response into a tidy data.frame
@@ -332,16 +337,30 @@ parse_arrest_demographics_response <- function(response, geography, offense) {
   )
 }
 
-#' Return a vector of all offenses in the UCR Arrest data.
+#' List the offense names `get_arrest_count()` accepts
+#'
+#' The CDE reports arrests at three levels of detail, and `get_arrest_count()`
+#' accepts a name from any of them.
 #'
 #' @family UCR arrest functions
+#' @param level `"all"` (the default) for every name, or one level:
+#'   `"name"` (the 34 offense names, e.g. `"Drug Possession"`), `"category"`
+#'   (29, e.g. `"Drug/Narcotic Offenses"`) or `"breakdown"` (49, e.g.
+#'   `"Drug Possession - Marijuana"`). Within a level the counts do not
+#'   overlap, so ranking offenses means ranking one level.
 #'
-#' @return
-#' A character vector of UCR arrest offense codes.
+#' @return A sorted character vector of offense names.
 #' @export
 #'
 #' @examples
 #' list_ucr_arrest_offenses()
-list_ucr_arrest_offenses <- function() {
-  fbiCDE::ucr_arrest_offenses
+#' list_ucr_arrest_offenses("category")
+list_ucr_arrest_offenses <- function(level = c("all", "name", "category",
+                                               "breakdown")) {
+  level <- match.arg(level)
+  tbl <- fbiCDE::ucr_arrest_offenses
+  if (level != "all") {
+    tbl <- tbl[tbl$level == level, , drop = FALSE]
+  }
+  sort(unique(tbl$offense))
 }

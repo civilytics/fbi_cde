@@ -11,7 +11,8 @@ test_that("get_agency_crime returns only the agency's own series by default", {
   result <- get_agency_crime("CA0010900", from = "01-2019", to = "03-2019")
 
   expect_equal(names(result),
-               c("geography", "offense", "measure", "period", "count", "rate"))
+               c("geography", "offense", "measure", "period", "count", "rate",
+                 "population", "participated_population"))
   expect_equal(nrow(result), 6)
   expect_equal(unique(result$geography), "CA0010900")
   # The requested code, not a series label.
@@ -29,7 +30,8 @@ test_that("get_agency_crime(comparison = TRUE) labels state and national series"
 
   expect_equal(names(result),
                c("geography", "series", "series_name", "offense", "measure",
-                 "period", "count", "rate"))
+                 "period", "count", "rate", "population",
+                 "participated_population"))
   expect_equal(nrow(result), 18)
   expect_equal(table(result$series)[c("agency", "state", "national")],
                c(agency = 6L, state = 6L, national = 6L),
@@ -158,4 +160,31 @@ test_that("an unrecognised label is kept with measure NA", {
                        level = "national")
   expect_equal(nrow(out), 1L)
   expect_true(is.na(out$measure))
+})
+
+test_that("each row carries its series' population and reporting coverage", {
+  local_fbi_fixture("summarized-agency-CA0010900-V.json")
+  fx <- read_fixture("summarized-agency-CA0010900-V.json")
+  result <- get_agency_crime("CA0010900", from = "01-2019", to = "03-2019",
+                             comparison = TRUE)
+
+  pop_of <- function(map, name, period) as.numeric(map[[name]][[period]])
+  for (i in seq_len(nrow(result))) {
+    expect_equal(result$population[i],
+                 pop_of(fx$populations$population, result$series_name[i],
+                        result$period[i]))
+    expect_equal(result$participated_population[i],
+                 pop_of(fx$populations$participated_population,
+                        result$series_name[i], result$period[i]))
+  }
+  expect_false(anyNA(result$population))
+})
+
+test_that("a series missing from the populations map gets NA, not an error", {
+  counts <- list("Some PD Offenses" = list("01-2019" = 5))
+  out <- .parse_series(counts, NULL, geography = "XX0000000", offense = "V",
+                       level = "agency",
+                       populations = list(population = list()))
+  expect_true(is.na(out$population))
+  expect_true(is.na(out$participated_population))
 })

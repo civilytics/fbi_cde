@@ -1,5 +1,21 @@
 # fbi 0.1.0.9000 (development version)
 
+## Reporting coverage and arrest offense levels
+
+- `get_agency_crime()`, `get_estimated_crime()`, `get_estimated_arson()` and
+  `get_arrest_count()` now return `population` and `participated_population`
+  for each row, from the response's own populations map. Their ratio is the
+  reporting coverage, so a state or national count can be read for what it
+  is: the sum of the agencies that reported. (Pennsylvania's 2023 arrests
+  cover 96% of its population even though only 17% of its agencies report
+  through NIBRS, so NIBRS participation is not a coverage measure.) A
+  single-offense arrest total has no populations; those columns are `NA`.
+- `list_ucr_arrest_offenses(level = )` lists one level of the CDE's arrest
+  names: `"name"` (34), `"category"` (29) or `"breakdown"` (49); the default
+  `"all"` lists every name. Counts within a level do not overlap, so ranking
+  offenses means ranking one level. The `ucr_arrest_offenses` dataset is now
+  a data frame of `offense` and `level`.
+
 ## Fixes found by checking against the live API
 
 - **NIBRS works; it never had an outage (#33).** The `nibrs/` endpoint takes
