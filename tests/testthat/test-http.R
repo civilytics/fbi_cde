@@ -202,3 +202,129 @@ test_that("cde_query() extracts year from MM-YYYY when four_digit_year = TRUE", 
   expect_equal(result$from, "2015")
   expect_equal(result$to, "2020")
 })
+
+# ---- cde_request() retries ---------------------------------------------------
+
+# A get_fun that returns (or raises) each scripted outcome in turn, recording
+# how often it was called and with what arguments.
+scripted_get <- function(...) {
+  outcomes <- list(...)
+  calls <- new.env(parent = emptyenv())
+  calls$n <- 0L
+  calls$args <- list()
+  fun <- function(url, ...) {
+    calls$n <- calls$n + 1L
+    calls$args[[calls$n]] <- list(...)
+    out <- outcomes[[min(calls$n, length(outcomes))]]
+    if (inherits(out, "error")) stop(out)
+    out
+  }
+  list(fun = fun, calls = calls)
+}
+
+ok_response <- function() {
+  fake_response(200L, charToRaw('{"ok": true}'))
+}
+
+# Record requested sleeps instead of sleeping, and pin the retry/timeout
+# options to their defaults so a caller's settings cannot change the result.
+local_no_sleep <- function(env = parent.frame()) {
+  withr::local_options(fbiCDE.max_retries = NULL, fbiCDE.timeout = NULL,
+                       .local_envir = env)
+  slept <- new.env(parent = emptyenv())
+  slept$s <- numeric(0)
+  testthat::local_mocked_bindings(
+    .cde_sleep = function(seconds) slept$s <- c(slept$s, seconds),
+    .package = "fbiCDE",
+    .env = env
+  )
+  slept
+}
+
+test_that("cde_request() retries a transient status, backing off, then succeeds", {
+  slept <- local_no_sleep()
+  g <- scripted_get(fake_response(503L), fake_response(502L), ok_response())
+
+  out <- cde_request("summarized/national/V", get_fun = g$fun)
+
+  expect_equal(out, list(ok = TRUE))
+  expect_equal(g$calls$n, 3L)
+  expect_equal(slept$s, c(1, 2))
+})
+
+test_that("cde_request() gives up after fbiCDE.max_retries and says so", {
+  slept <- local_no_sleep()
+  g <- scripted_get(fake_response(503L))
+
+  expect_error(
+    cde_request("summarized/national/V", get_fun = g$fun),
+    "HTTP 503 .*after 4 attempts"
+  )
+  expect_equal(g$calls$n, 4L)
+  expect_equal(slept$s, c(1, 2, 4))
+})
+
+test_that("cde_request() does not retry a 404", {
+  slept <- local_no_sleep()
+  g <- scripted_get(fake_response(404L))
+
+  expect_error(cde_request("nope", get_fun = g$fun), "HTTP 404")
+  expect_equal(g$calls$n, 1L)
+  expect_length(slept$s, 0L)
+})
+
+test_that("cde_request() retries a network error and reports a persistent one", {
+  slept <- local_no_sleep()
+  g <- scripted_get(simpleError("Timeout was reached"), ok_response())
+  expect_equal(cde_request("x", get_fun = g$fun), list(ok = TRUE))
+  expect_equal(g$calls$n, 2L)
+
+  g2 <- scripted_get(simpleError("Could not resolve host"))
+  expect_error(
+    cde_request("x", get_fun = g2$fun),
+    "Request failed for .*after 4 attempts.*Could not resolve host"
+  )
+})
+
+test_that("cde_request() honours Retry-After on a 429", {
+  slept <- local_no_sleep()
+  limited <- fake_response(429L)
+  limited$headers <- list("retry-after" = "7")
+  g <- scripted_get(limited, ok_response())
+
+  cde_request("x", get_fun = g$fun)
+  expect_equal(slept$s, 7)
+})
+
+test_that("fbiCDE.max_retries = 0 disables retries", {
+  slept <- local_no_sleep()
+  g <- scripted_get(fake_response(503L), ok_response())
+
+  withr::local_options(fbiCDE.max_retries = 0)
+  expect_error(cde_request("x", get_fun = g$fun), "HTTP 503")
+  expect_equal(g$calls$n, 1L)
+})
+
+test_that("cde_request() passes a per-attempt timeout to get_fun", {
+  withr::local_options(fbiCDE.max_retries = NULL, fbiCDE.timeout = NULL)
+  g <- scripted_get(ok_response())
+  cde_request("x", get_fun = g$fun)
+  has_timeout <- function(args, ms) {
+    any(vapply(args, function(a) {
+      inherits(a, "request") && identical(a$options$timeout_ms, ms)
+    }, logical(1)))
+  }
+  expect_true(has_timeout(g$calls$args[[1]], 60000))
+
+  withr::local_options(fbiCDE.timeout = 5)
+  cde_request("x", get_fun = g$fun)
+  expect_true(has_timeout(g$calls$args[[2]], 5000))
+})
+
+test_that("invalid retry and timeout options fail clearly", {
+  g <- scripted_get(ok_response())
+  withr::local_options(fbiCDE.max_retries = -1, fbiCDE.timeout = NULL)
+  expect_error(cde_request("x", get_fun = g$fun), "fbiCDE.max_retries")
+  withr::local_options(fbiCDE.max_retries = 3, fbiCDE.timeout = "soon")
+  expect_error(cde_request("x", get_fun = g$fun), "fbiCDE.timeout")
+})

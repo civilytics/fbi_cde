@@ -22,4 +22,14 @@ The single network seam for the package. Builds the full URL from
 base + path + encoded query, performs the GET request, and returns
 the parsed JSON list.
 }
+\details{
+Transient failures are retried with exponential backoff (1, 2, 4, ...
+seconds, capped at 30): an error raised by the request itself (a network
+failure or timeout) and HTTP 408, 429, 500, 502, 503 or 504. A
+`Retry-After` header given in seconds is honoured, capped at 60. Any other
+status fails immediately. Two options tune this:
+`getOption("fbiCDE.max_retries", 3)`, the number of retries after the first
+attempt, and `getOption("fbiCDE.timeout", 60)`, the per-attempt timeout in
+seconds.
+}
 \keyword{internal}

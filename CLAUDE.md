@@ -12,8 +12,10 @@ Targeting CRAN. Based on the original `fbi` package by Jacob Kaplan.
   offline.
 - **Test discipline.** Every data path gets **both** an offline fixture test that
   runs on CI (mocks `cde_request` via `local_fbi_fixture()`; fixtures in
-  `tests/testthat/fixtures/`) **and** a `skip_if_no_fbi_api()`-guarded live test.
-  See `tests/testthat/helper-fbi.R`. `R CMD check` must stay clean.
+  `tests/testthat/fixtures/`) **and** a `skip_if_no_fbi_api()`-guarded live test
+  (runs only with `FBI_CDE_LIVE=true`; weekly in `.github/workflows/live-api.yaml`).
+  See `tests/testthat/helper-fbiCDE.R`. `R CMD check` must stay clean.
+  Fixtures are verbatim recorded responses, never synthetic.
 - **Lean dependencies, base R.** `R >= 3.5.0`. Imports are only `httr`,
   `jsonlite`, `datasets`, `utils` — **`data.table` was removed**; new code is base
   R. Heavy deps (`sf`, `tidycensus`) must be justified and go in `Suggests`, not
@@ -23,8 +25,12 @@ Targeting CRAN. Based on the original `fbi` package by Jacob Kaplan.
   `actuals %||% counts`). Agency- and state-level `summarized`/`arrest` responses
   include **comparison rows** (state + national series with a real `rate` but
   `NA` count) — strip them to the geography's own series.
-- **`cde_request()` uses `simplifyVector = FALSE`** (nested lists). Index parsers
-  with `names()` / `[[ ]]` so they work for both the live shape and fixtures.
+- **`cde_request()` uses `simplifyVector = FALSE`** (nested lists), and
+  `read_fixture()` parses fixtures the same way, so parsers only ever see that
+  shape. Index with `names()` / `[[ ]]`; do not add `is.data.frame()` branches
+  for a simplified shape.
+- **`cde_request()` retries** transient failures (network errors, 408/429/5xx)
+  with backoff; 4xx other than 408/429 fail immediately.
 - **`R/sysdata.rda` holds two internal objects**, `crosswalk` (county FIPS) and
   `cbsa_crosswalk` (county->CBSA). Any build script that touches it must
   `load()` and re-`save()` **both** objects together, or it will silently

@@ -235,12 +235,24 @@ calls route through this function, which:
 
 1.  Builds the full URL from `cde_base_url()` + `cde_path()` +
     `cde_query()`
-2.  Performs the HTTP GET request via `httr::GET`
+2.  Performs the HTTP GET request via `httr::GET`, retrying transient
+    failures
 3.  Parses the JSON response via `jsonlite::fromJSON()`
 4.  Returns a list for downstream parsing
 
-This design makes it straightforward to mock the API in tests by
-injecting a custom `get_fun` argument.
+Tests mock `cde_request()` itself, so the whole suite runs offline. Live
+tests against the real API run only when `FBI_CDE_LIVE=true` is set, and
+weekly in the `live-api` GitHub Actions workflow.
+
+### Network settings
+
+Network errors and HTTP 408, 429 and 5xx responses are retried with
+exponential backoff (honouring `Retry-After`). Two options tune this:
+
+``` r
+options(fbiCDE.max_retries = 3)  # retries after the first attempt; 0 disables
+options(fbiCDE.timeout = 60)     # seconds allowed per attempt
+```
 
 ## Data Sources
 

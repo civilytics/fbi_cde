@@ -95,6 +95,15 @@ cde_base_url <- function() {
 #' base + path + encoded query, performs the GET request, and returns
 #' the parsed JSON list.
 #'
+#' Transient failures are retried with exponential backoff (1, 2, 4, ...
+#' seconds, capped at 30): an error raised by the request itself (a network
+#' failure or timeout) and HTTP 408, 429, 500, 502, 503 or 504. A
+#' `Retry-After` header given in seconds is honoured, capped at 60. Any other
+#' status fails immediately. Two options tune this:
+#' `getOption("fbiCDE.max_retries", 3)`, the number of retries after the first
+#' attempt, and `getOption("fbiCDE.timeout", 60)`, the per-attempt timeout in
+#' seconds.
+#'
 #' @param path Character string with the API path (e.g. `"summarized/national/V"`).
 #' @param query Named list of query parameters (default: `list()`).
 #' @param get_fun Function to perform the HTTP GET request. Defaults to
@@ -108,10 +117,32 @@ cde_request <- function(path, query = list(), get_fun = httr::GET) {
 
   useragent <- paste0(
     "Mozilla/5.0 (compatible; a bot using the R fbiCDE",
-    " package; https://github.com/Civilytics/fbiCDE)"
+    " package; https://github.com/civilytics/fbi_cde)"
   )
+  max_retries <- .cde_option_number("fbiCDE.max_retries", 3, min = 0)
+  timeout_secs <- .cde_option_number("fbiCDE.timeout", 60, min = 1)
 
-  response <- get_fun(full_url, httr::user_agent(useragent))
+  # A single dropped connection or 503 used to fail the call outright, and in
+  # a county or metro fan-out that silently removed the agency from the totals.
+  attempt <- 0L
+  repeat {
+    attempt <- attempt + 1L
+    response <- tryCatch(
+      get_fun(full_url, httr::user_agent(useragent),
+              httr::timeout(timeout_secs)),
+      error = function(e) e
+    )
+    if (!.cde_is_transient(response) || attempt > max_retries) {
+      break
+    }
+    .cde_sleep(.cde_backoff(attempt, response))
+  }
+  attempts <- if (attempt > 1L) paste0(" (after ", attempt, " attempts)") else ""
+
+  if (inherits(response, "error")) {
+    stop("Request failed for ", full_url, attempts, ": ",
+         conditionMessage(response), call. = FALSE)
+  }
 
   if (response$status_code != 200L) {
     body_raw <- response$content
@@ -127,7 +158,7 @@ cde_request <- function(path, query = list(), get_fun = httr::GET) {
       }
     }
     stop(
-      "HTTP ", response$status_code, " for ", full_url, msg,
+      "HTTP ", response$status_code, " for ", full_url, attempts, msg,
       call. = FALSE
     )
   }
@@ -141,6 +172,48 @@ cde_request <- function(path, query = list(), get_fun = httr::GET) {
   }
 
   jsonlite::fromJSON(rawToChar(body_raw), simplifyVector = FALSE)
+}
+
+# Statuses worth retrying: request timeout, rate limiting, and server-side
+# failures. Everything else (404, 400, ...) will not change on a retry.
+.CDE_TRANSIENT_STATUS <- c(408L, 429L, 500L, 502L, 503L, 504L)
+
+# TRUE when `response` (an httr response, or the error get_fun raised) is worth
+# retrying.
+.cde_is_transient <- function(response) {
+  inherits(response, "error") ||
+    response$status_code %in% .CDE_TRANSIENT_STATUS
+}
+
+# Seconds to wait before retry number `attempt`: 1, 2, 4, ... capped at 30, or
+# the server's Retry-After (in seconds) when it sends one, capped at 60.
+.cde_backoff <- function(attempt, response) {
+  wait <- min(2^(attempt - 1L), 30)
+  retry_after <- if (inherits(response, "error")) NULL else
+    response$headers[["retry-after"]]
+  if (length(retry_after) == 1L) {
+    secs <- suppressWarnings(as.numeric(retry_after))
+    if (!is.na(secs) && secs >= 0) {
+      wait <- min(secs, 60)
+    }
+  }
+  wait
+}
+
+# Isolated so tests can retry without actually sleeping.
+.cde_sleep <- function(seconds) {
+  Sys.sleep(seconds)
+}
+
+# Read a numeric option, validating it rather than failing obscurely later.
+.cde_option_number <- function(name, default, min) {
+  value <- getOption(name, default)
+  if (!is.numeric(value) || length(value) != 1L || is.na(value) ||
+      value < min) {
+    stop("Option '", name, "' must be a single number >= ", min,
+         " (got ", deparse(value), ").", call. = FALSE)
+  }
+  value
 }
 
 #' Build an FBI CDE API path string
