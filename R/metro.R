@@ -91,12 +91,12 @@
 #'   lists all of them. Returns a zero-row frame with a warning when the metro
 #'   is unknown.
 #' @section Coverage limitations:
-#' The bundled crosswalk has 1,915 county-CBSA rows, about 61% of the 3,131
+#' The bundled crosswalk has 1,915 county-CBSA rows, about 61% of the 3,134
 #' counties known to [county_agencies()]. That row count overstates coverage
 #' slightly, because some rows are Connecticut planning regions or Puerto
 #' Rico municipios that never join a CDE county name (see below). Counted as
-#' distinct, CDE-reachable counties instead, coverage is about 58.5% (1,831 of
-#' 3,131). Either way, rural counties belong to no CBSA at all; that is a
+#' distinct, CDE-reachable counties instead, coverage is about 58.5% (1,834 of
+#' 3,134). Either way, rural counties belong to no CBSA at all; that is a
 #' property of the 2023 OMB delineation, not a gap in the data.
 #'
 #' Connecticut's seven metros are not supported: Bridgeport-Stamford-Danbury,
@@ -113,12 +113,12 @@
 #' Puerto Rico's 10 CBSAs are unmapped too, but that is academic: the CDE has
 #' exactly one Puerto Rico agency.
 #'
-#' Agencies whose `county_name` is `"N/A"` -- state police, tribal agencies,
-#' and the District of Columbia -- cannot be reached from any county-keyed
-#' geography, so a metro that includes one is incomplete even when every one
-#' of its counties joins cleanly. Washington-Arlington-Alexandria, DC-VA-MD-WV
-#' is the visible case: it lists 23 counties but only 22 resolve, because
-#' DC's 3 agencies all carry `county_name = "N/A"`.
+#' Agencies whose `county_name` is `"N/A"` -- mostly state police, other
+#' state agencies and tribal agencies -- cannot be reached from any
+#' county-keyed geography. Three that police a whole county-equivalent are
+#' attributed by the package instead (the NYPD, DC's Metropolitan Police and
+#' the Baltimore City Sheriff; see [county_agencies()]), so the New York and
+#' Washington metros include them.
 #' @seealso [list_metros()] to discover metro names,
 #'   [county_agencies()].
 #' @export
@@ -202,7 +202,7 @@ metro_agencies <- function(metro, state = NULL) {
 # The crosswalk is keyed by the CDE's raw county_name, which includes
 # multi-county strings ("FAIRFIELD; LICKING"), so county_fips is NOT unique
 # across all rows. Filtering to names without a semicolon gives the canonical
-# entry: 3,131 such rows for 3,131 distinct FIPS -- an exact 1:1, with every
+# entry: 3,134 such rows for 3,134 distinct FIPS -- an exact 1:1, with every
 # FIPS represented. Skipping that filter would sometimes pick a multi-county
 # row, and county_agencies() matches county_name exactly, so it would return a
 # subset of the county rather than the county.

@@ -122,6 +122,13 @@ parse_agency_detail <- function(response, ori, offense, from, to) {
 #' mixes single-site agencies with multi-county task forces attributed to one
 #' county, and how tribal agencies should attribute to counties is unresolved.
 #'
+#' An agency that polices several counties reports one series, which is
+#' returned in full for each of its counties: Columbus PD's rows are the same
+#' for Delaware, Fairfield and Franklin counties, OH. The extreme case is New
+#' York City, where the NYPD is the police of all five boroughs: any borough
+#' returns **citywide** NYPD counts with New York City's population. Do not
+#' sum counties that share an agency; see [county_agencies()].
+#'
 #' @param county County name (case-insensitive).
 #' @param state Two-letter state abbreviation.
 #' @param offense Offense code (default `"V"`; see `get_offense_codes()`).

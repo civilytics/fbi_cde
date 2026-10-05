@@ -150,6 +150,21 @@ agency's full list. Because such an agency counts in full in each of its
 counties, **do not add counties together** to get a larger area: the shared
 agencies would be counted more than once. Use a metro area instead.
 
+New York City is the extreme case. The CDE gives three agencies no county at
+all, although each polices a whole county or county-equivalent: the NYPD, the
+District of Columbia's Metropolitan Police and the Baltimore City Sheriff. The
+package attributes them itself (see `?county_agencies`). The NYPD is the police
+of all five boroughs and reports one citywide series, so every borough returns
+New York City's figures:
+
+```{r nyc}
+queens <- get_county_crime_detail("Queens", "NY", from = "01-2023", to = "03-2023")
+queens[, c("agency_name", "period", "count", "population")]
+```
+
+That population is the city's, not Queens'. There is no borough breakdown in
+the CDE.
+
 ## A city
 
 A city's crime is reported by its own police department, so

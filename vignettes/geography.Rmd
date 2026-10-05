@@ -188,6 +188,26 @@ agency's full list. Because such an agency counts in full in each of its
 counties, **do not add counties together** to get a larger area: the shared
 agencies would be counted more than once. Use a metro area instead.
 
+New York City is the extreme case. The CDE gives three agencies no county at
+all, although each polices a whole county or county-equivalent: the NYPD, the
+District of Columbia's Metropolitan Police and the Baltimore City Sheriff. The
+package attributes them itself (see `?county_agencies`). The NYPD is the police
+of all five boroughs and reports one citywide series, so every borough returns
+New York City's figures:
+
+
+```r
+queens <- get_county_crime_detail("Queens", "NY", from = "01-2023", to = "03-2023")
+queens[, c("agency_name", "period", "count", "population")]
+#>                       agency_name  period count population
+#> 1 New York City Police Department 01-2023  4431    8184044
+#> 2 New York City Police Department 02-2023  3927    8184044
+#> 3 New York City Police Department 03-2023  4173    8184044
+```
+
+That population is the city's, not Queens'. There is no borough breakdown in
+the CDE.
+
 ## A city
 
 A city's crime is reported by its own police department, so
@@ -253,9 +273,7 @@ to start above `max_agencies` (150 by default) before sending anything:
 ```r
 get_metro_crime_detail("New York-Newark-Jersey City, NY-NJ",
                        from = "01-2023", to = "12-2023")
-#> Warning: Metro 'New York-Newark-Jersey City, NY-NJ' lists 22 counties but only
-#> 20 could be matched to CDE county names. Results are incomplete.
-#> Error: Metro 'New York-Newark-Jersey City, NY-NJ' resolves to 454 agencies, above max_agencies = 150. Each agency is a separate request, so this would take a while. Raise the limit (max_agencies = Inf), or narrow the set with agency_class.
+#> Error: Metro 'New York-Newark-Jersey City, NY-NJ' resolves to 455 agencies, above max_agencies = 150. Each agency is a separate request, so this would take a while. Raise the limit (max_agencies = Inf), or narrow the set with agency_class.
 ```
 
 A small area runs quickly:

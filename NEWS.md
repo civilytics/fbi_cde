@@ -90,6 +90,24 @@ reads its numbers from the results instead of hard-coding them.
   source of truth that unqualified references picked up. The bundled datasets
   are now the only copy, rebuilt from the live API by
   `data-raw/api_vocabularies.R`.
+- **The NYPD, DC's police and the Baltimore City Sheriff are back in their
+  counties.** The CDE gives these three agencies no county (`"N/A"`, or "NOT
+  SPECIFIED" in its live directory), so `county_agencies("District of
+  Columbia", "DC")` found nothing, Manhattan returned a SUNY campus and the
+  State Police, and the New York and Washington metros lacked their largest
+  department. The package now attributes them itself, by ORI, wherever the
+  CDE leaves the county as `"N/A"`:
+  - The NYPD goes to all five boroughs (Bronx, Kings, New York, Queens and
+    Richmond counties). It reports one citywide series, so like any
+    multi-county agency it counts in full in each: **a borough's results are
+    New York City's**, with the city's population.
+  - DC's Metropolitan Police goes to the District of Columbia, and the
+    Baltimore City Sheriff to Baltimore city.
+
+  The county FIPS crosswalk gains Queens (36081), Richmond (36085) and the
+  District of Columbia (11001), which no agency named before
+  (`data-raw/crosswalk_attributed_counties.R`). `fbi_api_agencies` itself
+  still holds the CDE's values.
 
 ## Interface changes (breaking)
 

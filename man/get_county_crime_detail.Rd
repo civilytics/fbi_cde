@@ -61,6 +61,13 @@ school, airport, port, park and railroad police, task forces) and tribal
 agencies are queried only when named in `agency_class`: the first group
 mixes single-site agencies with multi-county task forces attributed to one
 county, and how tribal agencies should attribute to counties is unresolved.
+
+An agency that polices several counties reports one series, which is
+returned in full for each of its counties: Columbus PD's rows are the same
+for Delaware, Fairfield and Franklin counties, OH. The extreme case is New
+York City, where the NYPD is the police of all five boroughs: any borough
+returns **citywide** NYPD counts with New York City's population. Do not
+sum counties that share an agency; see [county_agencies()].
 }
 \examples{
 \dontrun{

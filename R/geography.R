@@ -11,8 +11,43 @@ NULL
 utils::globalVariables("fbi_api_agencies")
 
 # Internal accessor so the source of the agency table is swappable in tests.
+# Every geography resolver reads agencies through here, so all of them see the
+# county attributions below.
 agencies_table <- function() {
-  fbi_api_agencies
+  .apply_county_attributions(fbi_api_agencies)
+}
+
+# Counties the package attributes to agencies the CDE leaves without one.
+#
+# The CDE gives these agencies no county ("N/A" in the bundled table, "NOT
+# SPECIFIED" in the live agency directory), yet each is the police of a whole
+# county or county-equivalent. Without an entry here their counties and metros
+# silently lost their largest department: county_agencies("District of
+# Columbia", "DC") found nothing, and the New York metro had no NYPD.
+#
+#   - NY0303000, New York City Police Department: all five boroughs, each a
+#     county. NYPD reports one citywide series, so like any multi-county agency
+#     it is attributed in full to each borough; a borough's NYPD rows are New
+#     York City's.
+#   - DCMPD0000, the District's Metropolitan Police Department.
+#   - MD0040600, Baltimore City Sheriff's Office. Baltimore city is an
+#     independent city; its Police Department already carries BALTIMORE CITY.
+#
+# Keyed by ORI, never by agency name. An entry fills county_name only while it
+# is "N/A", so a county the CDE supplies always wins. Each county named here
+# must be in the FIPS crosswalk (data-raw/crosswalk_attributed_counties.R).
+.AGENCY_COUNTY_ATTRIBUTIONS <- c(
+  NY0303000 = "BRONX; KINGS; NEW YORK; QUEENS; RICHMOND",
+  DCMPD0000 = "DISTRICT OF COLUMBIA",
+  MD0040600 = "BALTIMORE CITY"
+)
+
+.apply_county_attributions <- function(ag,
+                                       attributions = .AGENCY_COUNTY_ATTRIBUTIONS) {
+  i <- match(ag$ori, names(attributions))
+  fill <- !is.na(i) & ag$county_name %in% "N/A"
+  ag$county_name[fill] <- unname(attributions[i[fill]])
+  ag
 }
 
 # TRUE where `county_name` covers `county_key` (already uppercase, trimmed).
@@ -85,6 +120,24 @@ agencies_table <- function() {
 #'   `"special"` (transit, school, airport, port, park and railroad police,
 #'   task forces) or `"tribal"`. Returns a zero-row frame (with a warning) if
 #'   no agencies match.
+#' @section Agencies the CDE leaves without a county:
+#' The CDE assigns no county to three agencies that each police a whole county
+#' or county-equivalent, so the package attributes them itself, by ORI:
+#'
+#' * New York City Police Department (`NY0303000`): the five boroughs, Bronx,
+#'   Kings, New York, Queens and Richmond counties.
+#' * Metropolitan Police Department of the District of Columbia
+#'   (`DCMPD0000`): the District of Columbia.
+#' * Baltimore City Sheriff's Office (`MD0040600`): Baltimore city.
+#'
+#' The NYPD reports one series for the whole city; the CDE has no borough
+#' breakdown. Like any multi-county agency it is attributed in full to each
+#' of its counties, so `county_agencies("Kings", "NY")` includes the NYPD, and
+#' the crime functions return **citywide** NYPD figures for Brooklyn, with
+#' New York City's population. A borough's results therefore describe the
+#' city, not the borough. Use the New York metro, or the NYPD itself, rather
+#' than summing boroughs. For these agencies `agency_county_names` holds the
+#' package's attribution, not a list from the CDE.
 #' @export
 #' @examples
 #' \dontrun{

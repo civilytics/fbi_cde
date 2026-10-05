@@ -144,3 +144,17 @@ test_that("no metro returns a duplicated ORI", {
     expect_false(any(duplicated(out$ori)), info = paste("metro:", m))
   }
 })
+
+test_that("the New York and Washington metros include their city police", {
+  # Both lost their largest department, and warned of unmatched counties,
+  # while the NYPD and DC's police had no county.
+  ny <- expect_no_warning(metro_agencies("New York-Newark-Jersey City, NY-NJ"))
+  expect_equal(sum(ny$ori == "NY0303000"), 1L)
+  # Attributed to its first borough in delineation order.
+  expect_equal(ny$county_name[ny$ori == "NY0303000"], "BRONX")
+
+  dc <- expect_no_warning(
+    metro_agencies("Washington-Arlington-Alexandria, DC-VA-MD-WV")
+  )
+  expect_equal(sum(dc$ori == "DCMPD0000"), 1L)
+})

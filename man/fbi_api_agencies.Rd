@@ -18,7 +18,10 @@ A data frame with 18459 rows and 13 variables:
   \item{region_desc}{Census region code}
   \item{county_name}{County name, uppercase. Semicolon-separated for an
   agency that polices several counties; \code{"N/A"} when the agency has
-  no county}
+  no county. This is the CDE's own value: the geography functions also
+  attribute three \code{"N/A"} agencies (the NYPD, DC's Metropolitan
+  Police and the Baltimore City Sheriff) to their counties, which this
+  table does not show; see \code{\link{county_agencies}}}
   \item{nibrs}{Logical: whether the agency reported to NIBRS as of the
   snapshot}
   \item{latitude}{Numeric agency latitude; \code{NA} when unknown}

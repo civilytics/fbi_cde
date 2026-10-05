@@ -149,3 +149,69 @@ test_that("the bundled agency table has real column types", {
   # Coordinates are plausible where present (the one -9/-9 placeholder is NA).
   expect_false(any(ag$latitude == -9, na.rm = TRUE))
 })
+
+# ---- Agencies the CDE leaves without a county --------------------------------
+#
+# The NYPD, DC's Metropolitan Police and the Baltimore City Sheriff carry
+# county_name "N/A" in the CDE, so their counties and metros silently lost them.
+
+test_that("the attribution table fills only agencies the CDE left as N/A", {
+  ag <- data.frame(
+    ori = c("NY0303000", "DCMPD0000", "OHCOP0000"),
+    county_name = c("N/A", "SOMEWHERE", "DELAWARE; FAIRFIELD; FRANKLIN"),
+    stringsAsFactors = FALSE
+  )
+  out <- .apply_county_attributions(ag)
+  expect_equal(out$county_name[1], "BRONX; KINGS; NEW YORK; QUEENS; RICHMOND")
+  # A county the CDE supplies wins over the table.
+  expect_equal(out$county_name[2], "SOMEWHERE")
+  expect_equal(out$county_name[3], "DELAWARE; FAIRFIELD; FRANKLIN")
+})
+
+test_that("every attributed agency exists and is N/A in the bundled table", {
+  # If a snapshot refresh gives one of these a county, the entry is dead and
+  # should be removed rather than silently ignored.
+  ag <- fbi_api_agencies
+  ori <- names(.AGENCY_COUNTY_ATTRIBUTIONS)
+  expect_true(all(ori %in% ag$ori))
+  expect_true(all(ag$county_name[match(ori, ag$ori)] == "N/A"))
+})
+
+test_that("every attributed county resolves to a FIPS code", {
+  ag <- fbi_api_agencies
+  for (ori in names(.AGENCY_COUNTY_ATTRIBUTIONS)) {
+    st <- ag$state_abbr[ag$ori == ori]
+    counties <- trimws(strsplit(.AGENCY_COUNTY_ATTRIBUTIONS[[ori]], ";",
+                                fixed = TRUE)[[1]])
+    for (cty in counties) {
+      expect_false(is.na(county_to_fips(st, cty)), info = paste(ori, cty))
+    }
+  }
+})
+
+test_that("the NYPD is attributed in full to each of the five boroughs", {
+  boroughs <- c(Bronx = "36005", Kings = "36047", `New York` = "36061",
+                Queens = "36081", Richmond = "36085")
+  for (b in names(boroughs)) {
+    out <- county_agencies(b, "NY")
+    nypd <- out[out$ori == "NY0303000", ]
+    expect_equal(nrow(nypd), 1L, info = b)
+    expect_equal(nypd$county_name, toupper(b), info = b)
+    expect_equal(nypd$county_fips, boroughs[[b]], info = b)
+    expect_equal(nypd$agency_class, "municipal", info = b)
+    expect_equal(nypd$agency_county_names,
+                 "BRONX; KINGS; NEW YORK; QUEENS; RICHMOND", info = b)
+  }
+})
+
+test_that("the District of Columbia resolves to its police department", {
+  dc <- expect_no_warning(county_agencies("District of Columbia", "DC"))
+  expect_true("DCMPD0000" %in% dc$ori)
+  expect_equal(unique(dc$county_fips), "11001")
+})
+
+test_that("Baltimore city includes its sheriff alongside its police", {
+  bc <- county_agencies("Baltimore City", "MD")
+  expect_true(all(c("MD0040600", "MDBPD0000") %in% bc$ori))
+  expect_equal(unique(bc$county_fips), "24510")
+})

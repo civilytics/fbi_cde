@@ -35,6 +35,27 @@ to have occurred there. It returns every class; the crime functions
 ([get_county_crime_detail()], [get_metro_crime_detail()]) then choose which
 classes to query.
 }
+\section{Agencies the CDE leaves without a county}{
+
+The CDE assigns no county to three agencies that each police a whole county
+or county-equivalent, so the package attributes them itself, by ORI:
+
+* New York City Police Department (`NY0303000`): the five boroughs, Bronx,
+  Kings, New York, Queens and Richmond counties.
+* Metropolitan Police Department of the District of Columbia
+  (`DCMPD0000`): the District of Columbia.
+* Baltimore City Sheriff's Office (`MD0040600`): Baltimore city.
+
+The NYPD reports one series for the whole city; the CDE has no borough
+breakdown. Like any multi-county agency it is attributed in full to each
+of its counties, so `county_agencies("Kings", "NY")` includes the NYPD, and
+the crime functions return **citywide** NYPD figures for Brooklyn, with
+New York City's population. A borough's results therefore describe the
+city, not the borough. Use the New York metro, or the NYPD itself, rather
+than summing boroughs. For these agencies `agency_county_names` holds the
+package's attribution, not a list from the CDE.
+}
+
 \examples{
 \dontrun{
 county_agencies("Alameda", "CA")

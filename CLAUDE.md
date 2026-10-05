@@ -82,6 +82,14 @@ Layers:
   member county in delineation order). A multi-county agency's raw CDE list
   (`"DELAWARE; FAIRFIELD; FRANKLIN"`) lives in `agency_county_names`. Never
   group or derive FIPS from the raw list.
+- **County attributions for `"N/A"` agencies.** The CDE gives the NYPD, DC's
+  Metropolitan Police and the Baltimore City Sheriff no county.
+  `.AGENCY_COUNTY_ATTRIBUTIONS` (`R/geography.R`, keyed by ORI) fills their
+  `county_name` inside `agencies_table()`, only while the CDE's value is
+  `"N/A"`; the bundled `fbi_api_agencies` is left as the CDE has it. The NYPD
+  goes to all five boroughs, so a borough returns citywide figures; that is
+  documented, not a bug. A county added there must also be in the FIPS
+  crosswalk: run `data-raw/crosswalk_attributed_counties.R`.
 - `place_agencies(place, state, county = NULL)` — pure, name-identity resolver
   for the municipal tier (`"<Place> Police Department"` names); classifies
   `agency_class` (`place_primary`/`campus`/`special`).

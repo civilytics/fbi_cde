@@ -65,6 +65,16 @@ test_that("county_to_fips returns NA for unresolvable cases", {
   expect_true(is.na(county_to_fips("AK", "VALDEZ-CORDOVA")))
 })
 
+test_that("county_to_fips resolves counties only attributed agencies use", {
+  # No CDE agency names these counties; the NYPD and DC's police are
+  # attributed to them by the package.
+  expect_equal(county_to_fips("NY", "QUEENS"), "36081")
+  expect_equal(county_to_fips("NY", "RICHMOND"), "36085")
+  expect_equal(county_to_fips("DC", "DISTRICT OF COLUMBIA"), "11001")
+  # Richmond, NY must not disturb Richmond city, VA.
+  expect_equal(county_to_fips("VA", "RICHMOND CITY"), "51760")
+})
+
 test_that("county_to_fips handles state FIPS codes", {
   expect_equal(county_to_fips("06", "LOS ANGELES"), "06037")
   expect_equal(county_to_fips("48", "HARRIS"), "48201")
