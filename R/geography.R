@@ -29,7 +29,8 @@ agencies_table <- function() {
 
 .COUNTY_AGENCY_COLS <- c(
   "ori", "agency_name", "agency_type_name", "agency_class", "default_member",
-  "county_name", "state_abbr", "county_fips", "latitude", "longitude"
+  "county_name", "state_abbr", "county_fips", "latitude", "longitude",
+  "agency_county_names"
 )
 
 # A 0-row, .COUNTY_AGENCY_COLS-shaped frame whose column types match those of a
@@ -53,6 +54,7 @@ agencies_table <- function() {
     county_fips = character(0),
     latitude = character(0),
     longitude = character(0),
+    agency_county_names = character(0),
     stringsAsFactors = FALSE
   )
 }
@@ -68,8 +70,13 @@ agencies_table <- function() {
 #' @param state Two-letter state abbreviation (e.g. `"CA"`).
 #' @return A data.frame with columns `ori`, `agency_name`, `agency_type_name`,
 #'   `agency_class`, `default_member`, `county_name`, `state_abbr`, `county_fips`,
-#'   `latitude`, `longitude`. `county_fips` is the 5-digit county FIPS code
-#'   (character, preserving leading zeros). `default_member` is `TRUE` for
+#'   `latitude`, `longitude`, `agency_county_names`. `county_name` and
+#'   `county_fips` (5-digit, character, preserving leading zeros) identify the
+#'   queried county on every row. `agency_county_names` is the CDE's own county
+#'   list for the agency: semicolon-separated for an agency that polices several
+#'   counties (e.g. Columbus PD, `"DELAWARE; FAIRFIELD; FRANKLIN"`). Such an
+#'   agency is attributed in full to each of its counties, so summing results
+#'   across counties counts it more than once. `default_member` is `TRUE` for
 #'   `county_primary` and `municipal` agencies. Returns a zero-row frame
 #'   (with a warning) if no agencies match.
 #' @export
@@ -100,8 +107,16 @@ county_agencies <- function(county, state) {
   sel$agency_class <- classify_agency(sel$agency_type_name)
   sel$default_member <- sel$agency_class %in% DEFAULT_MEMBER_CLASSES
 
-  # Derive county FIPS for the county (all agencies share the same county FIPS)
-  sel$county_fips <- county_to_fips(sel$state_abbr[[1]], sel$county_name[[1]])
+  # Attribute every row to the county that was asked for. A multi-county
+  # agency's raw county_name ("DELAWARE; FAIRFIELD; FRANKLIN") describes the
+  # agency, not this row: left in place it split get_county_crime() into one
+  # group per distinct string, and deriving county_fips from the first row
+  # gave Licking County, OH the FIPS of Fairfield. The raw list is kept in
+  # agency_county_names. county_key is already the CDE's own spelling, since
+  # it matched one of the split parts exactly.
+  sel$agency_county_names <- sel$county_name
+  sel$county_name <- county_key
+  sel$county_fips <- county_to_fips(state_key, county_key)
 
   out <- sel[, .COUNTY_AGENCY_COLS, drop = FALSE]
   rownames(out) <- NULL

@@ -47,10 +47,12 @@
 # @param empty_fn Zero-argument constructor for the level's typed empty frame.
 # @param progress Print a progress line per agency.
 # @return A data.frame with `cols`. Agencies whose request or parse fails are
-#   dropped with a warning and recorded in `attr(x, "dropped")`.
+#   dropped with a warning; their ORIs are recorded in `attr(x, "dropped")` and
+#   the error messages, named by ORI, in `attr(x, "dropped_reasons")`.
 .fanout_agency_detail <- function(agencies, meta_cols, cols, empty_fn,
                                   offense, from, to, progress = FALSE) {
   dropped <- character(0)
+  reasons <- character(0)
   parts <- vector("list", nrow(agencies))
 
   for (i in seq_len(nrow(agencies))) {
@@ -67,6 +69,7 @@
     )
     if (inherits(res, "error")) {
       dropped <- c(dropped, ori)
+      reasons <- c(reasons, conditionMessage(res))
       next
     }
     for (col in meta_cols) {
@@ -85,12 +88,16 @@
     rownames(out) <- NULL
   }
 
+  # The old wording ("returned no data") was wrong for an HTTP error or a
+  # parse failure, and the error itself was discarded. Keep it.
   if (length(dropped) > 0) {
     warning("Dropped ", length(dropped),
             " agenc", if (length(dropped) == 1) "y" else "ies",
-            " that returned no data: ", paste(dropped, collapse = ", "),
+            " whose request or parse failed: ", paste(dropped, collapse = ", "),
+            ". See attr(x, \"dropped_reasons\") for the errors.",
             call. = FALSE)
     attr(out, "dropped") <- dropped
+    attr(out, "dropped_reasons") <- stats::setNames(reasons, dropped)
   }
   out
 }

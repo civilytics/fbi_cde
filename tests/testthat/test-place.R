@@ -223,3 +223,15 @@ test_that("an unmatched-place empty frame rbinds cleanly against a real result",
   expect_equal(classes[["ori"]], "character")
   expect_equal(out$ori, real$ori)
 })
+
+test_that("place_agencies county filter matches a multi-county agency", {
+  # Columbus PD's county_name is "DELAWARE; FAIRFIELD; FRANKLIN"; an exact
+  # comparison with county = "Franklin" used to find nothing.
+  out <- place_agencies("Columbus", "OH", county = "Franklin")
+  expect_equal(out$ori, "OHCOP0000")
+  expect_warning(
+    none <- place_agencies("Columbus", "OH", county = "Hocking"),
+    "No municipal agency"
+  )
+  expect_equal(nrow(none), 0L)
+})

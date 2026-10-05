@@ -50,7 +50,7 @@ test_that("county_agencies includes county_fips column (Alameda, CA)", {
   expect_equal(names(out),
                c("ori", "agency_name", "agency_type_name", "agency_class",
                  "default_member", "county_name", "state_abbr", "county_fips",
-                 "latitude", "longitude"))
+                 "latitude", "longitude", "agency_county_names"))
 })
 
 test_that("county_agencies zero-row branch includes county_fips", {
@@ -108,4 +108,24 @@ test_that("a single-county agency matches only its own county", {
     strsplit(toupper(alameda$county_name), ";", fixed = TRUE),
     function(p) "ALAMEDA" %in% trimws(p), logical(1)
   )))
+})
+
+test_that("county_agencies attributes every row to the queried county", {
+  # Columbus PD keeps its full county list, but in Franklin's result it is a
+  # Franklin row.
+  fr <- county_agencies("Franklin", "OH")
+  cop <- fr[fr$ori == "OHCOP0000", ]
+  expect_equal(cop$county_name, "FRANKLIN")
+  expect_equal(cop$agency_county_names, "DELAWARE; FAIRFIELD; FRANKLIN")
+  expect_equal(unique(fr$county_name), "FRANKLIN")
+  expect_equal(unique(fr$county_fips), "39049")
+})
+
+test_that("county_fips comes from the queried county, not the first agency", {
+  # The first Licking agency in table order is multi-county and lists
+  # Fairfield first; county_fips used to be read off that row (39045).
+  li <- county_agencies("Licking", "OH")
+  expect_true(grepl(";", li$agency_county_names[1], fixed = TRUE))
+  expect_equal(unique(li$county_fips), "39089")
+  expect_equal(unique(li$county_name), "LICKING")
 })

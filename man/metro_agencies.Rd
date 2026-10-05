@@ -16,8 +16,11 @@ disambiguate an ambiguous short name.}
 \value{
 A data.frame with the [county_agencies()] columns plus `cbsa_code`,
   `cbsa_title`, `cbsa_type` (`"metro"`/`"micro"`), and `central_outlying`
-  (whether the agency's county is central or outlying in the CBSA). Returns a
-  zero-row frame with a warning when the metro is unknown.
+  (whether the agency's county is central or outlying in the CBSA). Each ORI
+  appears once: an agency that polices several member counties is attributed
+  to the first of them in delineation order, and its `agency_county_names`
+  lists all of them. Returns a zero-row frame with a warning when the metro
+  is unknown.
 }
 \description{
 Resolves a Core Based Statistical Area (CBSA) to the union of its member

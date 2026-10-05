@@ -34,8 +34,12 @@ get_county_crime_detail(
 \item{progress}{If `TRUE`, print a simple progress line per agency.}
 }
 \value{
-A data.frame (columns listed in Details). Agencies whose request or
-  parse fails are dropped with a warning and recorded in `attr(x, "dropped")`.
+A data.frame with one row per agency-period: the agency metadata from
+  [county_agencies()] (including `county_fips`, which [join_census_pop()]
+  needs), then `offense`, `period`, `count`, `population`,
+  `participated_population`, `rate`, and `reported`. Agencies whose request
+  or parse fails are dropped with a warning; their ORIs are recorded in
+  `attr(x, "dropped")` and the errors in `attr(x, "dropped_reasons")`.
   Agencies classed `state` (e.g. Highway Patrol) or `tribal` are attributed
   to a county by HQ location, not jurisdiction; their figures reflect
   statewide/jurisdiction-wide totals, not county-specific crime. They are

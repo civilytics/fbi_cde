@@ -64,6 +64,7 @@ test_that("get_county_crime_detail empty frame agrees with its populated frame",
     default_member = TRUE,
     county_name = "TESTONIA",
     state_abbr = "CA",
+    county_fips = "06999",
     latitude = 0, longitude = 0,
     stringsAsFactors = FALSE
   )

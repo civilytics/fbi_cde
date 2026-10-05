@@ -141,7 +141,10 @@ place_agencies <- function(place, state, county = NULL) {
 
   if (!is.null(county)) {
     county_key <- toupper(trimws(county))
-    in_county <- toupper(trimws(sel$county_name)) == county_key
+    # Match against the split list, as county_agencies() does: Columbus PD's
+    # county_name is "DELAWARE; FAIRFIELD; FRANKLIN", so an exact comparison
+    # with county = "Franklin" found nothing.
+    in_county <- .county_name_matches(sel$county_name, county_key)
     in_county[is.na(in_county)] <- FALSE
     sel <- sel[in_county, , drop = FALSE]
   }
@@ -157,7 +160,8 @@ place_agencies <- function(place, state, county = NULL) {
     stop("Place '", place, "' is ambiguous in ", state_key,
          ": it occurs in ", nrow(sel), " counties (",
          paste(sel$county_name, collapse = ", "),
-         "). Disambiguate with county = \"", sel$county_name[1], "\".",
+         "). Disambiguate with county = \"",
+         trimws(strsplit(sel$county_name[1], ";", fixed = TRUE)[[1]][1]), "\".",
          call. = FALSE)
   }
 

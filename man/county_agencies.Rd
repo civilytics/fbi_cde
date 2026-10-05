@@ -14,8 +14,13 @@ county_agencies(county, state)
 \value{
 A data.frame with columns `ori`, `agency_name`, `agency_type_name`,
   `agency_class`, `default_member`, `county_name`, `state_abbr`, `county_fips`,
-  `latitude`, `longitude`. `county_fips` is the 5-digit county FIPS code
-  (character, preserving leading zeros). `default_member` is `TRUE` for
+  `latitude`, `longitude`, `agency_county_names`. `county_name` and
+  `county_fips` (5-digit, character, preserving leading zeros) identify the
+  queried county on every row. `agency_county_names` is the CDE's own county
+  list for the agency: semicolon-separated for an agency that polices several
+  counties (e.g. Columbus PD, `"DELAWARE; FAIRFIELD; FRANKLIN"`). Such an
+  agency is attributed in full to each of its counties, so summing results
+  across counties counts it more than once. `default_member` is `TRUE` for
   `county_primary` and `municipal` agencies. Returns a zero-row frame
   (with a warning) if no agencies match.
 }

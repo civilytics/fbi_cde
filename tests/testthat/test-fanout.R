@@ -237,4 +237,6 @@ test_that(".fanout_agency_detail keeps survivors when only some agencies fail", 
   expect_equal(nrow(out), 1L)
   expect_equal(out$ori, "CA0000001")
   expect_equal(attr(out, "dropped"), "CA0000002")
+  # The error is kept, keyed by ORI, rather than discarded.
+  expect_equal(attr(out, "dropped_reasons"), c(CA0000002 = "503"))
 })

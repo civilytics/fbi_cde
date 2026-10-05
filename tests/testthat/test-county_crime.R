@@ -105,6 +105,7 @@ test_that("get_county_crime_detail fans out, filters, and reports drops", {
     default_member = c(TRUE, FALSE, TRUE),
     county_name = "TESTONIA",
     state_abbr = "CA",
+    county_fips = "06999",
     latitude = 0, longitude = 0,
     stringsAsFactors = FALSE
   )
@@ -149,7 +150,7 @@ test_that("get_county_crime_detail returns .DETAIL_COLS-shaped empty frame when 
     agency_type_name = c("City", "University or College"),
     agency_class = c("municipal", "campus"),
     default_member = c(TRUE, FALSE),
-    county_name = "TESTONIA", state_abbr = "CA",
+    county_name = "TESTONIA", state_abbr = "CA", county_fips = "06999",
     latitude = 0, longitude = 0, stringsAsFactors = FALSE
   )
 
@@ -180,7 +181,7 @@ test_that("get_county_crime_detail default_only keeps only default members", {
     agency_type_name = c("City", "University or College"),
     agency_class = c("municipal", "campus"),
     default_member = c(TRUE, FALSE),
-    county_name = "TESTONIA", state_abbr = "CA",
+    county_name = "TESTONIA", state_abbr = "CA", county_fips = "06999",
     latitude = 0, longitude = 0, stringsAsFactors = FALSE
   )
   responses <- list(
@@ -222,7 +223,7 @@ test_that("get_county_agency_crime resolves the county_primary ORI", {
     agency_type_name = c("City", "County"),
     agency_class = c("municipal", "county_primary"),
     default_member = c(TRUE, TRUE),
-    county_name = "TESTONIA", state_abbr = "CA",
+    county_name = "TESTONIA", state_abbr = "CA", county_fips = "06999",
     latitude = 0, longitude = 0, stringsAsFactors = FALSE
   )
   called <- new.env()
@@ -248,7 +249,7 @@ test_that("get_county_agency_crime warns and uses the first ORI when multiple co
     agency_type_name = c("City", "County", "County"),
     agency_class = c("municipal", "county_primary", "county_primary"),
     default_member = c(TRUE, TRUE, TRUE),
-    county_name = "TESTONIA", state_abbr = "CA",
+    county_name = "TESTONIA", state_abbr = "CA", county_fips = "06999",
     latitude = 0, longitude = 0, stringsAsFactors = FALSE
   )
   called <- new.env()
@@ -271,7 +272,7 @@ test_that("get_county_agency_crime errors when no county_primary exists", {
   agencies <- data.frame(
     ori = "CA0000001", agency_name = "Alpha PD",
     agency_type_name = "City", agency_class = "municipal",
-    default_member = TRUE, county_name = "TESTONIA", state_abbr = "CA",
+    default_member = TRUE, county_name = "TESTONIA", state_abbr = "CA", county_fips = "06999",
     latitude = 0, longitude = 0, stringsAsFactors = FALSE
   )
   testthat::local_mocked_bindings(

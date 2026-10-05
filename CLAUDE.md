@@ -62,6 +62,11 @@ Layers:
   NIBRS-transition reporting hole). Filters via `agency_class` / `default_only`;
   failed ORIs are dropped, warned, and listed in `attr(x, "dropped")`.
 - `get_county_agency_crime(...)` — the county's own primary (sheriff) series.
+- **Attribution invariant:** a resolver row's `county_name`/`county_fips` is the
+  county the row is *attributed* to (the queried county; in a metro, the first
+  member county in delineation order). A multi-county agency's raw CDE list
+  (`"DELAWARE; FAIRFIELD; FRANKLIN"`) lives in `agency_county_names`. Never
+  group or derive FIPS from the raw list.
 - `place_agencies(place, state, county = NULL)` — pure, name-identity resolver
   for the municipal tier (`"<Place> Police Department"` names); classifies
   `agency_class` (`place_primary`/`campus`/`special`).

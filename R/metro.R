@@ -5,6 +5,7 @@
 .METRO_AGENCY_COLS <- c(
   "ori", "agency_name", "agency_type_name", "agency_class", "default_member",
   "county_name", "state_abbr", "county_fips", "latitude", "longitude",
+  "agency_county_names",
   "cbsa_code", "cbsa_title", "cbsa_type", "central_outlying"
 )
 
@@ -22,6 +23,7 @@
     county_fips = character(0),
     latitude = character(0),
     longitude = character(0),
+    agency_county_names = character(0),
     cbsa_code = character(0),
     cbsa_title = character(0),
     cbsa_type = character(0),
@@ -85,8 +87,11 @@
 #'   disambiguate an ambiguous short name.
 #' @return A data.frame with the [county_agencies()] columns plus `cbsa_code`,
 #'   `cbsa_title`, `cbsa_type` (`"metro"`/`"micro"`), and `central_outlying`
-#'   (whether the agency's county is central or outlying in the CBSA). Returns a
-#'   zero-row frame with a warning when the metro is unknown.
+#'   (whether the agency's county is central or outlying in the CBSA). Each ORI
+#'   appears once: an agency that polices several member counties is attributed
+#'   to the first of them in delineation order, and its `agency_county_names`
+#'   lists all of them. Returns a zero-row frame with a warning when the metro
+#'   is unknown.
 #' @section Coverage limitations:
 #' The bundled crosswalk has 1,915 county-CBSA rows, about 61% of the 3,131
 #' counties known to [county_agencies()]. That row count overstates coverage
@@ -183,7 +188,9 @@ metro_agencies <- function(metro, state = NULL) {
   # no-double-count invariant the metro layer rests on (#56).
   #
   # The first match is kept, which is the first member county in delineation
-  # order; the retained row's county_name still lists every county it covers.
+  # order: the retained row is attributed to that county (county_name,
+  # county_fips and central_outlying all describe it), and its
+  # agency_county_names still lists every county the agency covers.
   out <- out[!duplicated(out$ori), , drop = FALSE]
 
   out <- out[, .METRO_AGENCY_COLS, drop = FALSE]

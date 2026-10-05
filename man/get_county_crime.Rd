@@ -29,7 +29,10 @@ A data.frame with columns: `county_name`, `state_abbr`, `offense`,
   value used), `participated_population` (sum of participated populations),
   `rate` (`count / population * 1e5`), `denominator_type` (which strategy was
   used), and `coverage_fraction` (`participated_population / population`).
-  Returns a zero-row frame with correct columns if `detail` is empty.
+  Returns a zero-row frame with correct columns if `detail` is empty. If
+  `detail` carries `attr(detail, "dropped")` (agencies whose request failed
+  in [get_county_crime_detail()]), the result warns and keeps that attribute:
+  those agencies are missing from every total, including the denominator.
 }
 \description{
 Sums itemized agency-level detail (from [get_county_crime_detail()]) into a

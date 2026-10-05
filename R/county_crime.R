@@ -74,7 +74,7 @@ parse_agency_detail <- function(response, ori, offense, from, to) {
 
 .DETAIL_COLS <- c(
   "ori", "agency_name", "agency_type_name", "agency_class", "default_member",
-  "county_name", "state_abbr", "offense", "period", "count",
+  "county_name", "state_abbr", "county_fips", "offense", "period", "count",
   "population", "participated_population", "rate", "reported"
 )
 
@@ -94,6 +94,7 @@ parse_agency_detail <- function(response, ori, offense, from, to) {
     default_member = logical(0),
     county_name = character(0),
     state_abbr = character(0),
+    county_fips = character(0),
     offense = character(0),
     period = character(0),
     count = numeric(0),
@@ -125,8 +126,12 @@ parse_agency_detail <- function(response, ori, offense, from, to) {
 #' @param default_only If `TRUE`, keep only default members (`county_primary` +
 #'   `municipal`). Ignored if `agency_class` is supplied.
 #' @param progress If `TRUE`, print a simple progress line per agency.
-#' @return A data.frame (columns listed in Details). Agencies whose request or
-#'   parse fails are dropped with a warning and recorded in `attr(x, "dropped")`.
+#' @return A data.frame with one row per agency-period: the agency metadata from
+#'   [county_agencies()] (including `county_fips`, which [join_census_pop()]
+#'   needs), then `offense`, `period`, `count`, `population`,
+#'   `participated_population`, `rate`, and `reported`. Agencies whose request
+#'   or parse fails are dropped with a warning; their ORIs are recorded in
+#'   `attr(x, "dropped")` and the errors in `attr(x, "dropped_reasons")`.
 #'   Agencies classed `state` (e.g. Highway Patrol) or `tribal` are attributed
 #'   to a county by HQ location, not jurisdiction; their figures reflect
 #'   statewide/jurisdiction-wide totals, not county-specific crime. They are
@@ -155,7 +160,7 @@ get_county_crime_detail <- function(county, state, offense = "V",
   .fanout_agency_detail(
     agencies = agencies,
     meta_cols = c("agency_name", "agency_type_name", "agency_class",
-                  "default_member", "county_name", "state_abbr"),
+                  "default_member", "county_name", "state_abbr", "county_fips"),
     cols = .DETAIL_COLS,
     empty_fn = .empty_detail_frame,
     offense = offense, from = from, to = to, progress = progress
@@ -256,7 +261,10 @@ get_county_agency_crime <- function(county, state, offense = "V",
 #'   value used), `participated_population` (sum of participated populations),
 #'   `rate` (`count / population * 1e5`), `denominator_type` (which strategy was
 #'   used), and `coverage_fraction` (`participated_population / population`).
-#'   Returns a zero-row frame with correct columns if `detail` is empty.
+#'   Returns a zero-row frame with correct columns if `detail` is empty. If
+#'   `detail` carries `attr(detail, "dropped")` (agencies whose request failed
+#'   in [get_county_crime_detail()]), the result warns and keeps that attribute:
+#'   those agencies are missing from every total, including the denominator.
 #' @export
 #' @examples
 #' \dontrun{
@@ -293,9 +301,23 @@ get_county_crime <- function(detail, denominator = "jurisdiction_pop") {
          "in detail (e.g. from join_census_pop())", call. = FALSE)
   }
 
+  # Agencies the fan-out could not fetch have no rows at all, so they are
+  # missing from count AND population, and coverage_fraction cannot see them.
+  # Say so, and carry the record forward on the result.
+  dropped <- attr(detail, "dropped")
+  if (length(dropped) > 0) {
+    warning(length(dropped), " agenc", if (length(dropped) == 1) "y" else "ies",
+            " could not be fetched and ", if (length(dropped) == 1) "is" else "are",
+            " absent from these totals (", paste(dropped, collapse = ", "),
+            "); coverage_fraction does not account for ",
+            if (length(dropped) == 1) "it" else "them", ".", call. = FALSE)
+  }
+
   # Handle empty input.
   if (nrow(detail) == 0L) {
-    return(.empty_aggregate_frame())
+    out <- .empty_aggregate_frame()
+    attr(out, "dropped") <- dropped
+    return(out)
   }
 
   # Group by (county_name, state_abbr, offense, period) and aggregate.
@@ -352,6 +374,8 @@ get_county_crime <- function(detail, denominator = "jurisdiction_pop") {
 
   out <- do.call(rbind, agg_rows)
   rownames(out) <- NULL
-  out[, .AGGREGATE_COLS, drop = FALSE]
+  out <- out[, .AGGREGATE_COLS, drop = FALSE]
+  attr(out, "dropped") <- dropped
+  out
 }
 
