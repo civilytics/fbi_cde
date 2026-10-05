@@ -1,5 +1,50 @@
 # fbi 0.1.0.9000 (development version)
 
+## Interface changes (breaking)
+
+- **Comparison rows are stripped by default.** For an agency or state, the
+  CDE also sends its state's and the nation's series (a rate but no count).
+  `get_agency_crime()`, `get_estimated_crime()`, `get_estimated_arson()`,
+  `get_arrest_count()` and `get_county_agency_crime()` returned them mixed in
+  with the geography's own rows (an Oakland query gave 18 rows, 6 of them
+  Oakland's), so `mean(rate)` or a plot by period silently mixed geographies.
+  They now return only the queried geography's own series; `comparison = TRUE`
+  brings the others back, labelled by new `series` (`"agency"`, `"state"`,
+  `"national"`) and `series_name` columns.
+- **New output columns for those functions:** `offense` is now the requested
+  code (e.g. `"V"`, or `"all"` for arrests) rather than a series label such as
+  `"Oakland Police Department Offenses"`, and a new `measure` column says
+  `"offenses"`, `"clearances"` or `"arrests"`. Periods are sorted
+  chronologically (they had been sorted as strings, which misorders across
+  years).
+- **`default_only` and `default_member` are gone; `include_statewide` replaces
+  them.** `get_county_crime_detail()`, `get_place_crime_detail()` and
+  `get_metro_crime_detail()` now query, by default, the agencies whose
+  jurisdiction is a specific area below the state: sheriffs, city police and
+  campus police. `include_statewide = TRUE` adds state agencies (state police
+  and highway patrol, other state agencies). Special-purpose agencies
+  (transit, school, airport, port, park and railroad police, task forces) and
+  tribal agencies are queried only when named in `agency_class`. Membership is
+  decided by agency type alone, never by parsing names. What changes:
+  - County: previously every attributed agency was queried; special, state and
+    tribal agencies are now opt-in.
+  - Place and metro: campus police are now included by default (place: when
+    supplied via `add_place_spatial_members()`).
+  - `agency_class` values are validated; an unknown class is an error.
+- `agency_class` corrections: the 11 `"Census Area"` agencies are Alaska city
+  police departments (Nome, Bethel, ...) and are now `"municipal"` (and place
+  members) instead of `"special"`; `"Other State Agency"` is now `"state"`
+  instead of `"special"`.
+- **`fbi_api_agencies` has real column types:** `nibrs` is logical,
+  `latitude`/`longitude` numeric, `nibrs_start_date` a Date, with `NA` where
+  the source had the string `"NULL"`. One placeholder coordinate (`-9, -9`) is
+  now `NA`. The documentation now notes the table is a snapshot whose NIBRS
+  start dates run to September 2019. The conversion is recorded in
+  `data-raw/fbi_api_agencies_types.R`.
+- Tribal agencies' attribution to counties (reservations often cross county
+  lines) and the special-purpose class (single-site agencies mixed with
+  multi-county task forces) are deferred for a later design.
+
 ## Network resilience and test infrastructure
 
 - `cde_request()` now retries transient failures with exponential backoff
