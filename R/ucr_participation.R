@@ -2,9 +2,7 @@
 # list keyed by county name -> agency records) into one row per agency.
 #
 # Response shape (CDE API): a named list where each key is a county name and
-# each value is either a list of per-agency lists (live `cde_request()`,
-# `simplifyVector = FALSE`) or a data.frame of agencies (offline fixtures
-# read with `simplifyVector = TRUE`); both shapes are handled.
+# each value is a list of per-agency records.
 parse_agency_participation_response <- function(response) {
   empty <- data.frame(
     ori = character(), agency_name = character(), agency_type_name = character(),
@@ -19,20 +17,6 @@ parse_agency_participation_response <- function(response) {
 
   rows <- lapply(names(response), function(county) {
     county_data <- response[[county]]
-
-    if (is.data.frame(county_data)) {
-      return(data.frame(
-        ori = as.character(county_data$ori),
-        agency_name = as.character(county_data$agency_name),
-        agency_type_name = as.character(county_data$agency_type_name),
-        state_abbr = as.character(county_data$state_abbr),
-        state_name = as.character(county_data$state_name),
-        county = if (!is.null(county_data$counties)) as.character(county_data$counties) else county,
-        is_nibrs = as.logical(county_data$is_nibrs),
-        nibrs_start_date = as.character(county_data$nibrs_start_date),
-        stringsAsFactors = FALSE
-      ))
-    }
 
     agency_rows <- lapply(county_data, function(agency) {
       data.frame(

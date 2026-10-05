@@ -27,15 +27,17 @@ skip_if_no_fbi_api <- function() {
 # ---- Offline fixtures -----------------------------------------------------
 
 # Read a saved API response fixture from tests/testthat/fixtures/.
-# Store the *raw* parsed JSON exactly as the API returns it, so the package's
-# own parsing code is exercised by the test.
+# Store the *raw* JSON exactly as the API returns it, and parse it exactly as
+# cde_request() does (simplifyVector = FALSE, nested lists), so tests exercise
+# the shape the parsers see in production. Fixtures used to be simplified to
+# data.frames here, which let a parser that only worked on that shape pass.
 read_fixture <- function(name) {
   path <- testthat::test_path("fixtures", name)
   if (!file.exists(path)) {
     stop("Missing fixture: ", path,
          "\nRecord it from a live response (see tests/testthat/fixtures/README.md).")
   }
-  jsonlite::fromJSON(readLines(path, warn = FALSE), simplifyVector = TRUE)
+  jsonlite::fromJSON(readLines(path, warn = FALSE), simplifyVector = FALSE)
 }
 
 # Run a test with the package's HTTP layer stubbed to return a fixture instead

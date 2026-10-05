@@ -64,16 +64,12 @@ get_agencies <- function() {
 
 # Flatten one `agency/byStateAbbr/{state}` response -- a named list of county
 # -> array of agency records -- into one row per agency, keeping every scalar
-# field. Handles both the live nested-list shape (`simplifyVector = FALSE`) and
-# the data.frame-per-county shape offline fixtures produce.
+# field.
 .flatten_agency_directory <- function(response) {
   if (is.null(response) || length(response) == 0) {
     return(NULL)
   }
   rows <- lapply(response, function(county_data) {
-    if (is.data.frame(county_data)) {
-      return(county_data)
-    }
     rbind_fill(lapply(county_data, function(agency) {
       if (!is.list(agency)) {
         return(NULL)
@@ -115,30 +111,18 @@ get_offense_codes <- function(type = "crime-trend") {
   }
 
   # `crimeGroups` is a list of `{label, crimes}` groups, where `crimes` is a
-  # list of `{label, value}` offense entries. With `simplifyVector = TRUE`
-  # (offline fixture reads) `crimeGroups` simplifies to a data.frame whose
-  # `crimes` column holds one nested data.frame per group; with
-  # `simplifyVector = FALSE` (live `cde_request()`) it stays a list of lists.
-  # Both shapes are handled below.
-  crimes_list <- if (is.data.frame(groups)) groups$crimes else lapply(groups, function(g) g$crimes)
+  # list of `{label, value}` offense entries.
+  crimes_list <- lapply(groups, function(g) g$crimes)
 
   rows <- lapply(crimes_list, function(crimes) {
     if (is.null(crimes) || length(crimes) == 0) {
       return(NULL)
     }
-    if (is.data.frame(crimes)) {
-      data.frame(
-        code = as.character(crimes$value),
-        label = as.character(crimes$label),
-        stringsAsFactors = FALSE
-      )
-    } else {
-      data.frame(
-        code = vapply(crimes, function(c) as.character(c$value %||% NA), character(1)),
-        label = vapply(crimes, function(c) as.character(c$label %||% NA), character(1)),
-        stringsAsFactors = FALSE
-      )
-    }
+    data.frame(
+      code = vapply(crimes, function(c) as.character(c$value %||% NA), character(1)),
+      label = vapply(crimes, function(c) as.character(c$label %||% NA), character(1)),
+      stringsAsFactors = FALSE
+    )
   })
 
   rows <- rows[!vapply(rows, is.null, logical(1))]
@@ -173,18 +157,7 @@ get_states <- function() {
     return(empty)
   }
 
-  # `states` is an array of `{abbr, name}` objects. With
-  # `simplifyVector = TRUE` (offline fixture reads) it simplifies to a
-  # data.frame directly; with `simplifyVector = FALSE` (live
-  # `cde_request()`) it stays a list of per-state lists.
-  if (is.data.frame(states)) {
-    return(data.frame(
-      stateAbbreviation = as.character(states$abbr),
-      stateName = as.character(states$name),
-      stringsAsFactors = FALSE
-    ))
-  }
-
+  # `states` is an array of `{abbr, name}` objects.
   data.frame(
     stateAbbreviation = vapply(states, function(s) as.character(s$abbr %||% NA), character(1)),
     stateName = vapply(states, function(s) as.character(s$name %||% NA), character(1)),

@@ -42,16 +42,11 @@ test_that("get_states parses state lookup response", {
 # get_agencies() calls get_states() first, then the agency directory once per
 # state. The RI fixture is a recorded `agency/byStateAbbr/RI` response (a
 # county-keyed object, 49 agencies); every other state answers with an empty
-# object. Parsed both ways because the live seam uses simplifyVector = FALSE
-# while read_fixture() simplifies -- the old test only exercised the latter,
-# which is how a parser that produced one junk row per state went unnoticed.
-mock_agency_directory <- function(simplify, fail_state = NULL) {
+# object.
+mock_agency_directory <- function(fail_state = NULL) {
   paths <- character(0)
   states <- read_fixture("lookup-states.json")
-  ri <- jsonlite::fromJSON(
-    testthat::test_path("fixtures", "participation-agency-byStateAbbr-RI.json"),
-    simplifyVector = simplify
-  )
+  ri <- read_fixture("participation-agency-byStateAbbr-RI.json")
   fun <- function(path, ...) {
     paths <<- c(paths, path)
     if (identical(path, "lookup/states")) return(states)
@@ -64,30 +59,27 @@ mock_agency_directory <- function(simplify, fail_state = NULL) {
   list(fun = fun, paths = function() paths)
 }
 
-for (simplify in c(FALSE, TRUE)) {
-  test_that(paste("get_agencies flattens the county-keyed directory, simplify =",
-                  simplify), {
-    m <- mock_agency_directory(simplify)
-    testthat::local_mocked_bindings(cde_request = m$fun, .package = "fbiCDE")
-    result <- get_agencies()
+test_that("get_agencies flattens the county-keyed directory", {
+  m <- mock_agency_directory()
+  testthat::local_mocked_bindings(cde_request = m$fun, .package = "fbiCDE")
+  result <- get_agencies()
 
-    expect_s3_class(result, "data.frame")
-    expect_equal(nrow(result), 49L)
-    expect_false(any(duplicated(result$ori)))
-    expect_true(all(grepl("^RI", result$ori)))
-    expect_true(all(c("ori", "agency_name", "agency_type_name", "counties",
-                      "is_nibrs") %in% names(result)))
-    expect_true("Coventry Police Department" %in% result$agency_name)
-    expect_equal(result$ori, sort(result$ori))
-    # One directory request per state, on the endpoint that exists.
-    dir_paths <- setdiff(m$paths(), "lookup/states")
-    expect_true(all(grepl("^agency/byStateAbbr/[A-Z]{2}$", dir_paths)))
-    expect_true("agency/byStateAbbr/RI" %in% dir_paths)
-  })
-}
+  expect_s3_class(result, "data.frame")
+  expect_equal(nrow(result), 49L)
+  expect_false(any(duplicated(result$ori)))
+  expect_true(all(grepl("^RI", result$ori)))
+  expect_true(all(c("ori", "agency_name", "agency_type_name", "counties",
+                    "is_nibrs") %in% names(result)))
+  expect_true("Coventry Police Department" %in% result$agency_name)
+  expect_equal(result$ori, sort(result$ori))
+  # One directory request per state, on the endpoint that exists.
+  dir_paths <- setdiff(m$paths(), "lookup/states")
+  expect_true(all(grepl("^agency/byStateAbbr/[A-Z]{2}$", dir_paths)))
+  expect_true("agency/byStateAbbr/RI" %in% dir_paths)
+})
 
 test_that("get_agencies skips a failing state with a warning", {
-  m <- mock_agency_directory(FALSE, fail_state = "CA")
+  m <- mock_agency_directory(fail_state = "CA")
   testthat::local_mocked_bindings(cde_request = m$fun, .package = "fbiCDE")
   expect_warning(result <- get_agencies(), "1 state: CA")
   expect_equal(nrow(result), 49L)

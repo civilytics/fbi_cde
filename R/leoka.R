@@ -3,12 +3,9 @@
 #
 # Response shape (CDE API): a length-1 array containing one object keyed
 # "leoka_chart_ytd" or "leoka_chart_monthly", nested as
-# `<key>$data$chart_data$incidents_victim_officer_totals_ytd`. With
-# `simplifyVector = FALSE` (live `cde_request()`) the outer array arrives as
-# a length-1 list to unwrap; with `simplifyVector = TRUE` (offline fixtures)
-# the array is simplified away, so the key sits at the top level. `$`
-# indexing works identically on the nested list/data.frame either way once
-# that outer wrapper is resolved.
+# `<key>$data$chart_data$incidents_victim_officer_totals_ytd`. The outer array
+# arrives as a length-1 unnamed list to unwrap. The key is also accepted at the
+# top level, in case the API stops wrapping it.
 parse_leoka_totals <- function(response, year, month = NA_integer_) {
   empty <- data.frame(
     year = integer(), month = integer(), total_officers = integer(),

@@ -69,7 +69,7 @@ test_that("clean_column_names lowercases, renames, and drops csv_header", {
 })
 
 test_that("flatten_cde_json produces a tidy frame from fixture data", {
-  fixture <- jsonlite::fromJSON(readLines(testthat::test_path("fixtures/summarized-national-V.json"), warn = FALSE), simplifyVector = TRUE)
+  fixture <- read_fixture("summarized-national-V.json")
   rates <- fixture$offenses$rates
   result <- flatten_cde_json(rates)
   

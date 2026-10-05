@@ -323,8 +323,6 @@ parse_arrest_demographics_response <- function(response, geography, offense) {
   for (demo_type in names(totals)) {
     if (demo_type %in% skip_keys) next
     demo_data <- totals[[demo_type]]
-    # Accept both nested lists (live, simplifyVector = FALSE) and named atomic
-    # vectors (fixtures parsed with simplifyVector = TRUE).
     if (length(demo_data) == 0 || is.null(names(demo_data))) next
     for (demo_value in names(demo_data)) {
       count <- demo_data[[demo_value]]
