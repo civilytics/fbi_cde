@@ -11,7 +11,9 @@
 #'
 #' @return A character string with the 5-digit county FIPS code (e.g. `"06037"`)
 #'   or `NA_character_` when the county cannot be resolved (e.g. `"N/A"` county,
-#'   dissolved boroughs).
+#'   dissolved boroughs). `counties_with_fips()` returns a data.frame with one
+#'   row per resolvable county: `state_abbr`, `county_name` (as the CDE spells
+#'   it), and `county_fips`.
 #'
 #' @details
 #' The crosswalk is built at package build time from `tigris::counties()` and
@@ -53,6 +55,18 @@ county_to_fips <- function(state, county) {
   state_fips <- .state_abbr_to_fips(state)
   if (is.na(state_fips)) {
     return(NA_character_)
+  }
+
+  # The bundled crosswalk is keyed by every (state, county_name) pair the CDE
+  # uses, so it is authoritative for those names and is consulted first. The
+  # patch logic below exists for other spellings, and it is wrong for the
+  # Virginia independent cities that share a name with a county: it strips
+  # " CITY", so "RICHMOND CITY" resolved to Richmond County (51159) instead of
+  # Richmond city (51760). Same for Fairfax, Franklin and Roanoke.
+  exact_key <- paste(.fips_state_to_abbr(state_fips), toupper(trimws(county)),
+                     sep = "|")
+  if (exact_key %in% names(.fips_tigris_lookup)) {
+    return(unname(.fips_tigris_lookup[[exact_key]]))
   }
 
   # Strip multi-county: take the first county before ";"
@@ -120,9 +134,16 @@ county_to_fips <- function(state, county) {
 #' @rdname county_to_fips
 #' @export
 counties_with_fips <- function() {
-  # crosswalk is internal data (R/sysdata.rda); return a copy so users can
-  # modify the result without affecting package state.
-  crosswalk[NULL, , drop = FALSE]
+  # One row per county: the crosswalk's single-county names (multi-county
+  # strings such as "FAIRFIELD; LICKING" are agency attributes, not counties)
+  # with a resolved FIPS. This previously returned crosswalk[NULL, ], which is
+  # a zero-row frame, not a copy.
+  cw <- crosswalk[!grepl(";", crosswalk$county_name, fixed = TRUE) &
+                    !is.na(crosswalk$county_fips),
+                  c("state_abbr", "county_name", "county_fips"), drop = FALSE]
+  cw <- cw[order(cw$state_abbr, cw$county_name), , drop = FALSE]
+  rownames(cw) <- NULL
+  cw
 }
 
 # ---- Internal helpers ----

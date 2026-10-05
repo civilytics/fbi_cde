@@ -20,7 +20,9 @@ uppercase, may include `" CITY"` suffix for independent cities, or
 \value{
 A character string with the 5-digit county FIPS code (e.g. `"06037"`)
   or `NA_character_` when the county cannot be resolved (e.g. `"N/A"` county,
-  dissolved boroughs).
+  dissolved boroughs). `counties_with_fips()` returns a data.frame with one
+  row per resolvable county: `state_abbr`, `county_name` (as the CDE spells
+  it), and `county_fips`.
 }
 \description{
 Map a state + county name to a 5-digit county FIPS code using the FBI's
