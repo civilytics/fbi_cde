@@ -194,7 +194,9 @@ PLACE_VINTAGE <- 2020L
 #' municipal agencies resolve. The rest -- regional and multi-municipality
 #' departments, and two names that match more than one unit in their county --
 #' get `NA` rather than a guess. Codes follow the Census vintage in
-#' [PLACE_VINTAGE].
+#' [PLACE_VINTAGE]; Connecticut's county subdivision codes are therefore the
+#' 2020 ones, under its old counties, while Census data from 2022 codes them
+#' under its planning regions.
 #'
 #' @return A data.frame with columns `ori`, `agency_name`, `agency_type_name`,
 #'   `agency_class`, `place_name`, `place_type`, `place_fips`, `cousub_fips`,

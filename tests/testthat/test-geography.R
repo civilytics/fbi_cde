@@ -215,3 +215,46 @@ test_that("Baltimore city includes its sheriff alongside its police", {
   expect_true(all(c("MD0040600", "MDBPD0000") %in% bc$ori))
   expect_equal(unique(bc$county_fips), "24510")
 })
+
+# ---- Connecticut planning regions (#52) -------------------------------------
+
+test_that("planning regions are appended to a Connecticut agency's counties", {
+  ag <- data.frame(
+    ori = c("CT0000400", "CTCSP0000", "OHCOP0000"),
+    county_name = c("HARTFORD", "N/A", "DELAWARE; FAIRFIELD; FRANKLIN"),
+    stringsAsFactors = FALSE
+  )
+  regions <- data.frame(ori = c("CT0000400", "CTCSP0000"),
+                        planning_region = c("CAPITOL PLANNING REGION",
+                                            "CAPITOL PLANNING REGION"),
+                        stringsAsFactors = FALSE)
+  out <- .apply_planning_regions(ag, regions)
+  expect_equal(out$county_name[1], "HARTFORD; CAPITOL PLANNING REGION")
+  # An agency with no county gets the region alone.
+  expect_equal(out$county_name[2], "CAPITOL PLANNING REGION")
+  expect_equal(out$county_name[3], "DELAWARE; FAIRFIELD; FRANKLIN")
+})
+
+test_that("a Connecticut agency is reachable by county and by planning region", {
+  region <- county_agencies("Capitol Planning Region", "CT")
+  expect_gt(nrow(region), 0L)
+  expect_equal(unique(region$county_fips), "09110")
+  expect_equal(unique(region$county_name), "CAPITOL PLANNING REGION")
+  expect_true("CT0000400" %in% region$ori)   # Avon PD
+
+  hartford <- county_agencies("Hartford", "CT")
+  expect_equal(unique(hartford$county_fips), "09003")
+  expect_true("CT0000400" %in% hartford$ori)
+})
+
+test_that("the planning-region table covers Connecticut agencies only", {
+  r <- ct_planning_regions
+  ag <- fbi_api_agencies
+  expect_false(anyDuplicated(r$ori) > 0)
+  expect_true(all(ag$state_abbr[match(r$ori, ag$ori)] == "CT"))
+  expect_equal(length(unique(r$planning_region)), 9L)
+  expect_true(all(grepl(" PLANNING REGION$", r$planning_region)))
+  # Every region resolves to its FIPS code.
+  fips <- vapply(unique(r$planning_region), function(x) county_to_fips("CT", x), "")
+  expect_setequal(unname(fips), sprintf("09%d", seq(110, 190, by = 10)))
+})

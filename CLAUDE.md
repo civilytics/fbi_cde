@@ -35,9 +35,10 @@ original `fbi` package by Jacob Kaplan.
   for a simplified shape.
 - **`cde_request()` retries** transient failures (network errors, 408/429/5xx)
   with backoff; 4xx other than 408/429 fail immediately.
-- **`R/sysdata.rda` holds three internal objects**: `crosswalk` (county FIPS),
-  `cbsa_crosswalk` (county->CBSA) and `place_crosswalk` (ORI -> Census place
-  / county subdivision). Any build script that touches it must `load()` and
+- **`R/sysdata.rda` holds four internal objects**: `crosswalk` (county FIPS),
+  `cbsa_crosswalk` (county->CBSA), `place_crosswalk` (ORI -> Census place
+  / county subdivision) and `ct_planning_regions` (ORI -> Connecticut
+  planning region). Any build script that touches it must `load()` and
   re-`save()` **every** object together (the `data-raw/` scripts do it with
   `ls()` on a loaded environment), or it will silently destroy the ones it did
   not know about.
@@ -94,6 +95,12 @@ Layers:
   goes to all five boroughs, so a borough returns citywide figures; that is
   documented, not a bug. A county added there must also be in the FIPS
   crosswalk: run `data-raw/crosswalk_attributed_counties.R`.
+- **Connecticut planning regions (#52).** Connecticut's county equivalents
+  since 2022, and the units of its 2023 CBSAs. `ct_planning_regions` records
+  each bundled CT agency's region as the CDE's live directory reports it
+  (`data-raw/ct_planning_regions.R`); `agencies_table()` appends it to the
+  agency's county list, so an agency is reachable by traditional county and by
+  region. The two systems overlap completely: never sum across them.
 - `place_agencies(place, state, county = NULL)` — pure, name-identity resolver
   for the municipal tier (`"<Place> Police Department"` names); classifies
   `agency_class` (`place_primary`/`campus`/`special`).

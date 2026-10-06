@@ -34,26 +34,21 @@ a short name shared by several metros (\code{"Albany"} matches GA, OR and NY).
 }
 \section{Coverage limitations}{
 
-The bundled crosswalk has 1,915 county-CBSA rows, about 61\% of the 3,134
-counties known to \code{\link[=county_agencies]{county_agencies()}}. That row count overstates coverage
-slightly, because some rows are Connecticut planning regions or Puerto
-Rico municipios that never join a CDE county name (see below). Counted as
-distinct, CDE-reachable counties instead, coverage is about 58.5\% (1,834 of
-3,134). Either way, rural counties belong to no CBSA at all; that is a
-property of the 2023 OMB delineation, not a gap in the data.
+The bundled crosswalk has 1,915 county-CBSA rows, about 61\% of the 3,143
+counties and county equivalents known to \code{\link[=county_agencies]{county_agencies()}}. That row
+count overstates coverage slightly, because Puerto Rico's municipios never
+join a CDE county name (see below). Counted as distinct, CDE-reachable
+counties instead, coverage is about 58.6\% (1,843 of 3,143). Either way,
+rural counties belong to no CBSA at all; that is a property of the 2023 OMB
+delineation, not a gap in the data.
 
-Connecticut's seven metros are not supported: Bridgeport-Stamford-Danbury,
-Hartford-West Hartford-East Hartford, New Haven,
-Norwich-New London-Willimantic, Putnam, Torrington, and Waterbury-Shelton.
-The 2023 delineation delineates Connecticut by planning regions (FIPS
-09110-09190), which replaced its counties in 2022, while the CDE still
-reports Connecticut agencies by traditional county (09001-09015). The two
-vocabularies do not join, so all seven Connecticut metros resolve to zero
-counties. This function warns explicitly in that case rather than
-returning a silent empty frame, because a quiet zero-row result would read
-as "no agencies report here", which is false. Tracked as Gitea issue #52.
+Connecticut's metros are built from its nine planning regions, the county
+equivalents it adopted in 2022, and its agencies are attributed to their
+planning region as the CDE reports it (see \code{\link[=county_agencies]{county_agencies()}}). Two
+Connecticut campus agencies have no region in the CDE's directory, Yale
+and UConn Health, so the New Haven and Hartford metros lack them.
 
-Puerto Rico's 10 CBSAs are unmapped too, but that is academic: the CDE has
+Puerto Rico's 10 CBSAs are unmapped, but that is academic: the CDE has
 exactly one Puerto Rico agency.
 
 Agencies whose \code{county_name} is \code{"N/A"} -- mostly state police, other

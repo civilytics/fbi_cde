@@ -65,6 +65,10 @@ means.
 
 ### Connecticut is unsupported in v0.5, and must say so
 
+> **Resolved (2026-10-06, #52):** the CDE's live directory now attributes
+> Connecticut agencies to planning regions; see
+> `specs/2026-10-06-connecticut-planning-regions-design.md`.
+
 Added 2026-07-24 after probing against the corrected FIPS crosswalk (#50).
 
 84 of the 1,915 county↔CBSA rows do not join to our county crosswalk, and **17

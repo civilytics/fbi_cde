@@ -47,6 +47,15 @@ Kings, New York, Queens and Richmond counties.
 \item Baltimore City Sheriff's Office (\code{MD0040600}): Baltimore city.
 }
 
+Connecticut agencies are also attributed to their \strong{planning region}, the
+county equivalent Connecticut adopted in 2022 and the unit its metro areas
+are built from, as the CDE's live agency directory reports it. Query either
+a traditional county (\code{county_agencies("Hartford", "CT")}) or a region
+(\code{county_agencies("Capitol Planning Region", "CT")}), but do not add the
+two systems together: every agency is in one of each. Six agencies have no
+region in the directory (the state police, the DMV, two tribal agencies,
+and Yale and UConn Health, which it lists under other identifiers).
+
 The NYPD reports one series for the whole city; the CDE has no borough
 breakdown. Like any multi-county agency it is attributed in full to each
 of its counties, so \code{county_agencies("Kings", "NY")} includes the NYPD, and

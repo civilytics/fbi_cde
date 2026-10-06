@@ -83,39 +83,32 @@ test_that("metro_agencies resolves a single-county micro area", {
   expect_equal(length(unique(out$county_name)), 1L)
 })
 
-test_that("a Connecticut metro warns rather than returning silently empty", {
-  # The 2023 delineation uses CT planning regions (09110-09190); the CDE
-  # reports traditional CT counties (09001-09015). They do not join, so all
-  # five CT metros resolve to nothing. That MUST be loud: a quiet zero-row
-  # frame would read as "no agencies report in Hartford", which is false.
-  expect_warning(
-    out <- metro_agencies("Hartford-West Hartford-East Hartford, CT"),
-    "Connecticut"
-  )
-  expect_equal(nrow(out), 0L)
-  expect_equal(names(out), .METRO_AGENCY_COLS)
+test_that("every Connecticut metro resolves through its planning regions", {
+  # The 2023 delineation builds Connecticut's CBSAs from planning regions
+  # (09110-09190). They resolved to nothing while agencies carried only
+  # traditional counties (#52); the CDE's planning-region attribution fixes
+  # that. Derived from the shipped crosswalk, not a hardcoded list.
+  cw <- .cbsa_table()
+  ct_titles <- sort(unique(cw$cbsa_title[substr(cw$county_fips, 1L, 2L) == "09"]))
+  expect_equal(length(ct_titles), 7L)
+
+  seen <- character(0)
+  for (title in ct_titles) {
+    out <- expect_no_warning(metro_agencies(title))
+    expect_gt(nrow(out), 0L)
+    expect_true(all(grepl("PLANNING REGION$", out$county_name)), info = title)
+    seen <- c(seen, out$ori)
+  }
+  # Each attributed Connecticut agency is in exactly one Connecticut metro.
+  expect_false(anyDuplicated(seen) > 0)
+  expect_setequal(seen, ct_planning_regions$ori)
 })
 
 test_that("partial county coverage warns with the counts", {
-  expect_warning(
-    metro_agencies("New Haven, CT"),
-    "counties but only"
-  )
-})
-
-test_that("EVERY CBSA containing a Connecticut county warns", {
-  # Derived from the shipped crosswalk itself, not a hardcoded list of seven
-  # CT metro names -- so this cannot silently go stale the way the docs did
-  # (Gitea whole-branch review, I1). Any CBSA with a 09xxx (Connecticut)
-  # county must warn, because none of Connecticut's planning-region FIPS join
-  # the CDE's traditional county names.
+  # Puerto Rico's municipios do not join any CDE county name.
   cw <- .cbsa_table()
-  ct_titles <- sort(unique(cw$cbsa_title[substr(cw$county_fips, 1L, 2L) == "09"]))
-  expect_gt(length(ct_titles), 0L)
-
-  for (title in ct_titles) {
-    expect_warning(metro_agencies(title), info = title)
-  }
+  pr_title <- cw$cbsa_title[substr(cw$county_fips, 1L, 2L) == "72"][1]
+  expect_warning(metro_agencies(pr_title), "counties but only")
 })
 
 # ---- No double-count from multi-county agencies (#56) ----------------------

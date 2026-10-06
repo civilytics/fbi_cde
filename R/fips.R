@@ -331,17 +331,22 @@ counties_with_fips <- function() {
     "BRISTOL BAY"            = "Bristol Bay",
     "PRINCE OF WALES-HYDER"  = "Prince of Wales-Hyder",
 
-    # ---- Connecticut planning regions → traditional counties ----
-    # tigris returns CT planning regions (not counties). Map to traditional names.
-    "CAPITOL"                = "Hartford",
-    "GREATER BRIDGEPORT"     = "Fairfield",
-    "LOWER CONNECTICUT RIVER VALLEY" = "New London",
-    "NAUGATUCK VALLEY"       = "Litchfield",
-    "NORTHEASTERN CONNECTICUT" = "Windham",
-    "NORTHWEST HILLS"        = "Litchfield",
-    "SOUTH CENTRAL CONNECTICUT" = "New Haven",
-    "SOUTHEASTERN CONNECTICUT"  = "New London",
-    "WESTERN CONNECTICUT"    = "Fairfield",
+    # ---- Connecticut planning regions (county equivalents since 2022) ----
+    # A region's bare name resolves to the region's own FIPS; its full name
+    # ("CAPITOL PLANNING REGION") is in the crosswalk (#52). These entries
+    # used to send each region to one traditional county ("NAUGATUCK VALLEY"
+    # -> Litchfield), which was wrong for much of every region: regions were
+    # drawn from towns and cross county lines. State-scoped, like the
+    # traditional names below.
+    "09__CAPITOL"                        = "09110",
+    "09__GREATER BRIDGEPORT"             = "09120",
+    "09__LOWER CONNECTICUT RIVER VALLEY" = "09130",
+    "09__NAUGATUCK VALLEY"               = "09140",
+    "09__NORTHEASTERN CONNECTICUT"       = "09150",
+    "09__NORTHWEST HILLS"                = "09160",
+    "09__SOUTH CENTRAL CONNECTICUT"      = "09170",
+    "09__SOUTHEASTERN CONNECTICUT"       = "09180",
+    "09__WESTERN CONNECTICUT"            = "09190",
 
     # ---- CT traditional county names (fbi uses these, tigris has planning regions) ----
     # Direct FIPS mapping since tigris doesn't have traditional CT county names.

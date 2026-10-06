@@ -1,5 +1,23 @@
 # fbiCDE 0.1.0.9000 (development version)
 
+## Connecticut metros (#52)
+
+- **Connecticut's seven metros now resolve.** The 2023 delineation builds them
+  from planning regions, Connecticut's county equivalents since 2022, while
+  the bundled agency table has traditional counties, so every Connecticut
+  metro was empty. The CDE's live agency directory now reports each agency's
+  planning region, and the package records that for 101 of the 107 bundled
+  Connecticut agencies (`data-raw/ct_planning_regions.R`). An agency is
+  reachable by its traditional county and by its planning region
+  (`county_agencies("Capitol Planning Region", "CT")`); do not add the two
+  together.
+- The nine planning regions join the county FIPS crosswalk (09110-09190), and
+  a bare region name ("Naugatuck Valley") now resolves to the region rather
+  than to one traditional county it only partly overlaps.
+- Yale and UConn Health campus police are not in the directory under their
+  bundled ORIs, so their metros lack them until the agency snapshot is
+  refreshed. Puerto Rico's metros remain unmapped, with a warning.
+
 ## Census codes for places (#46)
 
 - `place_agencies()` and `get_place_crime_detail()` now carry the Census code

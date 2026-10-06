@@ -214,3 +214,13 @@ test_that("get_metro_crime_detail works against the live API", {
   expect_s3_class(out, "data.frame")
   expect_equal(names(out), .METRO_DETAIL_COLS)
 })
+
+test_that("a Connecticut metro returns crime from the live API", {
+  skip_if_no_fbi_api()
+  # Connecticut metros resolve through planning regions (#52).
+  out <- get_metro_crime_detail("Torrington, CT", from = "01-2023",
+                                to = "03-2023", progress = FALSE)
+  expect_gt(nrow(out), 0L)
+  expect_equal(unique(out$county_fips), "09160")
+  expect_true(any(out$reported))
+})

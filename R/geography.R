@@ -14,7 +14,29 @@ utils::globalVariables("fbi_api_agencies")
 # Every geography resolver reads agencies through here, so all of them see the
 # county attributions below.
 agencies_table <- function() {
-  .apply_county_attributions(fbi_api_agencies)
+  .apply_planning_regions(.apply_county_attributions(fbi_api_agencies))
+}
+
+utils::globalVariables("ct_planning_regions")
+
+# Connecticut agencies also belong to their planning region (#52).
+#
+# Connecticut replaced its counties with nine planning regions as county
+# equivalents in 2022, and the 2023 OMB delineation builds the state's CBSAs
+# from them, so with only traditional counties every Connecticut metro was
+# empty. The CDE's live agency directory now gives each agency's planning
+# region as its county; `ct_planning_regions` (data-raw/ct_planning_regions.R)
+# records that for the bundled agencies. The region is appended to the
+# agency's county list, so it is reachable by its traditional county (as the
+# 2019 snapshot has it) and by its planning region, and metros dedupe it.
+.apply_planning_regions <- function(ag, regions = ct_planning_regions) {
+  i <- match(ag$ori, regions$ori)
+  hit <- which(!is.na(i))
+  region <- regions$planning_region[i[hit]]
+  current <- ag$county_name[hit]
+  ag$county_name[hit] <- ifelse(is.na(current) | current == "N/A", region,
+                                paste(current, region, sep = "; "))
+  ag
 }
 
 # Counties the package attributes to agencies the CDE leaves without one.
@@ -129,6 +151,15 @@ agencies_table <- function() {
 #' * Metropolitan Police Department of the District of Columbia
 #'   (`DCMPD0000`): the District of Columbia.
 #' * Baltimore City Sheriff's Office (`MD0040600`): Baltimore city.
+#'
+#' Connecticut agencies are also attributed to their **planning region**, the
+#' county equivalent Connecticut adopted in 2022 and the unit its metro areas
+#' are built from, as the CDE's live agency directory reports it. Query either
+#' a traditional county (`county_agencies("Hartford", "CT")`) or a region
+#' (`county_agencies("Capitol Planning Region", "CT")`), but do not add the
+#' two systems together: every agency is in one of each. Six agencies have no
+#' region in the directory (the state police, the DMV, two tribal agencies,
+#' and Yale and UConn Health, which it lists under other identifiers).
 #'
 #' The NYPD reports one series for the whole city; the CDE has no borough
 #' breakdown. Like any multi-county agency it is attributed in full to each

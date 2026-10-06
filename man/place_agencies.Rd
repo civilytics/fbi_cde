@@ -62,7 +62,9 @@ over a county subdivision, which wins over a CDP. 98.7\% of the 11,646
 municipal agencies resolve. The rest -- regional and multi-municipality
 departments, and two names that match more than one unit in their county --
 get \code{NA} rather than a guess. Codes follow the Census vintage in
-\link{PLACE_VINTAGE}.
+\link{PLACE_VINTAGE}; Connecticut's county subdivision codes are therefore the
+2020 ones, under its old counties, while Census data from 2022 codes them
+under its planning regions.
 }
 
 \examples{

@@ -91,26 +91,21 @@
 #'   lists all of them. Returns a zero-row frame with a warning when the metro
 #'   is unknown.
 #' @section Coverage limitations:
-#' The bundled crosswalk has 1,915 county-CBSA rows, about 61% of the 3,134
-#' counties known to [county_agencies()]. That row count overstates coverage
-#' slightly, because some rows are Connecticut planning regions or Puerto
-#' Rico municipios that never join a CDE county name (see below). Counted as
-#' distinct, CDE-reachable counties instead, coverage is about 58.5% (1,834 of
-#' 3,134). Either way, rural counties belong to no CBSA at all; that is a
-#' property of the 2023 OMB delineation, not a gap in the data.
+#' The bundled crosswalk has 1,915 county-CBSA rows, about 61% of the 3,143
+#' counties and county equivalents known to [county_agencies()]. That row
+#' count overstates coverage slightly, because Puerto Rico's municipios never
+#' join a CDE county name (see below). Counted as distinct, CDE-reachable
+#' counties instead, coverage is about 58.6% (1,843 of 3,143). Either way,
+#' rural counties belong to no CBSA at all; that is a property of the 2023 OMB
+#' delineation, not a gap in the data.
 #'
-#' Connecticut's seven metros are not supported: Bridgeport-Stamford-Danbury,
-#' Hartford-West Hartford-East Hartford, New Haven,
-#' Norwich-New London-Willimantic, Putnam, Torrington, and Waterbury-Shelton.
-#' The 2023 delineation delineates Connecticut by planning regions (FIPS
-#' 09110-09190), which replaced its counties in 2022, while the CDE still
-#' reports Connecticut agencies by traditional county (09001-09015). The two
-#' vocabularies do not join, so all seven Connecticut metros resolve to zero
-#' counties. This function warns explicitly in that case rather than
-#' returning a silent empty frame, because a quiet zero-row result would read
-#' as "no agencies report here", which is false. Tracked as Gitea issue #52.
+#' Connecticut's metros are built from its nine planning regions, the county
+#' equivalents it adopted in 2022, and its agencies are attributed to their
+#' planning region as the CDE reports it (see [county_agencies()]). Two
+#' Connecticut campus agencies have no region in the CDE's directory, Yale
+#' and UConn Health, so the New Haven and Hartford metros lack them.
 #'
-#' Puerto Rico's 10 CBSAs are unmapped too, but that is academic: the CDE has
+#' Puerto Rico's 10 CBSAs are unmapped, but that is academic: the CDE has
 #' exactly one Puerto Rico agency.
 #'
 #' Agencies whose `county_name` is `"N/A"` -- mostly state police, other
@@ -155,22 +150,15 @@ metro_agencies <- function(metro, state = NULL) {
 
   # Coverage must never be silent. A CBSA whose counties do not join our
   # crosswalk would otherwise return a quiet zero-row frame, which reads as
-  # "no agencies report here" -- false, and materially misleading. The live
-  # case is Connecticut: the 2023 delineation uses planning regions
-  # (09110-09190) while the CDE reports traditional counties (09001-09015),
-  # so all seven CT metros resolve to nothing.
+  # "no agencies report here" -- false, and materially misleading. This was
+  # the case for all seven Connecticut metros until their planning regions
+  # were attributed (#52); Puerto Rico's remain.
   resolved <- sum(hit$county_fips %in% names(fips_to_county))
   if (resolved < nrow(hit)) {
     warning("Metro '", hit$cbsa_title[1], "' lists ", nrow(hit),
             " counties but only ", resolved,
-            " could be matched to CDE county names",
-            if (any(substr(hit$county_fips, 1L, 2L) == "09")) {
-              paste0(". Connecticut is delineated by planning regions, which ",
-                     "the CDE does not use, so its metros are not supported")
-            } else {
-              ""
-            },
-            ". Results are incomplete.", call. = FALSE)
+            " could be matched to CDE county names. Results are incomplete.",
+            call. = FALSE)
   }
 
   out <- rbind_fill(parts)
@@ -202,7 +190,7 @@ metro_agencies <- function(metro, state = NULL) {
 # The crosswalk is keyed by the CDE's raw county_name, which includes
 # multi-county strings ("FAIRFIELD; LICKING"), so county_fips is NOT unique
 # across all rows. Filtering to names without a semicolon gives the canonical
-# entry: 3,134 such rows for 3,134 distinct FIPS -- an exact 1:1, with every
+# entry: 3,143 such rows for 3,143 distinct FIPS -- an exact 1:1, with every
 # FIPS represented. Skipping that filter would sometimes pick a multi-county
 # row, and county_agencies() matches county_name exactly, so it would return a
 # subset of the county rather than the county.

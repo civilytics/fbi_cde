@@ -37,11 +37,19 @@ test_that("county_to_fips handles Virginia independent cities", {
   expect_equal(county_to_fips("VA", "ACCOMACK"), "51001")
 })
 
-test_that("county_to_fips handles Connecticut planning regions", {
-  # CT uses planning regions instead of traditional counties
+test_that("county_to_fips handles Connecticut counties and planning regions", {
+  # Traditional counties, as the bundled agency table has them.
   expect_equal(county_to_fips("CT", "HARTFORD"), "09003")
   expect_equal(county_to_fips("CT", "FAIRFIELD"), "09001")
   expect_equal(county_to_fips("CT", "NEW HAVEN"), "09009")
+  # Planning regions, the county equivalents since 2022, by full or bare name.
+  # Bare names used to resolve to an approximate traditional county.
+  expect_equal(county_to_fips("CT", "CAPITOL PLANNING REGION"), "09110")
+  expect_equal(county_to_fips("CT", "Capitol"), "09110")
+  expect_equal(county_to_fips("CT", "NAUGATUCK VALLEY"), "09140")
+  expect_equal(county_to_fips("CT", "WESTERN CONNECTICUT"), "09190")
+  # Region names are not counties elsewhere.
+  expect_true(is.na(county_to_fips("MA", "CAPITOL")))
 })
 
 test_that("county_to_fips handles Alaska boroughs", {
