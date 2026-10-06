@@ -46,7 +46,8 @@ internally — this is the only way to reach \code{"campus"}, \code{"special"} o
 rows supplied this way are queried by default. Must be a data.frame
 carrying at least \code{ori}, \code{agency_name}, \code{agency_type_name},
 \code{agency_class}, \code{place_name}, \code{county_name}, \code{state_abbr}, and
-\code{attribution}.
+\code{attribution}. Missing \code{place_type}, \code{place_fips} and \code{cousub_fips}
+columns are filled from the place crosswalk by ORI.
 
 Column presence is validated, but membership is \strong{not}: a hand-built frame
 can contain any ORI, including a sheriff or state police agency. The
@@ -62,8 +63,9 @@ under their own city ORI.}
 }
 \value{
 A data.frame with one row per agency-period, carrying: \code{ori},
-\code{agency_name}, \code{agency_type_name}, \code{agency_class},
-\code{place_name}, \code{county_name}, \code{state_abbr}, \code{attribution}, \code{offense},
+\code{agency_name}, \code{agency_type_name}, \code{agency_class}, \code{place_name}, the
+Census codes \code{place_type}, \code{place_fips} and \code{cousub_fips} (see
+\code{\link[=place_agencies]{place_agencies()}}), \code{county_name}, \code{state_abbr}, \code{attribution}, \code{offense},
 \code{period}, \code{count}, \code{population}, \code{participated_population}, \code{rate}, and
 \code{reported}. Agencies whose request or parse fails are dropped with a
 warning and recorded in \code{attr(x, "dropped")}. If filtering (via

@@ -1,5 +1,29 @@
 # fbiCDE 0.1.0.9000 (development version)
 
+## Census codes for places (#46)
+
+- `place_agencies()` and `get_place_crime_detail()` now carry the Census code
+  of the unit each municipal agency polices, as a promised join key:
+  `place_fips` (7 digits, state + place) for a city, town or village;
+  `cousub_fips` (10 digits, state + county + subdivision) for a township or a
+  New England or New York town, which are governments but not Census places;
+  and `place_type` (`"incorporated"`, `"county_subdivision"` or `"cdp"`)
+  saying which applies. 98.7% of the 11,646 municipal agencies resolve; the
+  rest, mostly regional departments, get `NA` rather than a guess.
+- Codes come from a bundled crosswalk built from the Census Bureau's 2020
+  reference code files (`data-raw/place_fips_crosswalk.R`; vintage in the new
+  `PLACE_VINTAGE`). An agency is matched by name only among Census units in
+  its own county; agency coordinates are not used, being too unreliable.
+  Design: `specs/2026-10-06-place-fips-design.md`.
+- `add_place_spatial_members()` keeps the place agency's own codes instead of
+  resetting them to `NA`; the `place_fips` it gives the campus and special
+  agencies it adds is still best-effort (where the headquarters sits).
+- `derive_place_name()` strips the ", <Name> County" that 146 Pennsylvania,
+  Ohio, New Jersey and Michigan agencies carry to tell same-named townships
+  apart. Those places were unreachable by name; now
+  `place_agencies("Hamilton Township", "NJ", county = "Mercer")` finds its
+  department.
+
 ## Documentation, distribution and clean-up
 
 - `get_police_employment()` explains an empty result with a message. The CDE

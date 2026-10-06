@@ -32,6 +32,9 @@ test_that("get_place_crime_detail returns per-period rows for the place's agency
   expect_equal(unique(out$agency_class), "place_primary")
   expect_equal(unique(out$attribution), "name_identity")
   expect_true(all(out$reported))
+  # The place's Census code rides along on every row.
+  expect_equal(unique(out$place_fips), "4845072")
+  expect_equal(unique(out$place_type), "incorporated")
 })
 
 test_that("get_place_crime_detail returns the documented columns in order", {
@@ -137,6 +140,8 @@ test_that("get_place_crime_detail uses a supplied agencies frame instead of re-r
   expect_false(called)
   expect_equal(nrow(out), 2L)
   expect_equal(unique(out$agency_class), "place_primary")
+  # A supplied frame without the Census code columns gets them, by ORI.
+  expect_equal(names(out), .PLACE_DETAIL_COLS)
 })
 
 test_that("get_place_crime_detail can reach campus agencies via a supplied agencies frame", {
@@ -217,4 +222,5 @@ test_that("get_place_crime_detail works against the live API", {
   expect_s3_class(out, "data.frame")
   expect_equal(names(out), .PLACE_DETAIL_COLS)
   expect_gt(nrow(out), 0L)
+  expect_equal(unique(out$place_fips), "4845072")
 })

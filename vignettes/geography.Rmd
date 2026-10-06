@@ -22,7 +22,7 @@ boundary. This vignette shows how membership is decided, what the itemised
 results look like, and how to add them up without fooling yourself.
 
 Everything below was run against the live API on
-2026-10-05.
+2026-10-06.
 
 
 ```r
@@ -229,6 +229,26 @@ lufkin[, c("agency_name", "period", "count", "reported")]
 #> 5 Lufkin Police Department 05-2023    22     TRUE
 #> 6 Lufkin Police Department 06-2023    22     TRUE
 ```
+
+Each city agency also carries the Census code of the unit it polices, for
+joining Census data. A city, town or village has a 7-digit `place_fips`; a
+township, or a New England or New York town, is a county subdivision rather
+than a Census place, and has a 10-digit `cousub_fips` instead:
+
+
+```r
+codes <- c("place_name", "place_type", "place_fips", "cousub_fips")
+place_agencies("Lufkin", "TX")[, codes]
+#>   place_name   place_type place_fips cousub_fips
+#> 1     Lufkin incorporated    4845072        <NA>
+place_agencies("Hamilton Township", "NJ", county = "Mercer")[, codes]
+#>          place_name         place_type place_fips cousub_fips
+#> 1 Hamilton Township county_subdivision       <NA>  3402129310
+```
+
+Codes are matched by name among the Census units in the agency's own county,
+and follow the 2020 Census vintage. About 99% of city agencies
+resolve; regional departments that police several towns get `NA`.
 
 Campus police inside a city cannot be found by name. With the `sf` and `tigris`
 packages installed, `add_place_spatial_members()` adds them by locating each

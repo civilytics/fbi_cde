@@ -19,15 +19,14 @@ reproducibility matters. \code{NULL} uses the \code{tigris} default.}
 Exposed for testing; you should not need to set it.}
 }
 \value{
-\code{x} with spatially-attributed rows appended and two columns added:
-\itemize{
-\item \code{place_type}: \code{"incorporated"} or \code{"cdp"} (Census Designated
-Place, i.e. unincorporated). \code{NA} on \code{name_identity} rows.
-\item \code{place_fips}: the matched polygon's GEOID. \strong{Best-effort
-enrichment, not a promised join key} — it is \code{NA} on \code{name_identity}
-rows, so it does not cover the municipal tier.
-}
-Appended rows carry \code{attribution = "point_in_polygon"}. Their
+\code{x} with spatially-attributed rows appended. On those rows
+\code{place_type} is \code{"incorporated"} or \code{"cdp"} (Census Designated Place, i.e.
+unincorporated) and \code{place_fips} is the GEOID of the polygon the
+agency's headquarters falls in: \strong{best-effort enrichment}, unlike the
+\code{place_fips} of the place's own agency, which is the promised key
+described in \code{\link[=place_agencies]{place_agencies()}}. \code{cousub_fips} is \code{NA} on appended rows.
+The rows of \code{x} keep their codes. Appended rows carry
+\code{attribution = "point_in_polygon"}. Their
 \code{agency_class} decides whether \code{\link[=get_place_crime_detail]{get_place_crime_detail()}} queries them by
 default: \code{"campus"} rows yes; \code{"special"} and \code{"state"} rows only when
 requested.

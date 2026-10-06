@@ -35,10 +35,12 @@ original `fbi` package by Jacob Kaplan.
   for a simplified shape.
 - **`cde_request()` retries** transient failures (network errors, 408/429/5xx)
   with backoff; 4xx other than 408/429 fail immediately.
-- **`R/sysdata.rda` holds two internal objects**, `crosswalk` (county FIPS) and
-  `cbsa_crosswalk` (county->CBSA). Any build script that touches it must
-  `load()` and re-`save()` **both** objects together, or it will silently
-  destroy whichever one it did not know about.
+- **`R/sysdata.rda` holds three internal objects**: `crosswalk` (county FIPS),
+  `cbsa_crosswalk` (county->CBSA) and `place_crosswalk` (ORI -> Census place
+  / county subdivision). Any build script that touches it must `load()` and
+  re-`save()` **every** object together (the `data-raw/` scripts do it with
+  `ls()` on a loaded environment), or it will silently destroy the ones it did
+  not know about.
 
 ## API shape & data facts (non-obvious)
 
@@ -95,6 +97,13 @@ Layers:
 - `place_agencies(place, state, county = NULL)` — pure, name-identity resolver
   for the municipal tier (`"<Place> Police Department"` names); classifies
   `agency_class` (`place_primary`/`campus`/`special`).
+- **Place codes (#46):** `place_agencies()` rows carry `place_type`,
+  `place_fips` (7-digit) or `cousub_fips` (10-digit, for townships and New
+  England/NY towns), from `place_crosswalk` keyed by ORI
+  (`data-raw/place_fips_crosswalk.R`, Census 2020 reference files,
+  `PLACE_VINTAGE`). Matched by name **within the agency's county**, never by
+  coordinates (the HQ points are too unreliable). Unresolved = `NA`, not a
+  guess. Spec: `specs/2026-10-06-place-fips-design.md`.
 - `get_place_crime_detail(...)` — the place twin of `get_county_crime_detail()`;
   accepts an optional pre-resolved `agencies` frame (e.g. from
   `add_place_spatial_members()`) so campus/special members can be queried.
@@ -120,8 +129,9 @@ spec → plan → implementation cycle; tracked as Gitea issues):
   `get_metro_crime_detail()` (guarded by `max_agencies`), `list_metros()`, and
   a bundled 2023 OMB delineation crosswalk. Spec:
   `specs/2026-07-24-metro-cbsa-v0.5-design.md`.
-- **Place FIPS** as a promised join key — likely a name-based crosswalk rather
-  than `sf` (Gitea #46).
+- **Place FIPS** as a promised join key (Gitea #46) — **shipped** as a
+  name-and-county crosswalk, no `sf`. Spec:
+  `specs/2026-10-06-place-fips-design.md`.
 - **Capstone** — imputation gap: FBI published aggregate vs. sum of reported
   components (uses the `reported`/coverage columns already collected).
 

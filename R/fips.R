@@ -397,4 +397,10 @@ counties_with_fips <- function() {
   if (!is.null(cbsa_vintage)) {
     CBSA_VINTAGE <<- cbsa_vintage
   }
+
+  # Same for PLACE_VINTAGE (R/place.R) and the place crosswalk.
+  place_vintage <- attr(place_crosswalk, "vintage")
+  if (!is.null(place_vintage)) {
+    PLACE_VINTAGE <<- place_vintage
+  }
 }

@@ -177,6 +177,21 @@ lufkin <- get_place_crime_detail("Lufkin", "TX", from = "01-2023", to = "06-2023
 lufkin[, c("agency_name", "period", "count", "reported")]
 ```
 
+Each city agency also carries the Census code of the unit it polices, for
+joining Census data. A city, town or village has a 7-digit `place_fips`; a
+township, or a New England or New York town, is a county subdivision rather
+than a Census place, and has a 10-digit `cousub_fips` instead:
+
+```{r place-codes}
+codes <- c("place_name", "place_type", "place_fips", "cousub_fips")
+place_agencies("Lufkin", "TX")[, codes]
+place_agencies("Hamilton Township", "NJ", county = "Mercer")[, codes]
+```
+
+Codes are matched by name among the Census units in the agency's own county,
+and follow the `r PLACE_VINTAGE` Census vintage. About 99% of city agencies
+resolve; regional departments that police several towns get `NA`.
+
 Campus police inside a city cannot be found by name. With the `sf` and `tigris`
 packages installed, `add_place_spatial_members()` adds them by locating each
 agency's headquarters within the city's boundary; they are then queried along

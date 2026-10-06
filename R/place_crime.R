@@ -15,7 +15,8 @@
 
 .PLACE_DETAIL_COLS <- c(
   "ori", "agency_name", "agency_type_name", "agency_class",
-  "place_name", "county_name", "state_abbr", "attribution",
+  "place_name", "place_type", "place_fips", "cousub_fips",
+  "county_name", "state_abbr", "attribution",
   "offense", "period", "count",
   "population", "participated_population", "rate", "reported"
 )
@@ -31,6 +32,9 @@
     agency_type_name = character(0),
     agency_class = character(0),
     place_name = character(0),
+    place_type = character(0),
+    place_fips = character(0),
+    cousub_fips = character(0),
     county_name = character(0),
     state_abbr = character(0),
     attribution = character(0),
@@ -77,7 +81,8 @@
 #'   rows supplied this way are queried by default. Must be a data.frame
 #'   carrying at least `ori`, `agency_name`, `agency_type_name`,
 #'   `agency_class`, `place_name`, `county_name`, `state_abbr`, and
-#'   `attribution`.
+#'   `attribution`. Missing `place_type`, `place_fips` and `cousub_fips`
+#'   columns are filled from the place crosswalk by ORI.
 #'
 #'   Column presence is validated, but membership is **not**: a hand-built frame
 #'   can contain any ORI, including a sheriff or state police agency. The
@@ -90,8 +95,9 @@
 #'   under their own city ORI.
 #' @param progress If `TRUE`, print a simple progress line per agency.
 #' @return A data.frame with one row per agency-period, carrying: `ori`,
-#'   `agency_name`, `agency_type_name`, `agency_class`,
-#'   `place_name`, `county_name`, `state_abbr`, `attribution`, `offense`,
+#'   `agency_name`, `agency_type_name`, `agency_class`, `place_name`, the
+#'   Census codes `place_type`, `place_fips` and `cousub_fips` (see
+#'   [place_agencies()]), `county_name`, `state_abbr`, `attribution`, `offense`,
 #'   `period`, `count`, `population`, `participated_population`, `rate`, and
 #'   `reported`. Agencies whose request or parse fails are dropped with a
 #'   warning and recorded in `attr(x, "dropped")`. If filtering (via
@@ -129,6 +135,7 @@ get_place_crime_detail <- function(place, state, county = NULL, offense = "V",
   } else {
     agencies <- place_agencies(place, state, county = county)
   }
+  agencies <- .with_place_codes(agencies)
 
   pre_filter_n <- nrow(agencies)
   agencies <- .filter_agency_members(agencies, agency_class, include_statewide)
@@ -146,8 +153,8 @@ get_place_crime_detail <- function(place, state, county = NULL, offense = "V",
   .fanout_agency_detail(
     agencies = agencies,
     meta_cols = c("agency_name", "agency_type_name", "agency_class",
-                  "place_name", "county_name", "state_abbr",
-                  "attribution"),
+                  "place_name", "place_type", "place_fips", "cousub_fips",
+                  "county_name", "state_abbr", "attribution"),
     cols = .PLACE_DETAIL_COLS,
     empty_fn = .empty_place_detail_frame,
     offense = offense, from = from, to = to, progress = progress

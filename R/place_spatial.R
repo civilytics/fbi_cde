@@ -56,15 +56,14 @@
 #'   `places_fun(state, vintage)` and expected to return an `sf` frame with
 #'   `GEOID`, `NAME`, and `CLASSFP` columns. Defaults to `tigris::places()`.
 #'   Exposed for testing; you should not need to set it.
-#' @return `x` with spatially-attributed rows appended and two columns added:
-#'   \itemize{
-#'     \item `place_type`: `"incorporated"` or `"cdp"` (Census Designated
-#'       Place, i.e. unincorporated). `NA` on `name_identity` rows.
-#'     \item `place_fips`: the matched polygon's GEOID. **Best-effort
-#'       enrichment, not a promised join key** — it is `NA` on `name_identity`
-#'       rows, so it does not cover the municipal tier.
-#'   }
-#'   Appended rows carry `attribution = "point_in_polygon"`. Their
+#' @return `x` with spatially-attributed rows appended. On those rows
+#'   `place_type` is `"incorporated"` or `"cdp"` (Census Designated Place, i.e.
+#'   unincorporated) and `place_fips` is the GEOID of the polygon the
+#'   agency's headquarters falls in: **best-effort enrichment**, unlike the
+#'   `place_fips` of the place's own agency, which is the promised key
+#'   described in [place_agencies()]. `cousub_fips` is `NA` on appended rows.
+#'   The rows of `x` keep their codes. Appended rows carry
+#'   `attribution = "point_in_polygon"`. Their
 #'   `agency_class` decides whether [get_place_crime_detail()] queries them by
 #'   default: `"campus"` rows yes; `"special"` and `"state"` rows only when
 #'   requested.
@@ -79,7 +78,7 @@ add_place_spatial_members <- function(x, vintage = NULL, places_fun = NULL) {
   if (!inherits(x, "data.frame")) {
     stop("'x' must be a data.frame", call. = FALSE)
   }
-  missing_cols <- setdiff(.PLACE_AGENCY_COLS, names(x))
+  missing_cols <- setdiff(.PLACE_AGENCY_REQUIRED_COLS, names(x))
   if (length(missing_cols) > 0) {
     stop("'x' is missing required columns: ",
          paste(missing_cols, collapse = ", "), call. = FALSE)
@@ -96,12 +95,12 @@ add_place_spatial_members <- function(x, vintage = NULL, places_fun = NULL) {
     return(x)
   }
 
-  # Attach unconditionally, before the dependency guard, so every return path
-  # — including the sf/tigris-unavailable degradation path — yields the same
-  # columns. A caller doing out[!is.na(out$place_type), ] must not see the
-  # column vanish just because sf isn't installed.
-  x$place_type <- NA_character_
-  x$place_fips <- NA_character_
+  # Ensure the Census code columns before the dependency guard, so every
+  # return path -- including the sf/tigris-unavailable degradation path --
+  # yields the same columns. place_agencies() results already carry them (the
+  # promised key from the place crosswalk); a hand-built frame gets them filled
+  # by ORI. They are never reset: the name_identity rows keep their codes.
+  x <- .with_place_codes(x)
 
   if (is.null(places_fun)) {
     if (!.spatial_deps_available()) {
@@ -174,8 +173,10 @@ add_place_spatial_members <- function(x, vintage = NULL, places_fun = NULL) {
     longitude = cand$longitude,
     place_type = ifelse(substr(classfp, 1L, 1L) == "U", "cdp", "incorporated"),
     place_fips = as.character(match_poly$GEOID)[idx],
+    cousub_fips = NA_character_,
     stringsAsFactors = FALSE
   )
+  added <- added[, .PLACE_AGENCY_COLS, drop = FALSE]
 
   out <- rbind(x[, names(added), drop = FALSE], added)
   rownames(out) <- NULL

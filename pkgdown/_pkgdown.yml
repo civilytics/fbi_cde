@@ -43,11 +43,12 @@ reference:
       - join_census_pop
       - county_to_fips
   - title: Places
-    desc: City membership and crime
+    desc: City membership, crime, and Census place codes
     contents:
       - place_agencies
       - get_place_crime_detail
       - add_place_spatial_members
+      - PLACE_VINTAGE
   - title: Metro areas
     desc: Core Based Statistical Areas (CBSAs) as unions of whole counties
     contents:
