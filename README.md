@@ -5,8 +5,8 @@
 
 <!-- badges: start -->
 
-[![R-CMD-check](https://github.com/Civilytics/fbiCDE/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Civilytics/fbiCDE/actions/workflows/R-CMD-check.yaml)
-[![r-universe](https://civilytics.r-universe.dev/badges/fbiCDE)](https://civilytics.r-universe.dev/packages/fbiCDE)
+[![R-CMD-check](https://github.com/civilytics/fbi_cde/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/civilytics/fbi_cde/actions/workflows/R-CMD-check.yaml)
+[![r-universe](https://civilytics.r-universe.dev/badges/fbiCDE)](https://civilytics.r-universe.dev/fbiCDE)
 [![License:
 MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
 <!-- badges: end -->
@@ -24,10 +24,21 @@ for the package. **No API key is required** for the current CDE host at
 
 ## Installation
 
-The package is not on CRAN. Install the development version from GitHub:
+fbiCDE is distributed through
+[r-universe](https://civilytics.r-universe.dev/fbiCDE), not CRAN. Install the
+released version with:
 
 ``` r
-remotes::install_github("Civilytics/fbiCDE")
+install.packages(
+  "fbiCDE",
+  repos = c("https://civilytics.r-universe.dev", "https://cloud.r-project.org")
+)
+```
+
+or the development version from GitHub:
+
+``` r
+remotes::install_github("civilytics/fbi_cde")
 ```
 
 ## Quick Start

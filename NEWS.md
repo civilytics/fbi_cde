@@ -1,4 +1,27 @@
-# fbi 0.1.0.9000 (development version)
+# fbiCDE 0.1.0.9000 (development version)
+
+## Documentation, distribution and clean-up
+
+- `get_police_employment()` explains an empty result with a message. The CDE
+  answers state, region and national requests with every value missing
+  (counts and rates alike), so only agency-level staffing is available; the
+  docs, README and vignette now say so instead of offering state and national
+  examples.
+- Help pages render their markdown. The roxygen comments were written in
+  markdown that the package never enabled, so the help showed backticks and
+  `[fn()]` literally, and any text after a `%` was silently dropped (an
+  unescaped `%` starts an Rd comment).
+- The package is distributed through r-universe
+  (<https://civilytics.r-universe.dev/fbiCDE>), not CRAN. DESCRIPTION's `URL`
+  and `BugReports` point at the public GitHub repository, the maintainer
+  address is real, and the README installs from r-universe. The version is
+  now `0.1.0.9000`, development past the `v0.1.0` release r-universe builds,
+  and this file separates the two.
+- The pkgdown reference index lists every exported topic (place, metro,
+  LEOKA and the county aggregate functions were missing).
+- Removed four unexported helpers left over from the retired api.data.gov
+  API (`make_state()`, `make_year()`, `clean_column_names()`,
+  `combine_url_section()`).
 
 ## Vignettes
 
@@ -230,6 +253,8 @@ row's county downstream.
   return data.
 - `?cde_base_url` named the pre-rename option `fbi.cde.base_url`; it is
   `fbiCDE.cde.base_url`.
+
+# fbiCDE 0.1.0
 
 ## Metro (CBSA) geography (v0.5, Issue #45)
 

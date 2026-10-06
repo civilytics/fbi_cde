@@ -1,9 +1,3 @@
-url: https://Civilytics.github.io/fbiCDE/
-
-template:
-  params:
-    ganalytics: G-XXXXXXXXXX
-
 navbar:
   structure:
     left:  [home, reference, articles, news]
@@ -37,12 +31,30 @@ reference:
       - get_state_participation
       - get_region_participation
       - get_agency_participation
-  - title: Geography
-    desc: County-level membership and itemized detail
+  - title: Counties
+    desc: >
+      County membership, itemized crime per agency, and the county aggregate
     contents:
       - county_agencies
       - get_county_crime_detail
       - get_county_agency_crime
+      - get_county_crime
+      - impute_reporting_gaps
+      - join_census_pop
+      - county_to_fips
+  - title: Places
+    desc: City membership and crime
+    contents:
+      - place_agencies
+      - get_place_crime_detail
+      - add_place_spatial_members
+  - title: Metro areas
+    desc: Core Based Statistical Areas (CBSAs) as unions of whole counties
+    contents:
+      - list_metros
+      - metro_agencies
+      - get_metro_crime_detail
+      - CBSA_VINTAGE
   - title: Arrest
     desc: Functions for querying UCR arrest statistics
     contents:
@@ -69,6 +81,11 @@ reference:
     desc: Functions for querying police staffing data
     contents:
       - get_police_employment
+  - title: Officers Killed (LEOKA)
+    desc: Law enforcement officers feloniously killed, nationally
+    contents:
+      - get_leoka
+      - get_leoka_monthly
   - title: Utilities
     desc: Helper functions for working with the CDE API
     contents:

@@ -1,10 +1,9 @@
-# Explain the mirror contribution flow on every incoming pull request.
+# Explain the contribution flow on every incoming pull request.
 #
-# This repository is a MIRROR. A PR opened here is landed on the canonical
-# Gitea repository and syncs back; because the merge preserves the
-# contributor's commits at their original SHAs, GitHub marks the PR "Merged"
-# on its own as soon as the mirror syncs -- with nobody visibly clicking
-# Merge.
+# Development happens in a private Gitea repository. A PR opened here is
+# landed there and pushed back; because the merge preserves the contributor's
+# commits at their original SHAs, GitHub marks the PR "Merged" on its own as
+# soon as the push lands -- with nobody visibly clicking Merge.
 #
 # Without this comment, that reads as a rejection: the contributor sees their
 # PR close with no review, no merge button pressed, and no explanation. It is
@@ -18,7 +17,7 @@
 # executes the contributor's code; it posts a fixed string. Do not add a
 # checkout of `github.event.pull_request.head.sha` here -- that combination is
 # the standard pull_request_target privilege-escalation hole.
-name: Explain the mirror flow
+name: Explain the contribution flow
 
 on:
   pull_request_target:
@@ -38,9 +37,8 @@ jobs:
             const body = [
               "Thanks for this — and one thing worth knowing before it happens.",
               "",
-              "**This repository is a mirror.** Development happens on Gitea at",
-              "`gitea.civilytics.org/Civilytics/fbiCDE`. Your pull request will be fetched",
-              "from here, landed there, and synced back.",
+              "**Development happens in a private Gitea repository.** Your pull request",
+              "will be fetched from here, landed there, and pushed back.",
               "",
               "Because that merge preserves your commits at their original SHAs, **GitHub will",
               "mark this pull request \"Merged\" on its own** — without anyone visibly clicking",
@@ -51,7 +49,7 @@ jobs:
               "",
               "If it is *not* going to be merged, you will get an actual reply saying so.",
               "",
-              "Full details: [CONTRIBUTING.md](https://github.com/civilytics/fbiCDE/blob/main/CONTRIBUTING.md).",
+              "Full details: [CONTRIBUTING.md](https://github.com/civilytics/fbi_cde/blob/main/CONTRIBUTING.md).",
             ].join("\n");
 
             await github.rest.issues.createComment({

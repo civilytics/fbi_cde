@@ -1,8 +1,10 @@
-# CLAUDE.md — `fbi`
+# CLAUDE.md — `fbiCDE`
 
 R wrapper for the FBI Crime Data Explorer (CDE) API
 (`https://cde.ucr.cjis.gov/LATEST/`). No API key required for the current host.
-Targeting CRAN. Based on the original `fbi` package by Jacob Kaplan.
+Distributed through r-universe (`civilytics.r-universe.dev`, built from a
+release tag of `github.com/civilytics/fbi_cde`), **not CRAN**. Based on the
+original `fbi` package by Jacob Kaplan.
 
 ## Architecture & house rules (do not violate)
 
