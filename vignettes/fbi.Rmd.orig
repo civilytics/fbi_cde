@@ -207,20 +207,31 @@ c(Florida = sum(fl$count), Georgia = sum(ga$count))
 
 ## Police employment
 
-`get_police_employment()` uses four-digit years rather than `MM-YYYY`:
+`get_police_employment()` returns sworn officers and civilian staff by sex,
+for an agency, a state or the nation. It uses four-digit years rather than
+`MM-YYYY`:
 
 ```{r pe-agency}
 oakland_pe <- get_police_employment("CA0010900", from = "2018", to = "2020")
 oakland_pe
 ```
 
-Staffing is published for individual agencies only. The API accepts a state,
-a region or the nation, but answers with every value missing -- counts and
-rates alike -- so `get_police_employment()` returns no rows and says why:
+A state's or the nation's counts are sums over the agencies that reported
+that year, and that set changes, so compare years by the rate rather than the
+count:
 
 ```{r pe-state}
-nrow(get_police_employment(state_abb = "TX", from = "2018", to = "2020"))
+texas_pe <- get_police_employment(state_abb = "TX", from = "2018", to = "2020")
+texas_pe[, c("year", "employees_total", "participated_population",
+             "employees_per_1000")]
 ```
+
+```{r pe-state-numbers, include = FALSE}
+pe_growth <- texas_pe$employees_total[3] / texas_pe$employees_total[1] - 1
+```
+
+Texas's employee count rose `r round(100 * pe_growth)`% from 2018 to 2020
+because more of the state reported; per 1,000 people covered it barely moved.
 
 ## NIBRS participation
 

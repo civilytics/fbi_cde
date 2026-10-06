@@ -1,13 +1,14 @@
 
 # Offline tests for police employment using fixtures.
 #
-# pe-agency-CA0010900.json and pe-national.json were recorded live from
-# pe/{level}?from=2018&to=2020 (see tests/testthat/fixtures/README.md).
+# The pe-*.json fixtures were recorded live, with from=2018&to=2020, from
+# pe/CA/CA0010900, pe/CA and pe (see tests/testthat/fixtures/README.md).
 
 police_matching_columns <- c(
   "year", "male_officers", "female_officers", "male_civilians",
   "female_civilians", "ori", "male_total", "female_total", "civilians_total",
-  "officers_total", "employees_total"
+  "officers_total", "employees_total", "participated_population",
+  "employees_per_1000"
 )
 
 test_that("get_police_employment parses agency-level response", {
@@ -30,31 +31,48 @@ test_that("get_police_employment parses agency-level response", {
   expect_equal(result$employees_total[1], 1010)
 })
 
-test_that("get_police_employment says why a national request is empty", {
-  # The CDE answers national requests with every value null -- counts, rates
-  # and populations. See the live tests below.
+test_that("get_police_employment parses a national response", {
   local_fbi_fixture("pe-national.json")
-  expect_message(
-    result <- get_police_employment(from = "2018", to = "2020"),
-    "individual agencies only"
-  )
+  result <- get_police_employment(from = "2018", to = "2020")
 
-  expect_s3_class(result, "data.frame")
   expect_equal(names(result), police_matching_columns)
-  expect_equal(nrow(result), 0)
+  expect_equal(result$year, c(2018, 2019, 2020))
+  expect_equal(unique(result$ori), "US")
+  expect_equal(result$male_officers[1], 614322)
 })
 
-test_that("get_police_employment says why a state request is empty", {
-  # Same as national: every value in the state response is null.
+test_that("get_police_employment parses a state response", {
   local_fbi_fixture("pe-state-CA.json")
-  expect_message(
-    result <- get_police_employment(state_abb = "CA"),
-    "returned no data for CA"
-  )
+  result <- get_police_employment(state_abb = "CA", from = "2018", to = "2020")
 
-  expect_s3_class(result, "data.frame")
   expect_equal(names(result), police_matching_columns)
-  expect_equal(nrow(result), 0)
+  expect_equal(nrow(result), 3)
+  expect_equal(unique(result$ori), "CA")
+  expect_equal(result$male_officers[1], 68663)
+  # Coverage rides along: a state's counts are sums over reporting agencies.
+  expect_equal(result$participated_population, c(33867039, 33821670, 33781093))
+  expect_equal(result$employees_per_1000, c(3.54, 3.59, 3.57))
+})
+
+test_that("get_police_employment requests the paths the pe endpoint answers", {
+  # pe/state/{ST} and pe/national come back all-null; the endpoint wants
+  # pe/{ST}, plain pe, and pe/{ST}/{ORI}.
+  paths <- character(0)
+  testthat::local_mocked_bindings(
+    cde_request = function(path, ...) {
+      paths <<- c(paths, path)
+      read_fixture("pe-agency-CA0010900.json")
+    },
+    .package = "fbiCDE"
+  )
+  get_police_employment("ca0010900", from = "2018", to = "2020")
+  get_police_employment(state_abb = "ca", from = "2018", to = "2020")
+  get_police_employment(from = "2018", to = "2020")
+  expect_equal(paths, c("pe/CA/CA0010900", "pe/CA", "pe"))
+})
+
+test_that("get_police_employment rejects a region", {
+  expect_error(get_police_employment(region = "South"), "no region-level")
 })
 
 test_that("get_police_employment validates ORI", {
@@ -97,27 +115,20 @@ test_that("get_police_employment returns expected shape from live API (agency)",
 
 test_that("get_police_employment returns expected shape from live API (state)", {
   skip_if_no_fbi_api()
-  # The CDE answers state requests with every value null; if this starts
-  # returning rows, the documented agency-only limitation has lifted.
-  expect_message(
-    result <- get_police_employment(state_abb = "CA", from = "2018", to = "2020"),
-    "individual agencies only"
-  )
+  result <- get_police_employment(state_abb = "CA", from = "2018", to = "2020")
 
   expect_s3_class(result, "data.frame")
   expect_equal(names(result), police_matching_columns)
-  expect_equal(nrow(result), 0)
+  expect_equal(nrow(result), 3)
+  expect_true(all(result$officers_total > 0))
 })
 
 test_that("get_police_employment returns expected shape from live API (national)", {
   skip_if_no_fbi_api()
-  expect_message(
-    result <- get_police_employment(from = "2018", to = "2020"),
-    "individual agencies only"
-  )
+  result <- get_police_employment(from = "2018", to = "2020")
 
   expect_s3_class(result, "data.frame")
   expect_equal(names(result), police_matching_columns)
-  expect_equal(nrow(result), 0)
+  expect_equal(nrow(result), 3)
+  expect_true(all(result$officers_total > 500000))
 })
-

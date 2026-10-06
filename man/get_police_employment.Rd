@@ -18,8 +18,8 @@ get_police_employment(
 \item{state_abb}{String for state abbreviation. If \code{NULL} (default) returns
 national data.}
 
-\item{region}{Character string for the census region (e.g. "Northeast",
-"Midwest", "South", "West").}
+\item{region}{Not supported: the CDE publishes no region-level police
+employment, and passing a region is an error. Sum the states instead.}
 
 \item{from, to}{First and last year, as four-digit \code{YYYY} strings (defaults
 \code{"2015"} and \code{"2020"}). Unlike the other data functions, police
@@ -29,22 +29,26 @@ employment is annual.}
 A data.frame with one row per year: \code{year}, \code{male_officers},
 \code{female_officers}, \code{male_civilians}, \code{female_civilians}, \code{ori} (the
 requested geography), and the totals \code{male_total}, \code{female_total},
-\code{civilians_total}, \code{officers_total} and \code{employees_total}. Zero rows,
-with a message, when the CDE returns no data.
+\code{civilians_total}, \code{officers_total} and \code{employees_total}, then
+\code{participated_population} (the population of the agencies that
+reported) and \code{employees_per_1000} (employees per 1,000 of that
+population). For a state or the nation the counts are sums over the
+agencies that reported, so they move with coverage: compare years by the
+rate, not the count. Zero rows, with a message, when the CDE returns no
+data.
 }
 \description{
-Returns an agency's annual count of sworn officers and civilian employees,
-by sex, from the CDE's police employment (\code{pe}) endpoint.
-}
-\details{
-The endpoint also takes a state, a region or the nation, but the CDE
-currently answers those with every value missing -- counts, rates and
-populations alike -- so they return no rows, with a message. Only
-agency-level staffing is available.
+Returns annual counts of sworn officers and civilian employees, by sex, for
+an agency, a state, or the nation, from the CDE's police employment (\code{pe})
+endpoint.
 }
 \examples{
 \dontrun{
 # Oakland Police Department, California
 get_police_employment("CA0010900", from = "2018", to = "2020")
+
+# California, and the nation
+get_police_employment(state_abb = "CA", from = "2018", to = "2020")
+get_police_employment(from = "2018", to = "2020")
 }
 }

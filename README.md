@@ -191,12 +191,13 @@ Functions for querying police staffing data.
 |---------------------------|--------------------------|
 | `get_police_employment()` | Get police staffing data |
 
-Staffing is published for individual agencies only: the CDE answers state,
-region and national requests with no data.
-
 ``` r
 # Oakland PD staffing
 get_police_employment("CA0010900", from = "2018", to = "2020")
+
+# California, and the nation
+get_police_employment(state_abb = "CA", from = "2018", to = "2020")
+get_police_employment(from = "2018", to = "2020")
 ```
 
 ### Utilities

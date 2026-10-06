@@ -14,7 +14,8 @@ parse_police_employment_response(response, geography)
 \value{
 A wide data.frame with columns: year, male_officers, female_officers,
 male_civilians, female_civilians, ori, male_total, female_total,
-civilians_total, officers_total, employees_total
+civilians_total, officers_total, employees_total,
+participated_population, employees_per_1000
 }
 \description{
 Response shape (CDE API):

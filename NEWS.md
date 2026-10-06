@@ -26,11 +26,17 @@
 
 ## Documentation, distribution and clean-up
 
-- `get_police_employment()` explains an empty result with a message. The CDE
-  answers state, region and national requests with every value missing
-  (counts and rates alike), so only agency-level staffing is available; the
-  docs, README and vignette now say so instead of offering state and national
-  examples.
+- **`get_police_employment()` returns state and national staffing.** It
+  requested `pe/state/{ST}` and `pe/national`, which the CDE answers with
+  every value null, so state and national calls returned no rows, and the
+  package's own tests had recorded those empty answers as "suppressed
+  upstream". The endpoint takes `pe/{ST}` for a state and plain `pe` for the
+  nation (an agency is `pe/{ST}/{ORI}`). No region form returns data, so
+  `region` is now an error. An empty result comes with a message.
+- `get_police_employment()` adds `participated_population` and
+  `employees_per_1000`. A state's counts are sums over the agencies that
+  reported, so they move with coverage: Texas's employee count rose 39% from
+  2018 to 2020 while its rate held near 3.4 per 1,000.
 - Help pages render their markdown. The roxygen comments were written in
   markdown that the package never enabled, so the help showed backticks and
   `[fn()]` literally, and any text after a `%` was silently dropped (an
@@ -60,7 +66,7 @@ reads its numbers from the results instead of hard-coding them.
   interface: offense codes, the `comparison` argument, reporting coverage,
   arrest offense levels, NIBRS codes (with the error an offense name now
   gives), SHR's reporting gaps (Florida sent 9 homicides for 2019; Georgia
-  484), police employment being agency-level only, and LEOKA counting
+  484), and LEOKA counting
   officers killed, not assaulted.
 - **Juvenile arrests** (`vignette("juvenile-arrests")`) corrected:
   - Reporting coverage comes from `participated_population / population`, not

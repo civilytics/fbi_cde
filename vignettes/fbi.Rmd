@@ -360,7 +360,9 @@ c(Florida = sum(fl$count), Georgia = sum(ga$count))
 
 ## Police employment
 
-`get_police_employment()` uses four-digit years rather than `MM-YYYY`:
+`get_police_employment()` returns sworn officers and civilian staff by sex,
+for an agency, a state or the nation. It uses four-digit years rather than
+`MM-YYYY`:
 
 
 ```r
@@ -374,18 +376,31 @@ oakland_pe
 #> 1        693          317             279            731            1010
 #> 2        699          324             283            740            1023
 #> 3        715          341             316            740            1056
+#>   participated_population employees_per_1000
+#> 1                  430230               2.35
+#> 2                  434036               2.36
+#> 3                  437923               2.41
 ```
 
-Staffing is published for individual agencies only. The API accepts a state,
-a region or the nation, but answers with every value missing -- counts and
-rates alike -- so `get_police_employment()` returns no rows and says why:
+A state's or the nation's counts are sums over the agencies that reported
+that year, and that set changes, so compare years by the rate rather than the
+count:
 
 
 ```r
-nrow(get_police_employment(state_abb = "TX", from = "2018", to = "2020"))
-#> get_police_employment() returned no data for TX, 2018-2020. The CDE currently publishes police staffing for individual agencies only; state, region and national requests come back empty.
-#> [1] 0
+texas_pe <- get_police_employment(state_abb = "TX", from = "2018", to = "2020")
+texas_pe[, c("year", "employees_total", "participated_population",
+             "employees_per_1000")]
+#>   year employees_total participated_population employees_per_1000
+#> 1 2018           70186                20609733               3.40
+#> 2 2019           86760                25744202               3.36
+#> 3 2020           97865                28635940               3.41
 ```
+
+
+
+Texas's employee count rose 39% from 2018 to 2020
+because more of the state reported; per 1,000 people covered it barely moved.
 
 ## NIBRS participation
 
