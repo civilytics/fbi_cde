@@ -3,7 +3,7 @@
 #
 # The municipal tier is a name-identity problem, not a spatial one: CDE city
 # agencies are named "<Place> Police Department", so the agency *is* the place.
-# See docs/superpowers/specs/2026-07-24-place-membership-v0.4-design.md §1.
+# See specs/2026-07-24-place-membership-v0.4-design.md §1.
 
 # The four agency_type_name values that constitute the municipal tier.
 .MUNICIPAL_TYPES <- c("City", "Municipality", "Borough", "City and Borough",

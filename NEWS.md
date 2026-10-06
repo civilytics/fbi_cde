@@ -22,6 +22,10 @@
 - Removed four unexported helpers left over from the retired api.data.gov
   API (`make_state()`, `make_year()`, `clean_column_names()`,
   `combine_url_section()`).
+- Design specs moved from `docs/superpowers/specs/` to `specs/`, and plans to
+  `specs/plans/` (#61), out of pkgdown's output folder. A Claude Code hook
+  (`.claude/settings.json`) and a Gitea CI step keep them from drifting back
+  to the superpowers default.
 
 ## Vignettes
 

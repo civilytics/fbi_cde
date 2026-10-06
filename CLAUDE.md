@@ -104,7 +104,7 @@ Layers:
 
 ## Roadmap
 
-Full design + phased plan: `docs/superpowers/specs/2026-07-13-geography-first-querying-design.md`.
+Full design + phased plan: `specs/2026-07-13-geography-first-querying-design.md`.
 Status: **v0.4 shipped** (county resolver + detail + aggregate; place
 resolver + detail + spatial members). Planned phases (each its own
 spec → plan → implementation cycle; tracked as Gitea issues):
@@ -115,11 +115,11 @@ spec → plan → implementation cycle; tracked as Gitea issues):
 - **v0.4** — **shipped.** Place/municipal membership: `place_agencies()`,
   `get_place_crime_detail()`, and opt-in `add_place_spatial_members()`
   (`sf`/`tigris` in `Suggests`). Spec:
-  `docs/superpowers/specs/2026-07-24-place-membership-v0.4-design.md`.
+  `specs/2026-07-24-place-membership-v0.4-design.md`.
 - **v0.5** — **shipped.** Metro (CBSA) geography: `metro_agencies()`,
   `get_metro_crime_detail()` (guarded by `max_agencies`), `list_metros()`, and
   a bundled 2023 OMB delineation crosswalk. Spec:
-  `docs/superpowers/specs/2026-07-24-metro-cbsa-v0.5-design.md`.
+  `specs/2026-07-24-metro-cbsa-v0.5-design.md`.
 - **Place FIPS** as a promised join key — likely a name-based crosswalk rather
   than `sf` (Gitea #46).
 - **Capstone** — imputation gap: FBI published aggregate vs. sum of reported
@@ -130,6 +130,12 @@ spec → plan → implementation cycle; tracked as Gitea issues):
 - **Issue-driven** on Gitea (`gitea.civilytics.org/Civilytics/fbiCDE`); default
   branch `main`. Conventional commits (`feat:`/`fix:`/`refactor:`/`test:`/`docs:`).
   Record changes in `NEWS.md`. CI: `.gitea/workflows/R-CMD-check.yaml`.
+- **Design docs go in `specs/`, plans in `specs/plans/` — never
+  `docs/superpowers/`** (#61). This overrides the superpowers skills' default
+  location: write a brainstorming spec to `specs/YYYY-MM-DD-<topic>-design.md`
+  and an implementation plan to `specs/plans/YYYY-MM-DD-<feature>.md`. `docs/`
+  is pkgdown's output folder. A hook in `.claude/settings.json` blocks writes
+  under `docs/superpowers/`, and the Gitea CI fails if that folder exists.
 - **NIBRS (#33 resolved):** the `nibrs/` endpoint takes short offense codes
   (`V`, `P`, `ROB`, `BUR`, `13B`, `35A`, ...) and answers anything else — long
   names, `"all"` — with an all-null payload, which once looked like an outage.

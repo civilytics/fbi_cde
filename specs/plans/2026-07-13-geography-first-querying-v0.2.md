@@ -54,8 +54,8 @@ git checkout -b design/geography-first
 - [ ] **Step 2: Commit the design doc and this plan**
 
 ```bash
-git add docs/superpowers/specs/2026-07-13-geography-first-querying-design.md \
-        docs/superpowers/plans/2026-07-13-geography-first-querying-v0.2.md
+git add specs/2026-07-13-geography-first-querying-design.md \
+        specs/plans/2026-07-13-geography-first-querying-v0.2.md
 git commit -m "docs: geography-first querying design + v0.2 implementation plan"
 ```
 

@@ -8,7 +8,7 @@
 
 **Tech Stack:** Base R (>= 3.5.0). Imports stay `httr`, `jsonlite`, `datasets`, `utils`. `readxl` is used **only** in `data-raw/` (not a package dependency — `data-raw/` is in `.Rbuildignore`).
 
-**Spec:** `docs/superpowers/specs/2026-07-24-metro-cbsa-v0.5-design.md`
+**Spec:** `specs/2026-07-24-metro-cbsa-v0.5-design.md`
 
 ## Global Constraints
 
@@ -1135,7 +1135,7 @@ In the `## Roadmap` section, add below the v0.4 entry:
 - **v0.5** — **shipped.** Metro (CBSA) geography: `metro_agencies()`,
   `get_metro_crime_detail()` (guarded by `max_agencies`), `list_metros()`, and
   a bundled 2023 OMB delineation crosswalk. Spec:
-  `docs/superpowers/specs/2026-07-24-metro-cbsa-v0.5-design.md`.
+  `specs/2026-07-24-metro-cbsa-v0.5-design.md`.
 ```
 
 Also note in the architecture section that `R/sysdata.rda` now holds **two** internal objects (`crosswalk`, `cbsa_crosswalk`) and that any build script touching it must re-save both.

@@ -8,7 +8,7 @@
 
 **Tech Stack:** Base R (>= 3.5.0). `httr`, `jsonlite`, `datasets`, `utils` in Imports. `sf`, `tigris` added to Suggests. `testthat` 3rd edition.
 
-**Spec:** `docs/superpowers/specs/2026-07-24-place-membership-v0.4-design.md`
+**Spec:** `specs/2026-07-24-place-membership-v0.4-design.md`
 
 ## Global Constraints
 
@@ -125,7 +125,7 @@ Create `R/place.R`:
 #
 # The municipal tier is a name-identity problem, not a spatial one: CDE city
 # agencies are named "<Place> Police Department", so the agency *is* the place.
-# See docs/superpowers/specs/2026-07-24-place-membership-v0.4-design.md §1.
+# See specs/2026-07-24-place-membership-v0.4-design.md §1.
 
 # The four agency_type_name values that constitute the municipal tier.
 .MUNICIPAL_TYPES <- c("City", "Municipality", "Borough", "City and Borough")
@@ -1324,7 +1324,7 @@ In the `## Roadmap` section, replace the `**v0.4 → 1.0**` bullet with:
 - **v0.4** — **shipped.** Place/municipal membership: `place_agencies()`,
   `get_place_crime_detail()`, and opt-in `add_place_spatial_members()`
   (`sf`/`tigris` in `Suggests`). Spec:
-  `docs/superpowers/specs/2026-07-24-place-membership-v0.4-design.md`.
+  `specs/2026-07-24-place-membership-v0.4-design.md`.
 - **Metro (CBSA)** — union of member counties; needs a county→CBSA crosswalk
   and a delineation-vintage decision (Gitea #45).
 - **Place FIPS** as a promised join key — likely a name-based crosswalk rather

@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "grep -Eq \"\\\"(file_path|notebook_path)\\\"[[:space:]]*:[[:space:]]*\\\"[^\\\"]*docs/superpowers/\" && { echo \"Blocked: this project keeps design specs in specs/ and implementation plans in specs/plans/, never docs/superpowers/ (the superpowers skills default; CLAUDE.md overrides it, Gitea #61). Write the file there instead.\" >&2; exit 2; } || exit 0",
+            "statusMessage": "Checking spec location"
+          }
+        ]
+      }
+    ]
+  }
+}
