@@ -134,6 +134,10 @@ spec → plan → implementation cycle; tracked as Gitea issues):
   `specs/2026-10-06-place-fips-design.md`.
 - **Capstone** — imputation gap: FBI published aggregate vs. sum of reported
   components (uses the `reported`/coverage columns already collected).
+- **Bulk downloads (#58)** — **decided:** no bulk-file reader for now;
+  estimates and LEOKA assaults are bulk-only (recipe and the shape of a future
+  reader in `specs/2026-10-06-bulk-downloads-decision.md`). Any reader needs
+  its own mockable network seam beside `cde_request()`.
 
 ## Workflow
 

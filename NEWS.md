@@ -74,6 +74,12 @@
 - Removed four unexported helpers left over from the retired api.data.gov
   API (`make_state()`, `make_year()`, `clean_column_names()`,
   `combine_url_section()`).
+- The FBI's bulk downloads were investigated (#58); the decision and a
+  download recipe are in `specs/2026-10-06-bulk-downloads-decision.md`. Two of
+  the four documented API gaps (arrests by offense and age; state and national
+  police employment) were package bugs, now fixed. State and national
+  estimates and LEOKA assaults remain bulk-file only, and the package does not
+  read those files.
 - Design specs moved from `docs/superpowers/specs/` to `specs/`, and plans to
   `specs/plans/` (#61), out of pkgdown's output folder. A Claude Code hook
   (`.claude/settings.json`) and a Gitea CI step keep them from drifting back
