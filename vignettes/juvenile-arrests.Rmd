@@ -18,7 +18,7 @@ what the CDE API can and cannot answer, because both matter when you are
 building an analysis you intend to defend.
 
 Every figure here comes from live API calls made on
-2026-10-05; see [Reproducing this](#reproducing-this).
+2026-10-06; see [Reproducing this](#reproducing-this).
 
 
 ```r
@@ -258,111 +258,90 @@ low[order(low$coverage), ]
 #> 32    NM     2278  52293 0.04356224 0.8913880
 ```
 
-## 3. Arrests by offence, and a gap in the API
+## 3. Arrests by offence
 
-The natural next question is *which offences* juveniles are arrested for. As of
-2026 the CDE API cannot answer it.
+Which offences are juveniles arrested for? The arrest endpoint addresses one
+offence by a numeric code, and `get_arrest_demographics()` takes an offence
+name and fetches its codes, so the age breakdown is available offence by
+offence.
 
-The arrest endpoint returns **independent marginals**, not a cross-tabulation:
-offence totals across all ages, and age totals across all offences. There is no
-offence-by-age table, so `get_arrest_demographics()` accepts only
-`offense = "all"`:
-
-
-```r
-get_arrest_demographics(state_abb = "OH", offense = "Larceny")
-#> Error: Only offense = "all" is supported for get_arrest_demographics(). The CDE API provides arrest demographics aggregated across all offenses and does not break them down by offense. Use get_arrest_count() for per-offense arrest counts.
-```
-
-This is a change in what the FBI publishes through the API, not a limit on what
-is collected — the underlying records contain both fields. Filling the gap from
-the FBI's bulk downloads is tracked as Gitea issue #58.
-
-`get_nibrs_offender()` does give age by offence, but in ten-year buckets where
-`10-19` straddles the age of majority, so it cannot isolate under-18s:
+The CDE names offences at three levels of detail (offence names, categories
+and breakdowns), and within one level the counts do not overlap, so ranking
+offences means ranking one level. Of the 34 offence names, two (`Rape` and
+`Runaway`) have no arrests in the API, and so no code; rape arrests are
+reported as `Rape (Legacy)`. That leaves:
 
 
 ```r
-nib <- get_nibrs_offender(
-  state_abb = "OH", offense = "BUR", variable = "age",
-  from = "01-2023", to = "12-2023"
-)
-nib$demographic_value
-#>  [1] "0-9"      "10-19"    "20-29"    "30-39"    "40-49"    "50-59"   
-#>  [7] "60-69"    "70-79"    "80-89"    "Unknown"  "90-Older"
-```
-
-So the offence breakdown below is **all ages**, and is labelled as such. It is
-not a juvenile figure.
-
-`get_arrest_count()` returns a monthly time series when `offense = "all"`, and a
-single total when you name an offence. The CDE names offences at three levels
-of detail — offence names, categories and breakdowns — and within one level
-the counts do not overlap, so ranking offences means ranking one level. The
-offence-name level has 34 entries:
-
-
-```r
-offense_names <- list_ucr_arrest_offenses(level = "name")
+offense_names <- intersect(list_ucr_arrest_offenses(level = "name"),
+                           ucr_arrest_offense_codes$name)
 length(offense_names)
-#> [1] 34
-head(offense_names, 10)
-#>  [1] "Aggravated Assault"                  "All Other Offenses"                 
-#>  [3] "Arson"                               "Burglary"                           
-#>  [5] "Counterfeiting/Forgery"              "Curfew and Loitering Law Violations"
-#>  [7] "Disorderly Conduct"                  "Drive Under the Influence"          
-#>  [9] "Drug Abuse Violations"               "Drug Possession"
+#> [1] 32
 ```
 
 
 ```r
-offense_counts <- do.call(rbind, lapply(offense_names, function(o) {
-  get_arrest_count(state_abb = "OH", offense = o,
-                   from = "01-2023", to = "12-2023")
+by_offense <- do.call(rbind, lapply(offense_names, function(o) {
+  d <- get_arrest_demographics(state_abb = "OH", offense = o,
+                               from = "01-2023", to = "12-2023")
+  cbind(offense = o, juvenile_summary(d))
 }))
+by_offense$share <- by_offense$juvenile / by_offense$total
 
-offense_counts <- offense_counts[order(-offense_counts$count), c("offense", "count")]
-rownames(offense_counts) <- NULL
-head(offense_counts, 10)
-#>                      offense count
-#> 1         All Other Offenses 48673
-#> 2             Simple Assault 35930
-#> 3  Drive Under the Influence 24197
-#> 4                    Larceny 19500
-#> 5            Drug Possession 19163
-#> 6         Disorderly Conduct  9151
-#> 7         Aggravated Assault  6374
-#> 8                    Weapons  4695
-#> 9      Liquor Law Violations  3702
-#> 10                 Vandalism  3669
+# Against the all-offence figures from section 1:
+rbind(by_offence = c(juvenile = sum(by_offense$juvenile),
+                     total = sum(by_offense$total)),
+      all_offences = c(juvenile = oh_summary$juvenile,
+                       total = oh_summary$total))
+#>              juvenile  total
+#> by_offence      22317 188836
+#> all_offences    22260 187953
 
-# The offence names partition all arrests:
-sum(offense_counts$count)
-#> [1] 188836
+by_offense <- by_offense[order(-by_offense$juvenile), ]
+rownames(by_offense) <- NULL
+head(by_offense, 10)
+#>                offense juvenile total      share
+#> 1   All Other Offenses     6987 48673 0.14354981
+#> 2       Simple Assault     5288 35930 0.14717506
+#> 3   Disorderly Conduct     2144  9151 0.23429133
+#> 4              Larceny     1666 19500 0.08543590
+#> 5      Drug Possession      920 19163 0.04800918
+#> 6            Vandalism      910  3669 0.24802398
+#> 7      Stolen Property      694  2413 0.28760879
+#> 8   Aggravated Assault      616  6374 0.09664261
+#> 9  Motor Vehicle Theft      555  1321 0.42013626
+#> 10             Weapons      525  4695 0.11182109
 ```
 
 
 
-Two names need care. `All Other Offenses` is the catch-all for everything
-without its own line, and it is the largest. And drug arrests are split:
-`Drug Possession` and `Drug Sale/Manufacturing` hold almost all of them, while
-`Drug Abuse Violations` is only the remainder classed as neither
-(880
-in Ohio). The category `"Drug/Narcotic Offenses"` gives the total:
-20,997.
+The two do not quite agree. The offence names partition all arrests, but the
+all-offence demographics leave out the arrests filed under the five
+"(Unspecified)" offence codes, such as "Drug Abuse Violations (Unspecified)":
+883 arrests in Ohio,
+57 of them juvenile. The
+per-offence figures include them, so where completeness matters, sum by
+offence.
+
+All Other Offenses leads with 6,987 juvenile arrests,
+14% of all its arrests. Among offences with at least 500
+arrests, the most juvenile is Motor Vehicle Theft:
+42% of its arrests were of under-18s.
 
 
 ```r
 top$offense <- factor(top$offense, levels = rev(top$offense))
 
-ggplot(top, aes(x = count, y = offense)) +
+ggplot(top, aes(x = juvenile, y = offense)) +
   geom_col(fill = "#4c72b0") +
-  scale_x_continuous(labels = scales::comma) +
+  geom_text(aes(label = scales::percent(share, accuracy = 1)),
+            hjust = -0.15, size = 3.4) +
+  scale_x_continuous(labels = scales::comma,
+                     expand = expansion(mult = c(0, 0.12))) +
   labs(
-    title = "Ohio's most common arrest offences, 2023",
-    subtitle = "ALL AGES. The API does not publish offence by age, so this cannot be
-narrowed to under-18s.",
-    x = "Arrests", y = NULL
+    title = "Ohio's most common under-18 arrest offences, 2023",
+    subtitle = "Juvenile arrests; labels give the juvenile share of each offence's arrests",
+    x = "Arrests of under-18s", y = NULL
   ) +
   theme_minimal(base_size = 11) +
   theme(plot.title = element_text(face = "bold"),
@@ -370,9 +349,18 @@ narrowed to under-18s.",
 ```
 
 <div class="figure">
-<img src="figures/juvenile-offense-plot-1.png" alt="Horizontal bar chart of Ohio's eight most common arrest offences in 2023 across all ages: All Other Offenses (48,673), Simple Assault (35,930), Drive Under the Influence (24,197), Larceny (19,500), Drug Possession (19,163), Disorderly Conduct (9,151), Aggravated Assault (6,374), Weapons (4,695)." width="100%" />
+<img src="figures/juvenile-offense-plot-1.png" alt="Horizontal bar chart of the eight offences with the most under-18 arrests in Ohio in 2023, labelled with the juvenile share of each offence's arrests: All Other Offenses (6,987, 14%), Simple Assault (5,288, 15%), Disorderly Conduct (2,144, 23%), Larceny (1,666, 9%), Drug Possession (920, 5%), Vandalism (910, 25%), Stolen Property (694, 29%), Aggravated Assault (616, 10%)." width="100%" />
 <p class="caption">plot of chunk offense-plot</p>
 </div>
+
+Two names need care. `All Other Offenses` is the catch-all for everything
+without its own line. And drug arrests are split: `Drug Possession` and
+`Drug Sale/Manufacturing` hold almost all of them, while `Drug Abuse
+Violations` is only the remainder classed as neither
+(880 in
+Ohio). The category `"Drug/Narcotic Offenses"` gives the total,
+20,997; a category spanning several codes costs one request per
+code.
 
 ## 4. One agency: Columbus Police Department
 
@@ -616,8 +604,10 @@ head(sizable[order(-sizable$share), c("agency", "juvenile", "total", "share")], 
   states is not credible as pure behavioural variation, and reporting coverage
   does not explain it. What does remains an open question, so do not rank
   states on this figure.
-- **Offence-by-age is unavailable from the API.** Any juvenile-by-offence figure
-  you see elsewhere came from bulk files or a different vintage.
+- **Offence names have codes, not URLs.** The API addresses one offence by a
+  numeric code; an offence name in the URL is an error. The package maps names
+  to codes (`ucr_arrest_offense_codes`), and a name spanning several codes is
+  their sum.
 - **Metro membership is attribution, not spatial truth.** An agency is included
   because it is attributed to a member county, not because its jurisdiction has
   been intersected with the metro boundary.

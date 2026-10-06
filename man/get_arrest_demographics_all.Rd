@@ -15,11 +15,10 @@ A data.frame with columns: geography, offense, period,
 demographic_type, demographic_value, count
 }
 \description{
-\strong{Deprecated.} Per-offense arrest demographics are no
-longer available from the CDE API, which only provides demographics
-aggregated across all offenses. This function now returns the same result as
-\code{get_arrest_demographics()} and emits a warning. It is retained for backward
-compatibility and may be removed in a future release.
+\strong{Deprecated.} Use \code{\link[=get_arrest_demographics]{get_arrest_demographics()}}, which takes an
+\code{offense}. This alias returns all-offense demographics (\code{offense = "all"})
+and emits a warning. It is retained for backward compatibility and may be
+removed in a future release.
 }
 \examples{
 \dontrun{

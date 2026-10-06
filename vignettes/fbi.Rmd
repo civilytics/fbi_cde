@@ -196,10 +196,11 @@ columbus_arrests
 #> 3                  908834
 ```
 
-Naming an offense returns a single total for the whole range instead: the API
-has no per-offense monthly series. Names come at three levels of detail
-(`list_ucr_arrest_offenses()` lists them); within one level the counts do not
-overlap.
+Naming an offense returns that offense's monthly series. Names come at three
+levels of detail (`list_ucr_arrest_offenses()` lists them); within one level
+the counts do not overlap. The API addresses an offense by a numeric code, one
+per breakdown (`ucr_arrest_offense_codes`), so a name spanning several codes
+costs one request per code and the series is their sum:
 
 
 ```r
@@ -211,34 +212,31 @@ head(list_ucr_arrest_offenses(level = "category"))
 #> [5] "Counterfeiting/Forgery"                  
 #> [6] "Destruction/Damage/Vandalism of Property"
 
-get_arrest_count(state_abb = "OH", offense = "Drug/Narcotic Offenses",
-                 from = "01-2023", to = "12-2023")
-#>   geography                offense measure period count rate population
-#> 1        OH Drug/Narcotic Offenses arrests   <NA> 20997   NA         NA
-#>   participated_population
-#> 1                      NA
+drugs <- get_arrest_count(state_abb = "OH", offense = "Drug/Narcotic Offenses",
+                          from = "01-2023", to = "03-2023")
+drugs[, c("offense", "period", "count", "rate")]
+#>                  offense  period count  rate
+#> 1 Drug/Narcotic Offenses 01-2023  1897 16.96
+#> 2 Drug/Narcotic Offenses 02-2023  1884 16.93
+#> 3 Drug/Narcotic Offenses 03-2023  2174 19.46
 ```
 
 One name to watch: `"Drug Abuse Violations"` is only the drug arrests not
 classed as possession or sale. The category `"Drug/Narcotic Offenses"` above
 is the total.
 
-`get_arrest_demographics()` returns arrestees by sex, race and age. The API
-provides these only across *all* offenses, so `offense` must be `"all"`;
-`get_arrest_demographics_all()` is a deprecated alias.
+`get_arrest_demographics()` returns arrestees by sex, race and age by sex,
+summed over the date range, for all offenses or one. For one offense, that is
+the age-by-offense cross-tabulation:
 
 
 ```r
-oh_demographics <- get_arrest_demographics(state_abb = "OH",
-                                           from = "01-2023", to = "12-2023")
-head(oh_demographics)
-#>   geography offense period demographic_type demographic_value  count
-#> 1        OH     all   <NA>     Arrestee Sex              Male 131300
-#> 2        OH     all   <NA>     Arrestee Sex            Female  56653
-#> 3        OH     all   <NA>    Arrestee Race             Asian    950
-#> 4        OH     all   <NA>    Arrestee Race             White 111870
-#> 5        OH     all   <NA>    Arrestee Race           Unknown   7211
-#> 6        OH     all   <NA>    Arrestee Race          Multiple      0
+larceny <- get_arrest_demographics(state_abb = "OH", offense = "Larceny",
+                                   from = "01-2023", to = "12-2023")
+larceny[larceny$demographic_type == "Arrestee Sex", ]
+#>   geography offense period demographic_type demographic_value count
+#> 1        OH Larceny   <NA>     Arrestee Sex              Male 10323
+#> 2        OH Larceny   <NA>     Arrestee Sex            Female  9177
 ```
 
 `vignette("juvenile-arrests")` works through these at state, agency and metro

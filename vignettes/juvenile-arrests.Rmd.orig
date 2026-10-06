@@ -232,97 +232,101 @@ low <- state_juvenile[state_juvenile$coverage < 0.9, cols]
 low[order(low$coverage), ]
 ```
 
-## 3. Arrests by offence, and a gap in the API
+## 3. Arrests by offence
 
-The natural next question is *which offences* juveniles are arrested for. As of
-2026 the CDE API cannot answer it.
+Which offences are juveniles arrested for? The arrest endpoint addresses one
+offence by a numeric code, and `get_arrest_demographics()` takes an offence
+name and fetches its codes, so the age breakdown is available offence by
+offence.
 
-The arrest endpoint returns **independent marginals**, not a cross-tabulation:
-offence totals across all ages, and age totals across all offences. There is no
-offence-by-age table, so `get_arrest_demographics()` accepts only
-`offense = "all"`:
-
-```{r no-crosstab, error = TRUE}
-get_arrest_demographics(state_abb = "OH", offense = "Larceny")
-```
-
-This is a change in what the FBI publishes through the API, not a limit on what
-is collected — the underlying records contain both fields. Filling the gap from
-the FBI's bulk downloads is tracked as Gitea issue #58.
-
-`get_nibrs_offender()` does give age by offence, but in ten-year buckets where
-`10-19` straddles the age of majority, so it cannot isolate under-18s:
-
-```{r nibrs-age}
-nib <- get_nibrs_offender(
-  state_abb = "OH", offense = "BUR", variable = "age",
-  from = "01-2023", to = "12-2023"
-)
-nib$demographic_value
-```
-
-So the offence breakdown below is **all ages**, and is labelled as such. It is
-not a juvenile figure.
-
-`get_arrest_count()` returns a monthly time series when `offense = "all"`, and a
-single total when you name an offence. The CDE names offences at three levels
-of detail — offence names, categories and breakdowns — and within one level
-the counts do not overlap, so ranking offences means ranking one level. The
-offence-name level has 34 entries:
+The CDE names offences at three levels of detail (offence names, categories
+and breakdowns), and within one level the counts do not overlap, so ranking
+offences means ranking one level. Of the 34 offence names, two (`Rape` and
+`Runaway`) have no arrests in the API, and so no code; rape arrests are
+reported as `Rape (Legacy)`. That leaves:
 
 ```{r offense-list}
-offense_names <- list_ucr_arrest_offenses(level = "name")
+offense_names <- intersect(list_ucr_arrest_offenses(level = "name"),
+                           ucr_arrest_offense_codes$name)
 length(offense_names)
-head(offense_names, 10)
 ```
 
 ```{r offense-breakdown}
-offense_counts <- do.call(rbind, lapply(offense_names, function(o) {
-  get_arrest_count(state_abb = "OH", offense = o,
-                   from = "01-2023", to = "12-2023")
+by_offense <- do.call(rbind, lapply(offense_names, function(o) {
+  d <- get_arrest_demographics(state_abb = "OH", offense = o,
+                               from = "01-2023", to = "12-2023")
+  cbind(offense = o, juvenile_summary(d))
 }))
+by_offense$share <- by_offense$juvenile / by_offense$total
 
-offense_counts <- offense_counts[order(-offense_counts$count), c("offense", "count")]
-rownames(offense_counts) <- NULL
-head(offense_counts, 10)
+# Against the all-offence figures from section 1:
+rbind(by_offence = c(juvenile = sum(by_offense$juvenile),
+                     total = sum(by_offense$total)),
+      all_offences = c(juvenile = oh_summary$juvenile,
+                       total = oh_summary$total))
 
-# The offence names partition all arrests:
-sum(offense_counts$count)
+by_offense <- by_offense[order(-by_offense$juvenile), ]
+rownames(by_offense) <- NULL
+head(by_offense, 10)
 ```
 
-```{r offense-alt, include = FALSE}
-top <- head(offense_counts, 8)
+```{r offense-numbers, include = FALSE}
+top <- head(by_offense, 8)
+# Among offences with enough arrests to mean something.
+common <- by_offense[by_offense$total >= 500, ]
+most_juvenile <- common[which.max(common$share), ]
 offense_alt <- paste0(
-  "Horizontal bar chart of Ohio's eight most common arrest offences in 2023 ",
-  "across all ages: ",
-  paste0(top$offense, " (", num(top$count), ")", collapse = ", "), "."
+  "Horizontal bar chart of the eight offences with the most under-18 arrests ",
+  "in Ohio in 2023, labelled with the juvenile share of each offence's ",
+  "arrests: ",
+  paste0(top$offense, " (", num(top$juvenile), ", ", pct(top$share, 0), ")",
+         collapse = ", "), "."
 )
+drug_total <- sum(get_arrest_count(state_abb = "OH",
+                                   offense = "Drug/Narcotic Offenses",
+                                   from = "01-2023", to = "12-2023")$count)
 ```
 
-Two names need care. `All Other Offenses` is the catch-all for everything
-without its own line, and it is the largest. And drug arrests are split:
-`Drug Possession` and `Drug Sale/Manufacturing` hold almost all of them, while
-`Drug Abuse Violations` is only the remainder classed as neither
-(`r num(offense_counts$count[offense_counts$offense == "Drug Abuse Violations"])`
-in Ohio). The category `"Drug/Narcotic Offenses"` gives the total:
-`r num(get_arrest_count(state_abb = "OH", offense = "Drug/Narcotic Offenses", from = "01-2023", to = "12-2023")$count)`.
+The two do not quite agree. The offence names partition all arrests, but the
+all-offence demographics leave out the arrests filed under the five
+"(Unspecified)" offence codes, such as "Drug Abuse Violations (Unspecified)":
+`r num(sum(by_offense$total) - oh_summary$total)` arrests in Ohio,
+`r num(sum(by_offense$juvenile) - oh_summary$juvenile)` of them juvenile. The
+per-offence figures include them, so where completeness matters, sum by
+offence.
+
+`r top$offense[1]` leads with `r num(top$juvenile[1])` juvenile arrests,
+`r pct(top$share[1], 0)` of all its arrests. Among offences with at least 500
+arrests, the most juvenile is `r most_juvenile$offense`:
+`r pct(most_juvenile$share, 0)` of its arrests were of under-18s.
 
 ```{r offense-plot, fig.alt = offense_alt}
 top$offense <- factor(top$offense, levels = rev(top$offense))
 
-ggplot(top, aes(x = count, y = offense)) +
+ggplot(top, aes(x = juvenile, y = offense)) +
   geom_col(fill = "#4c72b0") +
-  scale_x_continuous(labels = scales::comma) +
+  geom_text(aes(label = scales::percent(share, accuracy = 1)),
+            hjust = -0.15, size = 3.4) +
+  scale_x_continuous(labels = scales::comma,
+                     expand = expansion(mult = c(0, 0.12))) +
   labs(
-    title = "Ohio's most common arrest offences, 2023",
-    subtitle = "ALL AGES. The API does not publish offence by age, so this cannot be
-narrowed to under-18s.",
-    x = "Arrests", y = NULL
+    title = "Ohio's most common under-18 arrest offences, 2023",
+    subtitle = "Juvenile arrests; labels give the juvenile share of each offence's arrests",
+    x = "Arrests of under-18s", y = NULL
   ) +
   theme_minimal(base_size = 11) +
   theme(plot.title = element_text(face = "bold"),
         panel.grid.major.y = element_blank())
 ```
+
+Two names need care. `All Other Offenses` is the catch-all for everything
+without its own line. And drug arrests are split: `Drug Possession` and
+`Drug Sale/Manufacturing` hold almost all of them, while `Drug Abuse
+Violations` is only the remainder classed as neither
+(`r num(by_offense$total[by_offense$offense == "Drug Abuse Violations"])` in
+Ohio). The category `"Drug/Narcotic Offenses"` gives the total,
+`r num(drug_total)`; a category spanning several codes costs one request per
+code.
 
 ## 4. One agency: Columbus Police Department
 
@@ -503,8 +507,10 @@ head(sizable[order(-sizable$share), c("agency", "juvenile", "total", "share")], 
   states is not credible as pure behavioural variation, and reporting coverage
   does not explain it. What does remains an open question, so do not rank
   states on this figure.
-- **Offence-by-age is unavailable from the API.** Any juvenile-by-offence figure
-  you see elsewhere came from bulk files or a different vintage.
+- **Offence names have codes, not URLs.** The API addresses one offence by a
+  numeric code; an offence name in the URL is an error. The package maps names
+  to codes (`ucr_arrest_offense_codes`), and a name spanning several codes is
+  their sum.
 - **Metro membership is attribution, not spatial truth.** An agency is included
   because it is attributed to a member county, not because its jurisdiction has
   been intersected with the metro boundary.

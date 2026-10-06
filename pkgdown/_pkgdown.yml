@@ -105,6 +105,7 @@ reference:
       - nibrs_offender_variables
       - nibrs_offense_variables
       - ucr_arrest_offenses
+      - ucr_arrest_offense_codes
       - regions
   - title: API Key Management
     desc: Functions for managing API keys (legacy)

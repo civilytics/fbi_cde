@@ -23,37 +23,38 @@ national data.}
 
 \item{to}{End date in MM-YYYY format (default "12-2020").}
 
-\item{offense}{\code{"all"} (the default) for the monthly series of total
-arrests, or an offense name for one aggregate count over the whole
-\code{from}-\code{to} range (the API has no per-offense monthly series). Names are
-matched case-insensitively against the API's three levels: offense names
-(\code{"Robbery"}, \code{"Drug Possession"}), categories
-(\code{"Drug/Narcotic Offenses"}) and breakdowns
-(\code{"Drug Possession - Marijuana"}). Note that \code{"Drug Abuse Violations"} is
-only the drug arrests not classed as possession or sale; total drug
-arrests are \code{"Drug/Narcotic Offenses"}. See \code{\link[=list_ucr_arrest_offenses]{list_ucr_arrest_offenses()}}.}
+\item{offense}{\code{"all"} (the default) for total arrests, or one offense.
+An offense is a name from any of the API's three levels, matched
+case-insensitively: offense names (\code{"Robbery"}, \code{"Drug Possession"}),
+categories (\code{"Drug/Narcotic Offenses"}) and breakdowns
+(\code{"Drug Possession - Marijuana"}); see \code{\link[=list_ucr_arrest_offenses]{list_ucr_arrest_offenses()}}. The
+API addresses offenses by numeric code (\link{ucr_arrest_offense_codes}), one
+per breakdown, so a name covering several (a category such as
+\code{"Drug/Narcotic Offenses"} has 11) costs one request per code, and the
+series is their sum. A string that is a name at more than one level
+resolves as an offense name first: \code{"Sex Offenses"} is code 240, not the
+category of that name, which holds only \code{"Rape (Legacy)"}. Note that
+\code{"Drug Abuse Violations"} is only the drug arrests not classed as
+possession or sale; total drug arrests are \code{"Drug/Narcotic Offenses"}.}
 
-\item{comparison}{If \code{TRUE} (and \code{offense = "all"}), also return the
-comparison series the API sends alongside an agency's or state's own: its
-state's and the nation's arrest rates (these have no \code{count}). Default
-\code{FALSE} returns only the queried geography's own series. A specific
-offense has no comparison series.}
+\item{comparison}{If \code{TRUE}, also return the comparison series the API
+sends alongside an agency's or state's own: its state's and the nation's
+arrest rates (these have no \code{count}). Default \code{FALSE} returns only the
+queried geography's own series.}
 }
 \value{
-A data.frame with columns \code{geography}, \code{offense}, \code{measure}
+A data.frame with one row per month: \code{geography}, \code{offense}
+(\code{"all"}, or the API's spelling of the offense name), \code{measure}
 (\code{"arrests"}), \code{period}, \code{count}, \code{rate} (per 100,000 population, for
-that month), and the \code{population} and \code{participated_population} described
-in \code{\link[=get_agency_crime]{get_agency_crime()}} (their ratio is the reporting coverage). With \code{offense = "all"}, \code{offense} is \code{"all"}; with
-\code{comparison = TRUE}, \code{series} and \code{series_name} columns follow
-\code{geography}, as in \code{\link[=get_agency_crime]{get_agency_crime()}}. For a specific offense, a single
-row holds the aggregate \code{count} for the whole range, with \code{period},
-\code{rate} and the population columns \code{NA}, and \code{offense} set to the API's
-name for it.
+that month), and the \code{population} and \code{participated_population}
+described in \code{\link[=get_agency_crime]{get_agency_crime()}} (their ratio is the reporting
+coverage). With \code{comparison = TRUE}, \code{series} and \code{series_name} columns
+follow \code{geography}, as in \code{\link[=get_agency_crime]{get_agency_crime()}}.
 }
 \description{
-Retrieves arrest counts for an agency, state, or nationally, from the CDE
-API endpoint \verb{arrest/<level>/all}: \code{type=counts} for the monthly all-offense
-series, \code{type=totals} for a single offense.
+Retrieves monthly arrest counts for an agency, a state, or the nation, for
+all offenses or one, from the CDE API endpoint \verb{arrest/<level>/<code>}
+with \code{type=counts}.
 }
 \examples{
 \dontrun{
@@ -61,6 +62,7 @@ get_arrest_count(ori = "CA0010900")
 get_arrest_count(state_abb = "CA")
 get_arrest_count()
 get_arrest_count(state_abb = "CA", offense = "Robbery")
+get_arrest_count(state_abb = "CA", offense = "Drug/Narcotic Offenses")
 }
 }
 \seealso{

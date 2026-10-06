@@ -26,6 +26,28 @@
 
 ## Documentation, distribution and clean-up
 
+- **Arrests by offense: monthly series and age-by-offense demographics.**
+  The arrest endpoint addresses one offense by numeric code
+  (`arrest/<level>/<code>`); a name is an HTTP 400, which the package had read
+  as "a specific offense is no longer addressable". So `get_arrest_count()`
+  returned one total picked out of the all-offense response, and
+  `get_arrest_demographics()` refused any offense, and the juvenile-arrests
+  vignette said the API had no offense-by-age table. It has.
+  - `get_arrest_count(offense = )` returns the offense's **monthly series**
+    (with `comparison = TRUE` too), where it returned one total row.
+  - `get_arrest_demographics(offense = )` accepts any offense name: Ohio's
+    2023 larceny arrests break down to 1,666 under 18.
+  - A name at any level maps to its codes through the new
+    `ucr_arrest_offense_codes` dataset (47 codes, built from the live API by
+    `data-raw/api_vocabularies.R`); a category spanning several codes is
+    their sum, one request each. `"Rape"` and `"Runaway"` have no code and no
+    arrests in the API, and say so.
+  - The API's own all-offense demographics leave out arrests filed under the
+    five "(Unspecified)" offense codes (883 of Ohio's 188,836 in 2023), though
+    its all-offense counts include them. Documented in
+    `?get_arrest_demographics`; summing by offense includes them.
+  - The juvenile-arrests vignette now ranks offenses by juvenile arrests, and
+    the Getting Started vignette shows both.
 - **`get_police_employment()` returns state and national staffing.** It
   requested `pe/state/{ST}` and `pe/national`, which the CDE answers with
   every value null, so state and national calls returned no rows, and the

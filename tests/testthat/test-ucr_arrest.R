@@ -66,11 +66,47 @@ test_that("get_arrest_demographics parses demographics response", {
       "Male Arrests By Age", "Female Arrests By Age")))
 })
 
-test_that("get_arrest_demographics rejects a specific offense", {
-  expect_error(
-    get_arrest_demographics("CA0010900", offense = "Robbery"),
-    "Only offense .* is supported"
+# Serve recorded arrest/state/OH/{code} fixtures by path and type, recording
+# the paths requested.
+local_arrest_code_fixtures <- function(env = parent.frame()) {
+  requested <- new.env()
+  requested$paths <- character(0)
+  testthat::local_mocked_bindings(
+    cde_request = function(path, query = list(), ...) {
+      requested$paths <- c(requested$paths, path)
+      code <- sub("^arrest/state/OH/", "", path)
+      read_fixture(sprintf("arrest-state-OH-%s-%s.json", code, query$type))
+    },
+    .package = "fbiCDE",
+    .env = env
   )
+  requested
+}
+
+test_that("get_arrest_demographics breaks one offense down by age and sex", {
+  req <- local_arrest_code_fixtures()
+  result <- get_arrest_demographics(state_abb = "OH", offense = "larceny",
+                                    from = "01-2023", to = "12-2023")
+  expect_equal(req$paths, "arrest/state/OH/70")
+  expect_equal(unique(result$offense), "Larceny")
+  sex <- result[result$demographic_type == "Arrestee Sex", ]
+  expect_equal(sum(sex$count), 19500)
+  under18 <- c("Under 10", "10-12", "13-14", "15", "16", "17")
+  by_age <- result[grepl("By Age", result$demographic_type) &
+                     result$demographic_value %in% under18, ]
+  expect_equal(sum(by_age$count), 1666)
+})
+
+test_that("get_arrest_demographics sums the codes of a multi-code offense", {
+  req <- local_arrest_code_fixtures()
+  result <- get_arrest_demographics(state_abb = "OH",
+                                    offense = "Homicide Offenses",
+                                    from = "01-2023", to = "12-2023")
+  expect_setequal(req$paths, c("arrest/state/OH/11", "arrest/state/OH/12"))
+  sex <- result[result$demographic_type == "Arrestee Sex", ]
+  # One row per demographic value, summed: murder 314 + negligent 12.
+  expect_false(anyDuplicated(sex$demographic_value) > 0)
+  expect_equal(sum(sex$count), 326)
 })
 
 test_that("get_arrest_demographics returns empty for no totals data", {
@@ -84,37 +120,55 @@ test_that("get_arrest_demographics returns empty for no totals data", {
   expect_equal(nrow(result), 0)
 })
 
-test_that("get_arrest_count recovers a specific offense from the all response", {
-  local_fbi_fixture("arrest-national-all-totals.json")
-  result <- get_arrest_count(offense = "Robbery")
-
-  expect_s3_class(result, "data.frame")
-  expect_equal(nrow(result), 1)
-  expect_equal(result$offense[1], "Robbery")
-  expect_equal(result$geography[1], "US")
-  expect_true(is.na(result$period[1]))
-  expect_true(is.na(result$rate[1]))
-  expect_true(result$count[1] > 0)
+test_that("get_arrest_count returns a monthly series for one offense", {
+  req <- local_arrest_code_fixtures()
+  result <- get_arrest_count(state_abb = "OH", offense = "Larceny",
+                             from = "01-2023", to = "03-2023")
+  expect_equal(req$paths, "arrest/state/OH/70")
+  expect_equal(result$period, c("01-2023", "02-2023", "03-2023"))
+  expect_equal(unique(result$offense), "Larceny")
+  expect_equal(unique(result$measure), "arrests")
+  fx <- read_fixture("arrest-state-OH-70-counts.json")
+  expect_equal(result$count,
+               unname(vapply(fx$actuals[["Ohio Arrests"]], as.numeric, 1)))
+  expect_false(anyNA(result$participated_population))
 })
 
-test_that("get_arrest_count is case-insensitive for offense names", {
-  local_fbi_fixture("arrest-national-all-totals.json")
-  result <- get_arrest_count(offense = "robbery")
-
-  expect_equal(nrow(result), 1)
-  expect_equal(result$offense[1], "Robbery")
+test_that("get_arrest_count sums the codes of a multi-code offense", {
+  req <- local_arrest_code_fixtures()
+  result <- get_arrest_count(state_abb = "OH", offense = "homicide offenses",
+                             from = "01-2023", to = "03-2023")
+  expect_setequal(req$paths, c("arrest/state/OH/11", "arrest/state/OH/12"))
+  expect_equal(unique(result$offense), "Homicide Offenses")
+  expect_equal(nrow(result), 3L)
+  per_code <- vapply(c("11", "12"), function(code) {
+    fx <- read_fixture(sprintf("arrest-state-OH-%s-counts.json", code))
+    sum(vapply(fx$actuals[["Ohio Arrests"]], as.numeric, 1))
+  }, numeric(1))
+  expect_equal(sum(result$count), sum(per_code))
 })
 
-test_that("get_arrest_count finds category and breakdown names too", {
-  local_fbi_fixture("arrest-national-all-totals.json")
-  totals <- read_fixture("arrest-national-all-totals.json")
-  # A category name (the only total of drug arrests) and a breakdown name.
-  category <- names(totals[["Offense Category"]])[1]
-  breakdown <- names(totals[["Offense Breakdown"]])[1]
-  expect_equal(get_arrest_count(offense = category)$count,
-               as.numeric(totals[["Offense Category"]][[category]]))
-  expect_equal(get_arrest_count(offense = breakdown)$count,
-               as.numeric(totals[["Offense Breakdown"]][[breakdown]]))
+test_that("offense names resolve at every level to their codes", {
+  sel <- .arrest_offense_selection
+  expect_equal(sel("all")$codes, "all")
+  expect_equal(sel("Larceny")$codes, "70")
+  expect_equal(sort(sel("Drug/Narcotic Offenses")$codes),
+               as.character(150:160))
+  expect_equal(sel("drug possession - marijuana")$codes, "158")
+  expect_equal(sel("70")$offense, "Larceny - Theft (Not Specified)")
+  # A name at two levels resolves as an offense name first.
+  expect_equal(sel("Sex Offenses")$codes, "240")
+  expect_error(sel("Rape"), "no arrests under 'Rape'.*Rape \\(Legacy\\)")
+  expect_error(sel("Runaway"), "no arrests under 'Runaway'")
+  expect_error(sel(c("Larceny", "Robbery")), "single string")
+})
+
+test_that("every listed offense name with arrests has a code", {
+  codes <- ucr_arrest_offense_codes
+  expect_false(anyDuplicated(codes$code) > 0)
+  covered <- unique(c(codes$name, codes$category, codes$breakdown))
+  expect_setequal(setdiff(list_ucr_arrest_offenses(), covered),
+                  c("Rape", "Runaway", "Rape - Not Specified"))
 })
 
 test_that("the bundled arrest offense names match the recorded response, by level", {
@@ -132,8 +186,11 @@ test_that("the bundled arrest offense names match the recorded response, by leve
   expect_error(list_ucr_arrest_offenses("subcategory"))
 })
 
-test_that("get_arrest_count rejects an unknown offense", {
-  local_fbi_fixture("arrest-national-all-totals.json")
+test_that("get_arrest_count rejects an unknown offense before any request", {
+  testthat::local_mocked_bindings(
+    cde_request = function(...) stop("no request expected"),
+    .package = "fbiCDE"
+  )
   expect_error(
     get_arrest_count(offense = "jaywalking"),
     "Invalid arrest offense"
@@ -199,14 +256,48 @@ test_that("get_arrest_demographics returns expected shape from live API", {
   expect_true("demographic_value" %in% names(result))
 })
 
-test_that("get_arrest_count recovers a specific offense from live API", {
+test_that("one offense by code reconciles with the all-offense totals, live", {
   skip_if_no_fbi_api()
-  result <- get_arrest_count(state_abb = "CA", offense = "Robbery")
+  series <- get_arrest_count(state_abb = "OH", offense = "Drug/Narcotic Offenses",
+                             from = "01-2023", to = "12-2023")
+  expect_equal(nrow(series), 12L)
+  totals <- cde_request(cde_path("arrest", "state/OH", "all"),
+                        list(from = "01-2023", to = "12-2023", type = "totals"))
+  expect_equal(sum(series$count),
+               as.numeric(totals[["Offense Category"]][["Drug/Narcotic Offenses"]]))
 
-  expect_s3_class(result, "data.frame")
-  expect_equal(nrow(result), 1)
-  expect_equal(result$offense[1], "Robbery")
-  expect_true(result$count[1] > 0)
+  demo <- get_arrest_demographics(state_abb = "OH", offense = "Larceny",
+                                  from = "01-2023", to = "12-2023")
+  sex <- demo[demo$demographic_type == "Arrestee Sex", ]
+  expect_equal(sum(sex$count),
+               as.numeric(totals[["Offense Name"]][["Larceny"]]))
+})
+
+test_that("all-offense demographics omit exactly the Unspecified codes, live", {
+  # Documented in ?get_arrest_demographics. If this fails, the API has
+  # changed and the documentation must change with it.
+  skip_if_no_fbi_api()
+  q <- list(from = "01-2023", to = "12-2023", type = "totals")
+  all <- cde_request(cde_path("arrest", "state/OH", "all"), q)
+  gap <- sum(unlist(all[["Offense Name"]])) - sum(unlist(all[["Arrestee Sex"]]))
+  codes <- ucr_arrest_offense_codes
+  unspecified <- codes$code[grepl("(Unspecified)", codes$breakdown, fixed = TRUE)]
+  expect_equal(sort(unspecified), c("140", "150", "151", "156", "170"))
+  in_unspecified <- sum(vapply(unspecified, function(code) {
+    r <- cde_request(cde_path("arrest", "state/OH", code), q)
+    sum(unlist(r[["Arrestee Sex"]]))
+  }, numeric(1)))
+  expect_gt(gap, 0)
+  expect_equal(gap, in_unspecified)
+})
+
+test_that("every bundled arrest code is served live", {
+  skip_if_no_fbi_api()
+  for (code in ucr_arrest_offense_codes$code) {
+    r <- cde_request(cde_path("arrest", "national", code),
+                     list(from = "01-2023", to = "12-2023", type = "totals"))
+    expect_true(!is.null(r[["Offense Name"]]), info = code)
+  }
 })
 
 test_that("list_ucr_arrest_offenses returns a character vector", {
@@ -227,9 +318,4 @@ test_that("arrest series carry population and participated_population", {
   expect_false(anyNA(result$population))
 })
 
-test_that("a single-offense total has NA population columns", {
-  local_fbi_fixture("arrest-national-all-totals.json")
-  result <- get_arrest_count(offense = "Robbery")
-  expect_true(all(c("population", "participated_population") %in% names(result)))
-  expect_true(is.na(result$population))
-})
+

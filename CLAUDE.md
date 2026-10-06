@@ -146,6 +146,13 @@ spec → plan → implementation cycle; tracked as Gitea issues):
   and an implementation plan to `specs/plans/YYYY-MM-DD-<feature>.md`. `docs/`
   is pkgdown's output folder. A hook in `.claude/settings.json` blocks writes
   under `docs/superpowers/`, and the Gitea CI fails if that folder exists.
+- **Arrest offenses are numeric codes** (`arrest/<level>/<code>`); a name in
+  the URL is HTTP 400. `ucr_arrest_offense_codes` maps each code to its name,
+  category and breakdown; `.arrest_offense_selection()` resolves a name (name,
+  then category, then breakdown) to codes and the functions sum per code.
+  Rebuild it with `data-raw/api_vocabularies.R`, never by hand.
+- **Police employment paths:** `pe` (nation), `pe/{ST}`, `pe/{ST}/{ORI}`.
+  `pe/state/{ST}` and `pe/national` answer all-null; no region form works.
 - **NIBRS (#33 resolved):** the `nibrs/` endpoint takes short offense codes
   (`V`, `P`, `ROB`, `BUR`, `13B`, `35A`, ...) and answers anything else — long
   names, `"all"` — with an all-null payload, which once looked like an outage.

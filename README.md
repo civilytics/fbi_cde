@@ -122,19 +122,22 @@ Functions for querying UCR arrest statistics.
 
 | Function | Description |
 |----|----|
-| `get_arrest_count()` | Get arrest offense counts |
-| `get_arrest_demographics()` | Get arrestee demographics |
-| `get_arrest_demographics_all()` | Get demographics for all UCR arrest offenses |
-| `list_ucr_arrest_offenses()` | List all UCR arrest offense codes |
+| `get_arrest_count()` | Monthly arrests, for all offenses or one |
+| `get_arrest_demographics()` | Arrestees by sex, race and age, for all offenses or one |
+| `get_arrest_demographics_all()` | Deprecated alias of `get_arrest_demographics()` |
+| `list_ucr_arrest_offenses()` | The offense names those functions accept |
 
 ``` r
 # Total arrests for an agency
 get_arrest_count(ori = "CA0010900")
 
-# Arrest demographics for a state
-get_arrest_demographics(state_abb = "CA")
+# One offense, monthly
+get_arrest_count(state_abb = "CA", offense = "Robbery")
 
-# All arrest offenses
+# Arrestees by sex, race and age, for one offense
+get_arrest_demographics(state_abb = "CA", offense = "Larceny")
+
+# The offense names they accept
 list_ucr_arrest_offenses()
 ```
 

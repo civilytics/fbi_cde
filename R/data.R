@@ -71,6 +71,29 @@
 #' @source \url{https://cde.ucr.cjis.gov/LATEST/}
 "ucr_arrest_offenses"
 
+#' Arrest offense codes
+#'
+#' The CDE's arrest endpoint addresses one offense by numeric code
+#' (`arrest/<level>/<code>`); an offense name is rejected. Each code is one
+#' breakdown, and reports its arrests under one offense name and one category.
+#' [get_arrest_count()] and [get_arrest_demographics()] resolve a name at any
+#' level to its codes and sum them. Built by `data-raw/api_vocabularies.R`
+#' from the `lookup/offenses?type=arrest` codes (plus Suspicion, 320, which
+#' the lookup omits), placing each by the names its own response reports.
+#' Two names in [ucr_arrest_offenses], `"Rape"` and `"Runaway"`, have no code
+#' and no arrests.
+#'
+#' @format A data frame with 47 rows and 5 variables:
+#' \describe{
+#'   \item{code}{The code, as a string}
+#'   \item{label}{The CDE lookup's label for it}
+#'   \item{name}{The offense name it reports under}
+#'   \item{category}{The category it reports under}
+#'   \item{breakdown}{The breakdown it reports under}
+#' }
+#' @source \url{https://cde.ucr.cjis.gov/LATEST/}
+"ucr_arrest_offense_codes"
+
 
 #' All agencies included in the FBI's Crime Data Explorer API.
 #'

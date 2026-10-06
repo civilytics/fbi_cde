@@ -1,8 +1,8 @@
 #' Get arrest offense counts from the UCR Crime Data Explorer
 #'
-#' Retrieves arrest counts for an agency, state, or nationally, from the CDE
-#' API endpoint `arrest/<level>/all`: `type=counts` for the monthly all-offense
-#' series, `type=totals` for a single offense.
+#' Retrieves monthly arrest counts for an agency, a state, or the nation, for
+#' all offenses or one, from the CDE API endpoint `arrest/<level>/<code>`
+#' with `type=counts`.
 #'
 #' @family UCR arrest functions
 #' @param ori A string of the 9-character ORI code for the desired agency.
@@ -10,30 +10,31 @@
 #'   national data.
 #' @param from Start date in MM-YYYY format (default "01-2015").
 #' @param to End date in MM-YYYY format (default "12-2020").
-#' @param offense `"all"` (the default) for the monthly series of total
-#'   arrests, or an offense name for one aggregate count over the whole
-#'   `from`-`to` range (the API has no per-offense monthly series). Names are
-#'   matched case-insensitively against the API's three levels: offense names
-#'   (`"Robbery"`, `"Drug Possession"`), categories
-#'   (`"Drug/Narcotic Offenses"`) and breakdowns
-#'   (`"Drug Possession - Marijuana"`). Note that `"Drug Abuse Violations"` is
-#'   only the drug arrests not classed as possession or sale; total drug
-#'   arrests are `"Drug/Narcotic Offenses"`. See [list_ucr_arrest_offenses()].
-#' @param comparison If `TRUE` (and `offense = "all"`), also return the
-#'   comparison series the API sends alongside an agency's or state's own: its
-#'   state's and the nation's arrest rates (these have no `count`). Default
-#'   `FALSE` returns only the queried geography's own series. A specific
-#'   offense has no comparison series.
+#' @param offense `"all"` (the default) for total arrests, or one offense.
+#'   An offense is a name from any of the API's three levels, matched
+#'   case-insensitively: offense names (`"Robbery"`, `"Drug Possession"`),
+#'   categories (`"Drug/Narcotic Offenses"`) and breakdowns
+#'   (`"Drug Possession - Marijuana"`); see [list_ucr_arrest_offenses()]. The
+#'   API addresses offenses by numeric code ([ucr_arrest_offense_codes]), one
+#'   per breakdown, so a name covering several (a category such as
+#'   `"Drug/Narcotic Offenses"` has 11) costs one request per code, and the
+#'   series is their sum. A string that is a name at more than one level
+#'   resolves as an offense name first: `"Sex Offenses"` is code 240, not the
+#'   category of that name, which holds only `"Rape (Legacy)"`. Note that
+#'   `"Drug Abuse Violations"` is only the drug arrests not classed as
+#'   possession or sale; total drug arrests are `"Drug/Narcotic Offenses"`.
+#' @param comparison If `TRUE`, also return the comparison series the API
+#'   sends alongside an agency's or state's own: its state's and the nation's
+#'   arrest rates (these have no `count`). Default `FALSE` returns only the
+#'   queried geography's own series.
 #'
-#' @return A data.frame with columns `geography`, `offense`, `measure`
+#' @return A data.frame with one row per month: `geography`, `offense`
+#'   (`"all"`, or the API's spelling of the offense name), `measure`
 #'   (`"arrests"`), `period`, `count`, `rate` (per 100,000 population, for
-#'   that month), and the `population` and `participated_population` described
-#'   in [get_agency_crime()] (their ratio is the reporting coverage). With `offense = "all"`, `offense` is `"all"`; with
-#'   `comparison = TRUE`, `series` and `series_name` columns follow
-#'   `geography`, as in [get_agency_crime()]. For a specific offense, a single
-#'   row holds the aggregate `count` for the whole range, with `period`,
-#'   `rate` and the population columns `NA`, and `offense` set to the API's
-#'   name for it.
+#'   that month), and the `population` and `participated_population`
+#'   described in [get_agency_crime()] (their ratio is the reporting
+#'   coverage). With `comparison = TRUE`, `series` and `series_name` columns
+#'   follow `geography`, as in [get_agency_crime()].
 #' @export
 #'
 #' @examples
@@ -42,6 +43,7 @@
 #' get_arrest_count(state_abb = "CA")
 #' get_arrest_count()
 #' get_arrest_count(state_abb = "CA", offense = "Robbery")
+#' get_arrest_count(state_abb = "CA", offense = "Drug/Narcotic Offenses")
 #' }
 get_arrest_count <- function(ori = NULL,
                               state_abb = NULL,
@@ -78,39 +80,102 @@ get_arrest_count <- function(ori = NULL,
     series_level <- "national"
   }
 
-  # "all" returns the monthly time series directly. A specific offense is no
-  # longer addressable in the URL, so fetch the all-offenses totals and pick the
-  # requested offense out of the response.
-  if (tolower(offense) == "all") {
-    path <- cde_path("arrest", level, "all")
-    query <- list(from = from, to = to, type = "counts")
-    response <- cde_request(path, query)
-    return(parse_arrest_counts_response(response, geography,
-                                        level = series_level,
-                                        comparison = comparison))
+  # One offense is addressed by numeric code, never by name (a name is an
+  # HTTP 400). This used to be read as "a specific offense is no longer
+  # addressable", and the package returned a single total picked out of the
+  # all-offense response; the code paths give the full monthly series.
+  sel <- .arrest_offense_selection(offense)
+  query <- list(from = from, to = to, type = "counts")
+  parts <- lapply(sel$codes, function(code) {
+    response <- cde_request(cde_path("arrest", level, code), query)
+    parse_arrest_counts_response(response, geography, level = series_level,
+                                 comparison = comparison,
+                                 offense = sel$offense)
+  })
+  .sum_arrest_parts(parts, c("count", "rate"))
+}
+
+# Resolve `offense` to the arrest codes it covers: "all", an offense name at
+# any of the three levels (name, then category, then breakdown), or a code.
+# Returns list(codes, offense), `offense` being the API's spelling.
+.arrest_offense_selection <- function(offense) {
+  if (!is.character(offense) || length(offense) != 1 || is.na(offense)) {
+    stop("'offense' must be a single string.", call. = FALSE)
+  }
+  key <- tolower(trimws(offense))
+  if (key == "all") {
+    return(list(codes = "all", offense = "all"))
   }
 
-  # The name is checked against the response itself, which always carries
-  # every name at all three levels, rather than a bundled list that can go
-  # stale (the old list lacked the categories, so "Drug/Narcotic Offenses" --
-  # the only total of drug arrests -- was rejected).
-  path <- cde_path("arrest", level, "all")
-  query <- list(from = from, to = to, type = "totals")
-  response <- cde_request(path, query)
-  parse_arrest_offense_total(response, geography, offense)
+  tbl <- fbiCDE::ucr_arrest_offense_codes
+  if (key %in% tbl$code) {
+    return(list(codes = key, offense = tbl$breakdown[tbl$code == key]))
+  }
+  for (col in c("name", "category", "breakdown")) {
+    hit <- tolower(tbl[[col]]) == key
+    if (any(hit)) {
+      return(list(codes = tbl$code[hit], offense = tbl[[col]][hit][1]))
+    }
+  }
+
+  # A name the totals report but no code covers: the API has no arrests
+  # under it (Rape and Runaway, as of the bundled vintage).
+  known <- fbiCDE::ucr_arrest_offenses$offense
+  idx <- match(key, tolower(known))
+  if (!is.na(idx)) {
+    stop("The API reports no arrests under '", known[idx], "' and has no ",
+         "code for it.",
+         if (key == "rape") " Rape arrests are reported as \"Rape (Legacy)\"." else "",
+         call. = FALSE)
+  }
+  stop("Invalid arrest offense: '", offense, "' is not a name the API ",
+       "reports. See list_ucr_arrest_offenses().", call. = FALSE)
+}
+
+# Combine the per-code results for one offense. A single code passes through;
+# several are summed over `sum_cols`, keyed by every other column except the
+# population ones, which are the geography's and identical across codes.
+.sum_arrest_parts <- function(parts, sum_cols) {
+  if (length(parts) == 1) {
+    return(parts[[1]])
+  }
+  all_rows <- do.call(rbind, parts)
+  if (nrow(all_rows) == 0) {
+    return(all_rows)
+  }
+  key_cols <- setdiff(names(all_rows),
+                      c(sum_cols, "population", "participated_population"))
+  key <- do.call(paste, c(lapply(all_rows[key_cols], as.character), sep = "\r"))
+  first <- !duplicated(key)
+  grp <- factor(key, levels = key[first])
+  out <- all_rows[first, , drop = FALSE]
+  for (col in sum_cols) {
+    out[[col]] <- unname(vapply(split(all_rows[[col]], grp), function(v) {
+      if (all(is.na(v))) NA_real_ else sum(v, na.rm = TRUE)
+    }, numeric(1)))
+  }
+  rownames(out) <- NULL
+  out
 }
 
 #' Get arrestee demographics from the UCR Crime Data Explorer
 #'
-#' Retrieves arrest counts broken down by demographic categories (sex, age,
-#' race) for a specific offense. Uses the CDE API endpoint
-#' `arrest/<level>/<offense>` with `type=totals`.
+#' Retrieves arrest counts broken down by demographic categories (sex, age by
+#' sex, race) over the date range, for all offenses or one. Uses the CDE API
+#' endpoint `arrest/<level>/<code>` with `type=totals`. With an offense this is
+#' the offense-by-age cross-tabulation: juvenile arrests for larceny, say.
 #'
 #' @family UCR arrest functions
 #' @inheritParams get_arrest_count
-#' @param offense Must be `"all"` (the default). The CDE API only provides
-#'   arrest demographics aggregated across all offenses; it does not break
-#'   demographics down by offense, so any other value raises an error.
+#' @param offense `"all"` (the default), or one offense, as in
+#'   [get_arrest_count()]. A name covering several codes is the sum of their
+#'   demographics.
+#' @section All-offense demographics are incomplete:
+#' The API's all-offense demographics leave out arrests filed under the five
+#' "(Unspecified)" offense codes (140, 150, 151, 156 and 170, e.g. "Drug
+#' Abuse Violations (Unspecified)"), although its all-offense counts include
+#' them: in Ohio in 2023, 883 of 188,836 arrests, 57 of them juvenile.
+#' Summing `get_arrest_demographics()` over the offense names includes them.
 #'
 #' @return A data.frame with columns: geography, offense, period,
 #'   demographic_type, demographic_value, count
@@ -120,6 +185,7 @@ get_arrest_count <- function(ori = NULL,
 #' \dontrun{
 #' get_arrest_demographics(ori = "CA0010900")
 #' get_arrest_demographics(state_abb = "CA")
+#' get_arrest_demographics(state_abb = "OH", offense = "Larceny")
 #' }
 get_arrest_demographics <- function(ori = NULL,
                                      state_abb = NULL,
@@ -139,17 +205,8 @@ get_arrest_demographics <- function(ori = NULL,
     stop("Invalid state abbreviation: ", state_abb, call. = FALSE)
   }
 
-  if (tolower(offense) != "all") {
-    stop(
-      "Only offense = \"all\" is supported for get_arrest_demographics(). ",
-      "The CDE API provides arrest demographics aggregated across all ",
-      "offenses and does not break them down by offense. Use ",
-      "get_arrest_count() for per-offense arrest counts.",
-      call. = FALSE
-    )
-  }
-
   cde_validate_dates(from, to, "mm-yyyy")
+  sel <- .arrest_offense_selection(offense)
 
   if (!is.null(ori)) {
     level <- paste0("agency/", ori)
@@ -162,21 +219,21 @@ get_arrest_demographics <- function(ori = NULL,
     geography <- "US"
   }
 
-  path <- cde_path("arrest", level, "all")
   query <- list(from = from, to = to, type = "totals")
-
-  response <- cde_request(path, query)
-  parse_arrest_demographics_response(response, geography, offense)
+  parts <- lapply(sel$codes, function(code) {
+    response <- cde_request(cde_path("arrest", level, code), query)
+    parse_arrest_demographics_response(response, geography, sel$offense)
+  })
+  .sum_arrest_parts(parts, "count")
 }
 
 #' Get arrestee demographics (all offenses)
 #'
 #' @description
-#' **Deprecated.** Per-offense arrest demographics are no
-#' longer available from the CDE API, which only provides demographics
-#' aggregated across all offenses. This function now returns the same result as
-#' `get_arrest_demographics()` and emits a warning. It is retained for backward
-#' compatibility and may be removed in a future release.
+#' **Deprecated.** Use [get_arrest_demographics()], which takes an
+#' `offense`. This alias returns all-offense demographics (`offense = "all"`)
+#' and emits a warning. It is retained for backward compatibility and may be
+#' removed in a future release.
 #'
 #' @family UCR arrest functions
 #' @param ... Arguments passed to `get_arrest_demographics()` (e.g. `ori`,
@@ -192,9 +249,9 @@ get_arrest_demographics <- function(ori = NULL,
 #' }
 get_arrest_demographics_all <- function(...) {
   warning(
-    "Per-offense arrest demographics are no longer available from the CDE ",
-    "API. Returning overall (offense = \"all\") demographics. ",
-    "See ?get_arrest_demographics.",
+    "get_arrest_demographics_all() is deprecated; use ",
+    "get_arrest_demographics(), which takes an offense. Returning ",
+    "all-offense (offense = \"all\") demographics.",
     call. = FALSE
   )
   args <- list(...)
@@ -202,64 +259,20 @@ get_arrest_demographics_all <- function(...) {
   do.call(get_arrest_demographics, args)
 }
 
-# Internal: pull the aggregate count for a single offense out of an
-# `arrest/{level}/all?type=totals` response. The breakdown lives in three maps
-# of increasing granularity; search them in order for a case-insensitive match.
-# A name absent from maps that are present is not an offense the API reports.
-parse_arrest_offense_total <- function(response, geography, offense) {
-  empty <- function() {
-    data.frame(
-      geography = character(), offense = character(), measure = character(),
-      period = character(), count = numeric(), rate = numeric(),
-      population = numeric(), participated_population = numeric(),
-      stringsAsFactors = FALSE
-    )
-  }
-
-  maps_present <- FALSE
-  for (map_name in c("Offense Name", "Offense Category", "Offense Breakdown")) {
-    section <- response[[map_name]]
-    if (is.null(section) || length(section) == 0) next
-    maps_present <- TRUE
-    idx <- match(tolower(offense), tolower(names(section)))
-    if (!is.na(idx)) {
-      cnt <- section[[idx]]
-      if (is.null(cnt) || length(cnt) != 1) return(empty())
-      return(data.frame(
-        geography = geography,
-        offense = names(section)[idx],
-        measure = "arrests",
-        period = NA_character_,
-        count = as.numeric(cnt),
-        rate = NA_real_,
-        population = NA_real_,
-        participated_population = NA_real_,
-        stringsAsFactors = FALSE
-      ))
-    }
-  }
-
-  if (maps_present) {
-    stop("Invalid arrest offense: '", offense, "' is not a name the API ",
-         "reports. See list_ucr_arrest_offenses().", call. = FALSE)
-  }
-  empty()
-}
-
-# Internal: parse an arrest/{level}/all?type=counts response.
+# Internal: parse an arrest/{level}/{code}?type=counts response.
 #
 # The CDE arrest endpoint dropped the `offenses` wrapper and renamed `counts`
 # to `actuals`. Accept both: prefer the top-level payload, fall back to the
 # legacy `offenses` container.
 parse_arrest_counts_response <- function(response, geography, level,
-                                         comparison = FALSE) {
+                                         comparison = FALSE, offense = "all") {
   container <- if (!is.null(response$offenses) && length(response$offenses) > 0) {
     response$offenses
   } else {
     response
   }
   .parse_series(container$actuals %||% container$counts, container$rates,
-                geography = geography, offense = "all", level = level,
+                geography = geography, offense = offense, level = level,
                 comparison = comparison, populations = response$populations)
 }
 
@@ -340,7 +353,9 @@ parse_arrest_demographics_response <- function(response, geography, offense) {
 #' List the offense names `get_arrest_count()` accepts
 #'
 #' The CDE reports arrests at three levels of detail, and `get_arrest_count()`
-#' accepts a name from any of them.
+#' and `get_arrest_demographics()` accept a name from any of them. Two names
+#' it lists, `"Rape"` and `"Runaway"`, have no arrests in the API; see
+#' [ucr_arrest_offense_codes] for the codes behind the rest.
 #'
 #' @family UCR arrest functions
 #' @param level `"all"` (the default) for every name, or one level:
