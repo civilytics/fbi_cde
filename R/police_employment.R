@@ -1,24 +1,32 @@
-#' Get agency-, state-, region-, or national-level police staffing data.
+#' Get police staffing data
+#'
+#' Returns an agency's annual count of sworn officers and civilian employees,
+#' by sex, from the CDE's police employment (`pe`) endpoint.
+#'
+#' The endpoint also takes a state, a region or the nation, but the CDE
+#' currently answers those with every value missing -- counts, rates and
+#' populations alike -- so they return no rows, with a message. Only
+#' agency-level staffing is available.
 #'
 #' @inheritParams get_estimated_arson
 #' @inheritParams get_agency_crime
 #' @param region Character string for the census region (e.g. "Northeast",
 #'   "Midwest", "South", "West").
+#' @param from,to First and last year, as four-digit `YYYY` strings (defaults
+#'   `"2015"` and `"2020"`). Unlike the other data functions, police
+#'   employment is annual.
 #'
-#' @return A data.frame with columns for annual number of employees and officers
-#'   (also broken up by gender).
+#' @return A data.frame with one row per year: `year`, `male_officers`,
+#'   `female_officers`, `male_civilians`, `female_civilians`, `ori` (the
+#'   requested geography), and the totals `male_total`, `female_total`,
+#'   `civilians_total`, `officers_total` and `employees_total`. Zero rows,
+#'   with a message, when the CDE returns no data.
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' # Gets only Oakland Police Department in California
-#' get_police_employment("CA0010900")
-#'
-#' # Gets California state-level estimates
-#' get_police_employment(state_abb = "CA")
-#'
-#' # Gets national-level estimates
-#' get_police_employment()
+#' # Oakland Police Department, California
+#' get_police_employment("CA0010900", from = "2018", to = "2020")
 #' }
 get_police_employment <- function(ori = NULL,
                                     state_abb = NULL,
@@ -57,7 +65,22 @@ get_police_employment <- function(ori = NULL,
   query <- cde_query(from, to, four_digit_year = TRUE)
 
   response <- cde_request(path, query)
-  parse_police_employment_response(response, geography)
+  out <- parse_police_employment_response(response, geography)
+
+  if (nrow(out) == 0) {
+    message(
+      "get_police_employment() returned no data for ", geography, ", ",
+      from, "-", to, ".",
+      if (is.null(ori)) {
+        paste0(" The CDE currently publishes police staffing for individual ",
+               "agencies only; state, region and national requests come back ",
+               "empty.")
+      } else {
+        ""
+      }
+    )
+  }
+  out
 }
 
 #' Internal helper: parse police employment API response into a wide data.frame

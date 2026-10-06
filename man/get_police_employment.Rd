@@ -2,7 +2,7 @@
 % Please edit documentation in R/police_employment.R
 \name{get_police_employment}
 \alias{get_police_employment}
-\title{Get agency-, state-, region-, or national-level police staffing data.}
+\title{Get police staffing data}
 \usage{
 get_police_employment(
   ori = NULL,
@@ -21,26 +21,30 @@ national data.}
 \item{region}{Character string for the census region (e.g. "Northeast",
 "Midwest", "South", "West").}
 
-\item{from}{Start date in MM-YYYY format (default "01-2015").}
-
-\item{to}{End date in MM-YYYY format (default "12-2020").}
+\item{from, to}{First and last year, as four-digit \code{YYYY} strings (defaults
+\code{"2015"} and \code{"2020"}). Unlike the other data functions, police
+employment is annual.}
 }
 \value{
-A data.frame with columns for annual number of employees and officers
-(also broken up by gender).
+A data.frame with one row per year: \code{year}, \code{male_officers},
+\code{female_officers}, \code{male_civilians}, \code{female_civilians}, \code{ori} (the
+requested geography), and the totals \code{male_total}, \code{female_total},
+\code{civilians_total}, \code{officers_total} and \code{employees_total}. Zero rows,
+with a message, when the CDE returns no data.
 }
 \description{
-Get agency-, state-, region-, or national-level police staffing data.
+Returns an agency's annual count of sworn officers and civilian employees,
+by sex, from the CDE's police employment (\code{pe}) endpoint.
+}
+\details{
+The endpoint also takes a state, a region or the nation, but the CDE
+currently answers those with every value missing -- counts, rates and
+populations alike -- so they return no rows, with a message. Only
+agency-level staffing is available.
 }
 \examples{
 \dontrun{
-# Gets only Oakland Police Department in California
-get_police_employment("CA0010900")
-
-# Gets California state-level estimates
-get_police_employment(state_abb = "CA")
-
-# Gets national-level estimates
-get_police_employment()
+# Oakland Police Department, California
+get_police_employment("CA0010900", from = "2018", to = "2020")
 }
 }

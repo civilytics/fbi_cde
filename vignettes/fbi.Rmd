@@ -25,7 +25,7 @@ agency. This vignette covers those. The package also builds county, city and
 metro-area views on top of them; see `vignette("geography")`.
 
 Everything below was run against the live API on
-2026-10-05. Agencies backfill and revise their
+2026-10-06. Agencies backfill and revise their
 reports, so re-running it will move some numbers.
 
 
@@ -376,12 +376,14 @@ oakland_pe
 #> 3        715          341             316            740            1056
 ```
 
-Employee *counts* are agency-level only: for a state or the nation the API
-returns rates without counts, so `get_police_employment()` returns no rows:
+Staffing is published for individual agencies only. The API accepts a state,
+a region or the nation, but answers with every value missing -- counts and
+rates alike -- so `get_police_employment()` returns no rows and says why:
 
 
 ```r
 nrow(get_police_employment(state_abb = "TX", from = "2018", to = "2020"))
+#> get_police_employment() returned no data for TX, 2018-2020. The CDE currently publishes police staffing for individual agencies only; state, region and national requests come back empty.
 #> [1] 0
 ```
 
