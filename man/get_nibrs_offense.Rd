@@ -16,29 +16,29 @@ get_nibrs_offense(
 \arguments{
 \item{ori}{A string of the 9-character ORI code for the desired agency.}
 
-\item{state_abb}{String for state abbreviation. If `NULL` (default) returns
+\item{state_abb}{String for state abbreviation. If \code{NULL} (default) returns
 national data.}
 
 \item{from}{Start date in MM-YYYY format (default "01-2015").}
 
 \item{to}{End date in MM-YYYY format (default "12-2020").}
 
-\item{offense}{Offense code (default `"V"`, violent crime): a summary group
-such as `"V"`, `"P"`, `"ROB"` or `"BUR"`, or a NIBRS offense code such as
-`"13B"` or `"35A"`. See [list_nibrs_offenses()]. Offense names such as
-`"robbery"` are rejected: the API returns no data for them.}
+\item{offense}{Offense code (default \code{"V"}, violent crime): a summary group
+such as \code{"V"}, \code{"P"}, \code{"ROB"} or \code{"BUR"}, or a NIBRS offense code such as
+\code{"13B"} or \code{"35A"}. See \code{\link[=list_nibrs_offenses]{list_nibrs_offenses()}}. Offense names such as
+\code{"robbery"} are rejected: the API returns no data for them.}
 
-\item{variable}{`"weapons"` (the default) or `"related_offenses"`. See
-[list_nibrs_offense_variables()].}
+\item{variable}{\code{"weapons"} (the default) or \code{"related_offenses"}. See
+\code{\link[=list_nibrs_offense_variables]{list_nibrs_offense_variables()}}.}
 }
 \value{
-A data.frame with the columns described in [get_nibrs_victim()].
+A data.frame with the columns described in \code{\link[=get_nibrs_victim]{get_nibrs_victim()}}.
 }
 \description{
 Retrieves offense characteristics -- the weapons involved, or the other
 offenses reported in the same incidents -- for one offense, summed over the
-date range, from the CDE API endpoint `nibrs/<level>/<offense>` with
-`type=totals`.
+date range, from the CDE API endpoint \verb{nibrs/<level>/<offense>} with
+\code{type=totals}.
 }
 \examples{
 \dontrun{

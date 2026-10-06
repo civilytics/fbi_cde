@@ -14,7 +14,7 @@ A character vector with 2 elements.
 nibrs_offense_variables
 }
 \description{
-The values `get_nibrs_offense()` accepts for `variable`: the keys of a
-NIBRS response's offense section. Built by `data-raw/api_vocabularies.R`.
+The values \code{get_nibrs_offense()} accepts for \code{variable}: the keys of a
+NIBRS response's offense section. Built by \code{data-raw/api_vocabularies.R}.
 }
 \keyword{datasets}

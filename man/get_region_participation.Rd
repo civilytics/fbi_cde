@@ -8,20 +8,20 @@ get_region_participation(region_name, key = get_api_key())
 }
 \arguments{
 \item{region_name}{String for the census region to get data for. See
-[regions] for valid values.}
+\link{regions} for valid values.}
 
 \item{key}{API key for the legacy FBI API (not needed for CDE API).}
 }
 \value{
 A one-row data.frame with columns: region, total_agencies,
-  nibrs_agencies, participation_rate.
+nibrs_agencies, participation_rate.
 }
 \description{
-Aggregates [get_state_participation()] across every state in
-`region_name`. Census region membership is taken from the bundled
-[fbi_api_agencies] dataset -- a fixed geography, not live crime data --
+Aggregates \code{\link[=get_state_participation]{get_state_participation()}} across every state in
+\code{region_name}. Census region membership is taken from the bundled
+\link{fbi_api_agencies} dataset -- a fixed geography, not live crime data --
 while each state's participation counts are fetched live. See
-[get_agency_participation()] for why this is a modernized reimplementation
+\code{\link[=get_agency_participation]{get_agency_participation()}} for why this is a modernized reimplementation
 rather than the retired year-by-year SRS/NIBRS participation series.
 }
 \examples{

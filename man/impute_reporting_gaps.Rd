@@ -7,25 +7,25 @@
 impute_reporting_gaps(detail, method = "interpolate")
 }
 \arguments{
-\item{detail}{A data.frame as returned by [get_county_crime_detail()], with at
+\item{detail}{A data.frame as returned by \code{\link[=get_county_crime_detail]{get_county_crime_detail()}}, with at
 least the columns: \code{ori}, \code{offense}, \code{period}, \code{count},
 \code{participated_population}, \code{rate}, \code{reported}.}
 
-\item{method}{Imputation method. Currently only `"interpolate"` is supported,
+\item{method}{Imputation method. Currently only \code{"interpolate"} is supported,
 which uses linear interpolation of \code{rate} across time (in months), then
 scales by each gap month's own population as described above. Gaps at the
 edges (before first or after last reported period) are not filled.}
 }
 \value{
 A data.frame with the same rows and columns as \code{detail}, plus two
-  new columns:
-  \itemize{
-    \item \code{imputed}: logical, \code{TRUE} only for rows whose values were
-      filled by imputation; \code{FALSE} for all original (reported or missing)
-      rows.
-    \item \code{impute_method}: character, the method name (e.g. `"interpolate"`)
-      on imputed rows; \code{NA} elsewhere.
-  }
+new columns:
+\itemize{
+\item \code{imputed}: logical, \code{TRUE} only for rows whose values were
+filled by imputation; \code{FALSE} for all original (reported or missing)
+rows.
+\item \code{impute_method}: character, the method name (e.g. \code{"interpolate"})
+on imputed rows; \code{NA} elsewhere.
+}
 }
 \description{
 Fills temporal holes within agencies that report some periods but miss others.
@@ -39,10 +39,10 @@ in the window, or have no population (e.g. transit or campus police, whose
 rate is undefined), are left unchanged. Every filled value is flagged with
 \code{imputed = TRUE} and \code{impute_method}; its
 \code{participated_population} stays missing, so coverage figures from
-[get_county_crime()] still show the month as unreported.
+\code{\link[=get_county_crime]{get_county_crime()}} still show the month as unreported.
 }
 \details{
-This is an opt-in transform — the raw detail from [get_county_crime_detail()]
+This is an opt-in transform — the raw detail from \code{\link[=get_county_crime_detail]{get_county_crime_detail()}}
 stays pristine. Call this function explicitly when you need continuous series
 for trend analysis. Gaps at the edges (before first or after last reported
 period) are not filled; only gaps between known values are interpolated.

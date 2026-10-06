@@ -7,8 +7,8 @@
 \format{
 A data frame with 73 rows and 2 variables:
 \describe{
-  \item{code}{Offense code, as passed to `offense`}
-  \item{label}{Offense name}
+\item{code}{Offense code, as passed to \code{offense}}
+\item{label}{Offense name}
 }
 }
 \source{
@@ -18,9 +18,9 @@ A data frame with 73 rows and 2 variables:
 nibrs_offenses
 }
 \description{
-The summary groups (`"V"`, `"P"`, `"ROB"`, `"BUR"`, ...) and the NIBRS
+The summary groups (\code{"V"}, \code{"P"}, \code{"ROB"}, \code{"BUR"}, ...) and the NIBRS
 offense codes from the CDE's offense lookup. The API also accepts NIBRS
-codes missing from the lookup, such as `"13A"` or `"120"`. Built by
-`data-raw/api_vocabularies.R`.
+codes missing from the lookup, such as \code{"13A"} or \code{"120"}. Built by
+\code{data-raw/api_vocabularies.R}.
 }
 \keyword{datasets}

@@ -18,64 +18,64 @@ get_place_crime_detail(
 )
 }
 \arguments{
-\item{place}{Place name (case-insensitive; e.g. `"Lufkin"`). Supply either
+\item{place}{Place name (case-insensitive; e.g. \code{"Lufkin"}). Supply either
 the bare name or the full agency name — both resolve.}
 
-\item{state}{Two-letter state abbreviation (e.g. `"TX"`).}
+\item{state}{Two-letter state abbreviation (e.g. \code{"TX"}).}
 
 \item{county}{Optional county name, needed only to disambiguate a place name
 that occurs in more than one county of the same state.}
 
-\item{offense}{Offense code (default `"V"`; see `get_offense_codes()`).}
+\item{offense}{Offense code (default \code{"V"}; see \code{get_offense_codes()}).}
 
-\item{from, to}{Date range in `MM-YYYY` format.}
+\item{from, to}{Date range in \code{MM-YYYY} format.}
 
 \item{agency_class}{Optional character vector of place classes to query
-instead of the default set (`"place_primary"`, `"campus"`): any of those
-plus `"special"` and `"state"`.}
+instead of the default set (\code{"place_primary"}, \code{"campus"}): any of those
+plus \code{"special"} and \code{"state"}.}
 
-\item{include_statewide}{If `TRUE`, also query state agencies (class
-`"state"`, e.g. a state park's rangers or a capitol police force) found
-inside the place by [add_place_spatial_members()]. Default `FALSE`.}
+\item{include_statewide}{If \code{TRUE}, also query state agencies (class
+\code{"state"}, e.g. a state park's rangers or a capitol police force) found
+inside the place by \code{\link[=add_place_spatial_members]{add_place_spatial_members()}}. Default \code{FALSE}.}
 
 \item{agencies}{Optional pre-resolved agency membership data.frame, e.g. the
-  output of [place_agencies()] with [add_place_spatial_members()] applied.
-  When supplied, it is used directly instead of calling `place_agencies()`
-  internally — this is the only way to reach `"campus"`, `"special"` or
-  `"state"` rows, since [place_agencies()] alone never returns them. Campus
-  rows supplied this way are queried by default. Must be a data.frame
-  carrying at least `ori`, `agency_name`, `agency_type_name`,
-  `agency_class`, `place_name`, `county_name`, `state_abbr`, and
-  `attribution`.
+output of \code{\link[=place_agencies]{place_agencies()}} with \code{\link[=add_place_spatial_members]{add_place_spatial_members()}} applied.
+When supplied, it is used directly instead of calling \code{place_agencies()}
+internally — this is the only way to reach \code{"campus"}, \code{"special"} or
+\code{"state"} rows, since \code{\link[=place_agencies]{place_agencies()}} alone never returns them. Campus
+rows supplied this way are queried by default. Must be a data.frame
+carrying at least \code{ori}, \code{agency_name}, \code{agency_type_name},
+\code{agency_class}, \code{place_name}, \code{county_name}, \code{state_abbr}, and
+\code{attribution}.
 
-  Column presence is validated, but membership is **not**: a hand-built frame
-  can contain any ORI, including a sheriff or state police agency. The
-  supported path ([place_agencies()], optionally through
-  [add_place_spatial_members()]) can never produce one — county, parish,
-  state-police, and tribal agencies are excluded structurally. If you build
-  the frame yourself, that exclusion becomes yours to maintain: attributing a
-  sheriff to a place double-counts against the place's own agency, because a
-  sheriff polices the unincorporated remainder and contract cities report
-  under their own city ORI.}
+Column presence is validated, but membership is \strong{not}: a hand-built frame
+can contain any ORI, including a sheriff or state police agency. The
+supported path (\code{\link[=place_agencies]{place_agencies()}}, optionally through
+\code{\link[=add_place_spatial_members]{add_place_spatial_members()}}) can never produce one — county, parish,
+state-police, and tribal agencies are excluded structurally. If you build
+the frame yourself, that exclusion becomes yours to maintain: attributing a
+sheriff to a place double-counts against the place's own agency, because a
+sheriff polices the unincorporated remainder and contract cities report
+under their own city ORI.}
 
-\item{progress}{If `TRUE`, print a simple progress line per agency.}
+\item{progress}{If \code{TRUE}, print a simple progress line per agency.}
 }
 \value{
-A data.frame with one row per agency-period, carrying: `ori`,
-  `agency_name`, `agency_type_name`, `agency_class`,
-  `place_name`, `county_name`, `state_abbr`, `attribution`, `offense`,
-  `period`, `count`, `population`, `participated_population`, `rate`, and
-  `reported`. Agencies whose request or parse fails are dropped with a
-  warning and recorded in `attr(x, "dropped")`. If filtering (via
-  `agency_class`/`include_statewide`) empties a non-empty agency set, a warning
-  names the place and the filter responsible, and a zero-row frame is
-  returned.
+A data.frame with one row per agency-period, carrying: \code{ori},
+\code{agency_name}, \code{agency_type_name}, \code{agency_class},
+\code{place_name}, \code{county_name}, \code{state_abbr}, \code{attribution}, \code{offense},
+\code{period}, \code{count}, \code{population}, \code{participated_population}, \code{rate}, and
+\code{reported}. Agencies whose request or parse fails are dropped with a
+warning and recorded in \code{attr(x, "dropped")}. If filtering (via
+\code{agency_class}/\code{include_statewide}) empties a non-empty agency set, a warning
+names the place and the filter responsible, and a zero-row frame is
+returned.
 }
 \description{
 Fans out one request per member agency and returns their crime series
-**unsummed** — one row per agency-period — carrying `agency_class`, coverage
-(`population`, `participated_population`, `reported`), a per-agency `rate`,
-and the `attribution` that earned each agency its membership.
+\strong{unsummed} — one row per agency-period — carrying \code{agency_class}, coverage
+(\code{population}, \code{participated_population}, \code{reported}), a per-agency \code{rate},
+and the \code{attribution} that earned each agency its membership.
 }
 \details{
 In the common case a place has exactly one member agency, so this is a
@@ -84,7 +84,7 @@ is the package's primary friction, and this removes it.
 
 No place-level aggregate is provided. Summing an opted-in campus agency into
 a city total is a modeling choice, not arithmetic; see the county Layer 2
-(`get_county_crime()`) for the shape that decision takes.
+(\code{get_county_crime()}) for the shape that decision takes.
 }
 \examples{
 \dontrun{
@@ -97,6 +97,6 @@ get_place_crime_detail("Berkeley", "CA", agencies = x)
 }
 }
 \seealso{
-[place_agencies()], [add_place_spatial_members()],
-  [impute_reporting_gaps()] for filling reporting gaps in the result.
+\code{\link[=place_agencies]{place_agencies()}}, \code{\link[=add_place_spatial_members]{add_place_spatial_members()}},
+\code{\link[=impute_reporting_gaps]{impute_reporting_gaps()}} for filling reporting gaps in the result.
 }

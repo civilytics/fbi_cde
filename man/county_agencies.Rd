@@ -7,52 +7,53 @@
 county_agencies(county, state)
 }
 \arguments{
-\item{county}{County name (case-insensitive; e.g. `"Alameda"`).}
+\item{county}{County name (case-insensitive; e.g. \code{"Alameda"}).}
 
-\item{state}{Two-letter state abbreviation (e.g. `"CA"`).}
+\item{state}{Two-letter state abbreviation (e.g. \code{"CA"}).}
 }
 \value{
-A data.frame with columns `ori`, `agency_name`, `agency_type_name`,
-  `agency_class`, `county_name`, `state_abbr`, `county_fips`,
-  `latitude`, `longitude`, `agency_county_names`. `county_name` and
-  `county_fips` (5-digit, character, preserving leading zeros) identify the
-  queried county on every row. `agency_county_names` is the CDE's own county
-  list for the agency: semicolon-separated for an agency that polices several
-  counties (e.g. Columbus PD, `"DELAWARE; FAIRFIELD; FRANKLIN"`). Such an
-  agency is attributed in full to each of its counties, so summing results
-  across counties counts it more than once. `agency_class` is one of
-  `"county_primary"` (sheriff, parish), `"municipal"` (city police),
-  `"campus"`, `"state"` (state police and other state agencies),
-  `"special"` (transit, school, airport, port, park and railroad police,
-  task forces) or `"tribal"`. Returns a zero-row frame (with a warning) if
-  no agencies match.
+A data.frame with columns \code{ori}, \code{agency_name}, \code{agency_type_name},
+\code{agency_class}, \code{county_name}, \code{state_abbr}, \code{county_fips},
+\code{latitude}, \code{longitude}, \code{agency_county_names}. \code{county_name} and
+\code{county_fips} (5-digit, character, preserving leading zeros) identify the
+queried county on every row. \code{agency_county_names} is the CDE's own county
+list for the agency: semicolon-separated for an agency that polices several
+counties (e.g. Columbus PD, \code{"DELAWARE; FAIRFIELD; FRANKLIN"}). Such an
+agency is attributed in full to each of its counties, so summing results
+across counties counts it more than once. \code{agency_class} is one of
+\code{"county_primary"} (sheriff, parish), \code{"municipal"} (city police),
+\code{"campus"}, \code{"state"} (state police and other state agencies),
+\code{"special"} (transit, school, airport, port, park and railroad police,
+task forces) or \code{"tribal"}. Returns a zero-row frame (with a warning) if
+no agencies match.
 }
 \description{
 Returns every agency in the bundled agency table whose county and state
-match, classified by `agency_class`. This is an *attribution* model, not a
+match, classified by \code{agency_class}. This is an \emph{attribution} model, not a
 spatial one: it reports the agencies attributed to a county, not crime known
 to have occurred there. It returns every class; the crime functions
-([get_county_crime_detail()], [get_metro_crime_detail()]) then choose which
+(\code{\link[=get_county_crime_detail]{get_county_crime_detail()}}, \code{\link[=get_metro_crime_detail]{get_metro_crime_detail()}}) then choose which
 classes to query.
 }
 \section{Agencies the CDE leaves without a county}{
 
 The CDE assigns no county to three agencies that each police a whole county
 or county-equivalent, so the package attributes them itself, by ORI:
-
-* New York City Police Department (`NY0303000`): the five boroughs, Bronx,
-  Kings, New York, Queens and Richmond counties.
-* Metropolitan Police Department of the District of Columbia
-  (`DCMPD0000`): the District of Columbia.
-* Baltimore City Sheriff's Office (`MD0040600`): Baltimore city.
+\itemize{
+\item New York City Police Department (\code{NY0303000}): the five boroughs, Bronx,
+Kings, New York, Queens and Richmond counties.
+\item Metropolitan Police Department of the District of Columbia
+(\code{DCMPD0000}): the District of Columbia.
+\item Baltimore City Sheriff's Office (\code{MD0040600}): Baltimore city.
+}
 
 The NYPD reports one series for the whole city; the CDE has no borough
 breakdown. Like any multi-county agency it is attributed in full to each
-of its counties, so `county_agencies("Kings", "NY")` includes the NYPD, and
-the crime functions return **citywide** NYPD figures for Brooklyn, with
+of its counties, so \code{county_agencies("Kings", "NY")} includes the NYPD, and
+the crime functions return \strong{citywide} NYPD figures for Brooklyn, with
 New York City's population. A borough's results therefore describe the
 city, not the borough. Use the New York metro, or the NYPD itself, rather
-than summing boroughs. For these agencies `agency_county_names` holds the
+than summing boroughs. For these agencies \code{agency_county_names} holds the
 package's attribution, not a list from the CDE.
 }
 

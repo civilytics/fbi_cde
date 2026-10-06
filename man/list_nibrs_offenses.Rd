@@ -7,10 +7,10 @@
 list_nibrs_offenses()
 }
 \value{
-A data.frame with columns `code` and `label`: the summary groups (`"V"`,
-`"P"`, `"ROB"`, `"BUR"`, ...) and the NIBRS offense codes from the CDE's
+A data.frame with columns \code{code} and \code{label}: the summary groups (\code{"V"},
+\code{"P"}, \code{"ROB"}, \code{"BUR"}, ...) and the NIBRS offense codes from the CDE's
 offense lookup. The API also accepts NIBRS offense codes missing from that
-lookup, such as `"13A"` (aggravated assault) or `"120"` (robbery).
+lookup, such as \code{"13A"} (aggravated assault) or \code{"120"} (robbery).
 }
 \description{
 List the offense codes the NIBRS functions accept.

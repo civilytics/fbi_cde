@@ -13,19 +13,19 @@ get_agency_participation(ori, key = get_api_key())
 }
 \value{
 A one-row data.frame with columns: ori, agency_name,
-  agency_type_name, state_abbr, state_name, county, is_nibrs,
-  nibrs_start_date.
+agency_type_name, state_abbr, state_name, county, is_nibrs,
+nibrs_start_date.
 }
 \description{
-The current CDE API has no dedicated participation-*rate* endpoint: the
-legacy `participation/...` paths this function used to call return 404,
-and the `participation/*` namespace still present in the current API is
+The current CDE API has no dedicated participation-\emph{rate} endpoint: the
+legacy \code{participation/...} paths this function used to call return 404,
+and the \verb{participation/*} namespace still present in the current API is
 scoped to Use-of-Force agency reporting, not general UCR/NIBRS
 participation (confirmed by inspecting the CDE web app's client bundle and
 probing the live API -- see Issue #1). This is a modernized
-reimplementation: it reports whether `ori` currently reports to NIBRS,
-sourced live from `agency/byStateAbbr/` (state derived from the first two
-characters of `ori`), in place of the retired year-by-year
+reimplementation: it reports whether \code{ori} currently reports to NIBRS,
+sourced live from \verb{agency/byStateAbbr/} (state derived from the first two
+characters of \code{ori}), in place of the retired year-by-year
 SRS/NIBRS participation series.
 }
 \examples{

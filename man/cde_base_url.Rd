@@ -11,8 +11,8 @@ A character string with the base URL.
 }
 \description{
 Returns the base URL for the FBI Crime Data Explorer API.
-Can be overridden via `getOption("fbiCDE.cde.base_url")` or
-`Sys.getenv("FBI_CDE_BASE_URL")` (for tests).
+Can be overridden via \code{getOption("fbiCDE.cde.base_url")} or
+\code{Sys.getenv("FBI_CDE_BASE_URL")} (for tests).
 }
 \examples{
 cde_base_url()

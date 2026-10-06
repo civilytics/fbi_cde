@@ -2,22 +2,22 @@
 % Please edit documentation in R/ucr_arrest.R
 \name{list_ucr_arrest_offenses}
 \alias{list_ucr_arrest_offenses}
-\title{List the offense names `get_arrest_count()` accepts}
+\title{List the offense names \code{get_arrest_count()} accepts}
 \usage{
 list_ucr_arrest_offenses(level = c("all", "name", "category", "breakdown"))
 }
 \arguments{
-\item{level}{`"all"` (the default) for every name, or one level:
-`"name"` (the 34 offense names, e.g. `"Drug Possession"`), `"category"`
-(29, e.g. `"Drug/Narcotic Offenses"`) or `"breakdown"` (49, e.g.
-`"Drug Possession - Marijuana"`). Within a level the counts do not
+\item{level}{\code{"all"} (the default) for every name, or one level:
+\code{"name"} (the 34 offense names, e.g. \code{"Drug Possession"}), \code{"category"}
+(29, e.g. \code{"Drug/Narcotic Offenses"}) or \code{"breakdown"} (49, e.g.
+\code{"Drug Possession - Marijuana"}). Within a level the counts do not
 overlap, so ranking offenses means ranking one level.}
 }
 \value{
 A sorted character vector of offense names.
 }
 \description{
-The CDE reports arrests at three levels of detail, and `get_arrest_count()`
+The CDE reports arrests at three levels of detail, and \code{get_arrest_count()}
 accepts a name from any of them.
 }
 \examples{

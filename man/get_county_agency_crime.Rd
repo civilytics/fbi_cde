@@ -18,23 +18,23 @@ get_county_agency_crime(
 
 \item{state}{Two-letter state abbreviation.}
 
-\item{offense}{Offense code (default `"V"`; see `get_offense_codes()`).}
+\item{offense}{Offense code (default \code{"V"}; see \code{get_offense_codes()}).}
 
-\item{from, to}{Date range in `MM-YYYY` format.}
+\item{from, to}{Date range in \code{MM-YYYY} format.}
 
-\item{comparison}{If `TRUE`, also return the comparison series the API
+\item{comparison}{If \code{TRUE}, also return the comparison series the API
 sends alongside the agency's own: its state's and the nation's rates
-(these have no `count`). Default `FALSE` returns only the agency's own
+(these have no \code{count}). Default \code{FALSE} returns only the agency's own
 series.}
 }
 \value{
-The `get_agency_crime()` data.frame for the county's primary agency.
+The \code{get_agency_crime()} data.frame for the county's primary agency.
 }
 \description{
-Resolves the single `county_primary` ORI for a county and returns its own
-`get_agency_crime()` series. This disambiguates "the county sheriff's own
+Resolves the single \code{county_primary} ORI for a county and returns its own
+\code{get_agency_crime()} series. This disambiguates "the county sheriff's own
 reported crime" from "crime aggregated across the county"
-(`get_county_crime_detail()`).
+(\code{get_county_crime_detail()}).
 }
 \examples{
 \dontrun{

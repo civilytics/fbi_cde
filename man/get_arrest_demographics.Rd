@@ -15,25 +15,25 @@ get_arrest_demographics(
 \arguments{
 \item{ori}{A string of the 9-character ORI code for the desired agency.}
 
-\item{state_abb}{String for state abbreviation. If `NULL` (default) returns
+\item{state_abb}{String for state abbreviation. If \code{NULL} (default) returns
 national data.}
 
 \item{from}{Start date in MM-YYYY format (default "01-2015").}
 
 \item{to}{End date in MM-YYYY format (default "12-2020").}
 
-\item{offense}{Must be `"all"` (the default). The CDE API only provides
+\item{offense}{Must be \code{"all"} (the default). The CDE API only provides
 arrest demographics aggregated across all offenses; it does not break
 demographics down by offense, so any other value raises an error.}
 }
 \value{
 A data.frame with columns: geography, offense, period,
-  demographic_type, demographic_value, count
+demographic_type, demographic_value, count
 }
 \description{
 Retrieves arrest counts broken down by demographic categories (sex, age,
 race) for a specific offense. Uses the CDE API endpoint
-`arrest/<level>/<offense>` with `type=totals`.
+\verb{arrest/<level>/<offense>} with \code{type=totals}.
 }
 \examples{
 \dontrun{

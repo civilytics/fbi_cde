@@ -7,22 +7,22 @@
 list_metros(type = NULL)
 }
 \arguments{
-\item{type}{Optionally filter to `"metro"` (Metropolitan Statistical Areas)
-or `"micro"` (Micropolitan Statistical Areas). `NULL` (default) returns
+\item{type}{Optionally filter to \code{"metro"} (Metropolitan Statistical Areas)
+or \code{"micro"} (Micropolitan Statistical Areas). \code{NULL} (default) returns
 both.}
 }
 \value{
-A data.frame with columns `cbsa_code`, `cbsa_title`, `cbsa_type`, and
-  `n_counties`, carrying the delineation vintage in `attr(x, "vintage")`.
+A data.frame with columns \code{cbsa_code}, \code{cbsa_title}, \code{cbsa_type}, and
+\code{n_counties}, carrying the delineation vintage in \code{attr(x, "vintage")}.
 }
 \description{
 Returns every CBSA in the bundled crosswalk, with how many counties each
-contains. This is the discovery counterpart to [metro_agencies()]: it answers
-"what may I pass as `metro`?"
+contains. This is the discovery counterpart to \code{\link[=metro_agencies]{metro_agencies()}}: it answers
+"what may I pass as \code{metro}?"
 }
 \examples{
 head(list_metros(type = "metro"))
 }
 \seealso{
-[metro_agencies()], [counties_with_fips()] for the county analogue.
+\code{\link[=metro_agencies]{metro_agencies()}}, \code{\link[=counties_with_fips]{counties_with_fips()}} for the county analogue.
 }

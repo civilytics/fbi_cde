@@ -15,7 +15,7 @@ get_police_employment(
 \arguments{
 \item{ori}{A string of the 9-character ORI code for the desired agency.}
 
-\item{state_abb}{String for state abbreviation. If `NULL` (default) returns
+\item{state_abb}{String for state abbreviation. If \code{NULL} (default) returns
 national data.}
 
 \item{region}{Character string for the census region (e.g. "Northeast",
@@ -27,7 +27,7 @@ national data.}
 }
 \value{
 A data.frame with columns for annual number of employees and officers
-  (also broken up by gender).
+(also broken up by gender).
 }
 \description{
 Get agency-, state-, region-, or national-level police staffing data.

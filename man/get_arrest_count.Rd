@@ -16,44 +16,44 @@ get_arrest_count(
 \arguments{
 \item{ori}{A string of the 9-character ORI code for the desired agency.}
 
-\item{state_abb}{String for state abbreviation. If `NULL` (default) returns
+\item{state_abb}{String for state abbreviation. If \code{NULL} (default) returns
 national data.}
 
 \item{from}{Start date in MM-YYYY format (default "01-2015").}
 
 \item{to}{End date in MM-YYYY format (default "12-2020").}
 
-\item{offense}{`"all"` (the default) for the monthly series of total
+\item{offense}{\code{"all"} (the default) for the monthly series of total
 arrests, or an offense name for one aggregate count over the whole
-`from`-`to` range (the API has no per-offense monthly series). Names are
+\code{from}-\code{to} range (the API has no per-offense monthly series). Names are
 matched case-insensitively against the API's three levels: offense names
-(`"Robbery"`, `"Drug Possession"`), categories
-(`"Drug/Narcotic Offenses"`) and breakdowns
-(`"Drug Possession - Marijuana"`). Note that `"Drug Abuse Violations"` is
+(\code{"Robbery"}, \code{"Drug Possession"}), categories
+(\code{"Drug/Narcotic Offenses"}) and breakdowns
+(\code{"Drug Possession - Marijuana"}). Note that \code{"Drug Abuse Violations"} is
 only the drug arrests not classed as possession or sale; total drug
-arrests are `"Drug/Narcotic Offenses"`. See [list_ucr_arrest_offenses()].}
+arrests are \code{"Drug/Narcotic Offenses"}. See \code{\link[=list_ucr_arrest_offenses]{list_ucr_arrest_offenses()}}.}
 
-\item{comparison}{If `TRUE` (and `offense = "all"`), also return the
+\item{comparison}{If \code{TRUE} (and \code{offense = "all"}), also return the
 comparison series the API sends alongside an agency's or state's own: its
-state's and the nation's arrest rates (these have no `count`). Default
-`FALSE` returns only the queried geography's own series. A specific
+state's and the nation's arrest rates (these have no \code{count}). Default
+\code{FALSE} returns only the queried geography's own series. A specific
 offense has no comparison series.}
 }
 \value{
-A data.frame with columns `geography`, `offense`, `measure`
-  (`"arrests"`), `period`, `count`, `rate` (per 100,000 population, for
-  that month), and the `population` and `participated_population` described
-  in [get_agency_crime()] (their ratio is the reporting coverage). With `offense = "all"`, `offense` is `"all"`; with
-  `comparison = TRUE`, `series` and `series_name` columns follow
-  `geography`, as in [get_agency_crime()]. For a specific offense, a single
-  row holds the aggregate `count` for the whole range, with `period`,
-  `rate` and the population columns `NA`, and `offense` set to the API's
-  name for it.
+A data.frame with columns \code{geography}, \code{offense}, \code{measure}
+(\code{"arrests"}), \code{period}, \code{count}, \code{rate} (per 100,000 population, for
+that month), and the \code{population} and \code{participated_population} described
+in \code{\link[=get_agency_crime]{get_agency_crime()}} (their ratio is the reporting coverage). With \code{offense = "all"}, \code{offense} is \code{"all"}; with
+\code{comparison = TRUE}, \code{series} and \code{series_name} columns follow
+\code{geography}, as in \code{\link[=get_agency_crime]{get_agency_crime()}}. For a specific offense, a single
+row holds the aggregate \code{count} for the whole range, with \code{period},
+\code{rate} and the population columns \code{NA}, and \code{offense} set to the API's
+name for it.
 }
 \description{
 Retrieves arrest counts for an agency, state, or nationally, from the CDE
-API endpoint `arrest/<level>/all`: `type=counts` for the monthly all-offense
-series, `type=totals` for a single offense.
+API endpoint \verb{arrest/<level>/all}: \code{type=counts} for the monthly all-offense
+series, \code{type=totals} for a single offense.
 }
 \examples{
 \dontrun{

@@ -7,38 +7,38 @@
 metro_agencies(metro, state = NULL)
 }
 \arguments{
-\item{metro}{A CBSA title (e.g. `"Pittsburgh, PA"`), or a short name
-(`"Pittsburgh"`). See [list_metros()] for the available values.}
+\item{metro}{A CBSA title (e.g. \code{"Pittsburgh, PA"}), or a short name
+(\code{"Pittsburgh"}). See \code{\link[=list_metros]{list_metros()}} for the available values.}
 
 \item{state}{Optional two-letter state abbreviation, used only to
 disambiguate an ambiguous short name.}
 }
 \value{
-A data.frame with the [county_agencies()] columns plus `cbsa_code`,
-  `cbsa_title`, `cbsa_type` (`"metro"`/`"micro"`), and `central_outlying`
-  (whether the agency's county is central or outlying in the CBSA). Each ORI
-  appears once: an agency that polices several member counties is attributed
-  to the first of them in delineation order, and its `agency_county_names`
-  lists all of them. Returns a zero-row frame with a warning when the metro
-  is unknown.
+A data.frame with the \code{\link[=county_agencies]{county_agencies()}} columns plus \code{cbsa_code},
+\code{cbsa_title}, \code{cbsa_type} (\code{"metro"}/\code{"micro"}), and \code{central_outlying}
+(whether the agency's county is central or outlying in the CBSA). Each ORI
+appears once: an agency that polices several member counties is attributed
+to the first of them in delineation order, and its \code{agency_county_names}
+lists all of them. Returns a zero-row frame with a warning when the metro
+is unknown.
 }
 \description{
 Resolves a Core Based Statistical Area (CBSA) to the union of its member
-counties' agency sets. A metro is a set of *whole counties*, so this simply
-stacks [county_agencies()] across them, and `agency_class` keeps exactly
+counties' agency sets. A metro is a set of \emph{whole counties}, so this simply
+stacks \code{\link[=county_agencies]{county_agencies()}} across them, and \code{agency_class} keeps exactly
 its county-level meaning.
 }
 \details{
-CBSA titles are unique nationally, so `state` is only needed to disambiguate
-a short name shared by several metros (`"Albany"` matches GA, OR and NY).
+CBSA titles are unique nationally, so \code{state} is only needed to disambiguate
+a short name shared by several metros (\code{"Albany"} matches GA, OR and NY).
 }
 \section{Coverage limitations}{
 
-The bundled crosswalk has 1,915 county-CBSA rows, about 61% of the 3,134
-counties known to [county_agencies()]. That row count overstates coverage
+The bundled crosswalk has 1,915 county-CBSA rows, about 61\% of the 3,134
+counties known to \code{\link[=county_agencies]{county_agencies()}}. That row count overstates coverage
 slightly, because some rows are Connecticut planning regions or Puerto
 Rico municipios that never join a CDE county name (see below). Counted as
-distinct, CDE-reachable counties instead, coverage is about 58.5% (1,834 of
+distinct, CDE-reachable counties instead, coverage is about 58.5\% (1,834 of
 3,134). Either way, rural counties belong to no CBSA at all; that is a
 property of the 2023 OMB delineation, not a gap in the data.
 
@@ -56,11 +56,11 @@ as "no agencies report here", which is false. Tracked as Gitea issue #52.
 Puerto Rico's 10 CBSAs are unmapped too, but that is academic: the CDE has
 exactly one Puerto Rico agency.
 
-Agencies whose `county_name` is `"N/A"` -- mostly state police, other
+Agencies whose \code{county_name} is \code{"N/A"} -- mostly state police, other
 state agencies and tribal agencies -- cannot be reached from any
 county-keyed geography. Three that police a whole county-equivalent are
 attributed by the package instead (the NYPD, DC's Metropolitan Police and
-the Baltimore City Sheriff; see [county_agencies()]), so the New York and
+the Baltimore City Sheriff; see \code{\link[=county_agencies]{county_agencies()}}), so the New York and
 Washington metros include them.
 }
 
@@ -70,6 +70,6 @@ metro_agencies("Pittsburgh, PA")
 }
 }
 \seealso{
-[list_metros()] to discover metro names,
-  [county_agencies()].
+\code{\link[=list_metros]{list_metros()}} to discover metro names,
+\code{\link[=county_agencies]{county_agencies()}}.
 }

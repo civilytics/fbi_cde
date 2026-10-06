@@ -17,43 +17,43 @@ get_metro_crime_detail(
 )
 }
 \arguments{
-\item{metro}{A CBSA title (e.g. `"Pittsburgh, PA"`), or a short name
-(`"Pittsburgh"`). See [list_metros()] for the available values.}
+\item{metro}{A CBSA title (e.g. \code{"Pittsburgh, PA"}), or a short name
+(\code{"Pittsburgh"}). See \code{\link[=list_metros]{list_metros()}} for the available values.}
 
 \item{state}{Optional two-letter state abbreviation, used only to
 disambiguate an ambiguous short name.}
 
-\item{offense}{Offense code (default `"V"`; see `get_offense_codes()`).}
+\item{offense}{Offense code (default \code{"V"}; see \code{get_offense_codes()}).}
 
-\item{from, to}{Date range in `MM-YYYY` format.}
+\item{from, to}{Date range in \code{MM-YYYY} format.}
 
 \item{agency_class, include_statewide}{Which agencies to query, as for
-[get_county_crime_detail()].}
+\code{\link[=get_county_crime_detail]{get_county_crime_detail()}}.}
 
 \item{max_agencies}{Refuse to run if the filtered agency set is larger than
-this (default `150`), erroring **before any request is issued**. Set to
-`Inf` to disable, or narrow the set with `agency_class`.}
+this (default \code{150}), erroring \strong{before any request is issued}. Set to
+\code{Inf} to disable, or narrow the set with \code{agency_class}.}
 
-\item{progress}{If `TRUE` (the default here, unlike the county and place
+\item{progress}{If \code{TRUE} (the default here, unlike the county and place
 equivalents), print a progress line per agency. At metro scale silence is
 indistinguishable from a hang.}
 }
 \value{
 A data.frame with one row per agency-period. Agencies whose request
-  or parse fails are dropped with a warning; their ORIs are recorded in
-  `attr(x, "dropped")` and the errors in `attr(x, "dropped_reasons")`.
+or parse fails are dropped with a warning; their ORIs are recorded in
+\code{attr(x, "dropped")} and the errors in \code{attr(x, "dropped_reasons")}.
 }
 \description{
 Fans out one request per member agency across the metro's counties and
-returns their crime series **unsummed** -- one row per agency-period -- with
+returns their crime series \strong{unsummed} -- one row per agency-period -- with
 coverage columns and the CBSA metadata.
 }
 \details{
-**This can be an expensive call.** A metro is the union of whole counties, so
+\strong{This can be an expensive call.} A metro is the union of whole counties, so
 the largest are very large: New York-Newark-Jersey City resolves to roughly
 489 agencies, Chicago 314. Every agency is one sequential request. The median
 CBSA is only 7 agencies, so the cost is highly skewed -- which is why
-`max_agencies` refuses the large cases up front rather than letting them run
+\code{max_agencies} refuses the large cases up front rather than letting them run
 silently for minutes.
 
 No metro-level aggregate is provided. Summing across a metro raises the same
@@ -67,5 +67,5 @@ get_metro_crime_detail("Aberdeen, WA", from = "01-2019", to = "12-2019")
 }
 }
 \seealso{
-[metro_agencies()], [list_metros()], [get_county_crime_detail()].
+\code{\link[=metro_agencies]{metro_agencies()}}, \code{\link[=list_metros]{list_metros()}}, \code{\link[=get_county_crime_detail]{get_county_crime_detail()}}.
 }

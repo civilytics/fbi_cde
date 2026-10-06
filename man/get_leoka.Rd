@@ -13,24 +13,24 @@ get_leoka(from = 2020, to = 2024)
 }
 \value{
 A data.frame with one row per requested year with data and
-  columns: year, month (always `NA`; year-to-date totals have no month),
-  total_officers (officers feloniously killed), total_incidents (incidents
-  in which they were killed), and the `_dod`/`_doi` splits of each. The API
-  does not label those splits (they sum to the totals) and the package does
-  not interpret them.
+columns: year, month (always \code{NA}; year-to-date totals have no month),
+total_officers (officers feloniously killed), total_incidents (incidents
+in which they were killed), and the \verb{_dod}/\verb{_doi} splits of each. The API
+does not label those splits (they sum to the totals) and the package does
+not interpret them.
 }
 \description{
-Counts of law enforcement officers **feloniously killed**, nationally, by
+Counts of law enforcement officers \strong{feloniously killed}, nationally, by
 year. Despite the program's name, these are not assault counts: the totals
 match the FBI's published felonious-killing figures (46 officers in 2020,
 73 in 2021).
 
-National only: the live `leoka/ytd` endpoint ignores state/agency query
+National only: the live \code{leoka/ytd} endpoint ignores state/agency query
 parameters (verified against the live API -- requests with and without
-`state`/`ori` params return identical data), so the current CDE API has no
+\code{state}/\code{ori} params return identical data), so the current CDE API has no
 state- or agency-level LEOKA breakdown. Data is only available from 2020
 onward; earlier years return an empty (0-row) result for that year and are
-dropped, since `leoka/ytd?year=<2015-2019>` returns a `null` payload on
+dropped, since \verb{leoka/ytd?year=<2015-2019>} returns a \code{null} payload on
 the live API.
 }
 \examples{

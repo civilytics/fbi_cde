@@ -14,7 +14,7 @@ A character vector with 6 elements.
 nibrs_victim_variables
 }
 \description{
-The values `get_nibrs_victim()` accepts for `variable`: the keys of a
-NIBRS response's victim section. Built by `data-raw/api_vocabularies.R`.
+The values \code{get_nibrs_victim()} accepts for \code{variable}: the keys of a
+NIBRS response's victim section. Built by \code{data-raw/api_vocabularies.R}.
 }
 \keyword{datasets}

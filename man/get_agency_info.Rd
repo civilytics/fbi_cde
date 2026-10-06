@@ -14,10 +14,10 @@ get_agency_info(agency, state = NULL, ori_only = FALSE, exact_match = TRUE)
 \item{ori_only}{If TRUE (not default), returns only the ORI and the agency_name columns.}
 
 \item{exact_match}{If TRUE (default), finds matches based on exact match of agency name. Else,
-uses `grep()` to find agencies with similar names to inputted agency.}
+uses \code{grep()} to find agencies with similar names to inputted agency.}
 }
 \value{
-A data.frame with information about the agency - including ORI code and geographic information. The agency will have as many rows as agencies matched from the `agency` input.
+A data.frame with information about the agency - including ORI code and geographic information. The agency will have as many rows as agencies matched from the \code{agency} input.
 }
 \description{
 Get information about the selected agency including the 9-digit ORI, geographic information, type of agency, and whether they report to NIBRS.

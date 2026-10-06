@@ -7,27 +7,27 @@
 place_agencies(place, state, county = NULL)
 }
 \arguments{
-\item{place}{Place name (case-insensitive; e.g. `"Lufkin"`). Supply either
+\item{place}{Place name (case-insensitive; e.g. \code{"Lufkin"}). Supply either
 the bare name or the full agency name — both resolve.}
 
-\item{state}{Two-letter state abbreviation (e.g. `"TX"`).}
+\item{state}{Two-letter state abbreviation (e.g. \code{"TX"}).}
 
 \item{county}{Optional county name, needed only to disambiguate a place name
 that occurs in more than one county of the same state.}
 }
 \value{
-A data.frame with columns `ori`, `agency_name`, `agency_type_name`,
-  `agency_class`, `place_name`, `county_name`,
-  `state_abbr`, `attribution`, `latitude`, `longitude`. `attribution` records
-  how the row earned membership: `"name_identity"` here, or
-  `"point_in_polygon"` for rows added by [add_place_spatial_members()].
-  Returns a zero-row frame (with a warning) when no municipal agency matches.
+A data.frame with columns \code{ori}, \code{agency_name}, \code{agency_type_name},
+\code{agency_class}, \code{place_name}, \code{county_name},
+\code{state_abbr}, \code{attribution}, \code{latitude}, \code{longitude}. \code{attribution} records
+how the row earned membership: \code{"name_identity"} here, or
+\code{"point_in_polygon"} for rows added by \code{\link[=add_place_spatial_members]{add_place_spatial_members()}}.
+Returns a zero-row frame (with a warning) when no municipal agency matches.
 }
 \description{
 Resolves a municipality to the agency that reports crime for it. CDE city
-agencies are named `"<Place> Police Department"`, so the place name is
-recovered from the agency name — the agency *is* the place. This is an
-*attribution* model, not a spatial one.
+agencies are named \code{"<Place> Police Department"}, so the place name is
+recovered from the agency name — the agency \emph{is} the place. This is an
+\emph{attribution} model, not a spatial one.
 }
 \details{
 Sheriffs, state police, and tribal agencies are never place members: a
@@ -35,15 +35,15 @@ sheriff's population is the unincorporated remainder, and contract cities
 report under their own city ORI. A place's crime is therefore carried
 entirely by its own agency, with no double-count and no gap.
 
-Campus and special-district agencies sit *inside* places but cannot be
-attributed from names alone (name-matching achieves only ~26% recall). Add
-them with [add_place_spatial_members()], which is opt-in and requires `sf`
-and `tigris`.
+Campus and special-district agencies sit \emph{inside} places but cannot be
+attributed from names alone (name-matching achieves only ~26\% recall). Add
+them with \code{\link[=add_place_spatial_members]{add_place_spatial_members()}}, which is opt-in and requires \code{sf}
+and \code{tigris}.
 }
 \examples{
 place_agencies("Lufkin", "TX")
 }
 \seealso{
-[county_agencies()] for the county-level resolver,
-  [get_place_crime_detail()] for the crime series.
+\code{\link[=county_agencies]{county_agencies()}} for the county-level resolver,
+\code{\link[=get_place_crime_detail]{get_place_crime_detail()}} for the crime series.
 }

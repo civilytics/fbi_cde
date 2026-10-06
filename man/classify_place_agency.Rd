@@ -7,15 +7,15 @@
 classify_place_agency(agency_type_name)
 }
 \arguments{
-\item{agency_type_name}{Character vector of raw `agency_type_name` values.}
+\item{agency_type_name}{Character vector of raw \code{agency_type_name} values.}
 }
 \value{
-Character vector of `"place_primary"`, `"campus"`, `"special"`,
-  `"state"`, or `NA` for types that are not place members.
+Character vector of \code{"place_primary"}, \code{"campus"}, \code{"special"},
+\code{"state"}, or \code{NA} for types that are not place members.
 }
 \description{
-Maps the CDE's raw `agency_type_name` to a place-level `agency_class`.
-Types that can never be place members (`County`, `Parish`, `State Police`,
-`Tribal`) map to `NA`.
+Maps the CDE's raw \code{agency_type_name} to a place-level \code{agency_class}.
+Types that can never be place members (\code{County}, \code{Parish}, \verb{State Police},
+\code{Tribal}) map to \code{NA}.
 }
 \keyword{internal}

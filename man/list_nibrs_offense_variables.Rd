@@ -2,15 +2,15 @@
 % Please edit documentation in R/nibrs.R
 \name{list_nibrs_offense_variables}
 \alias{list_nibrs_offense_variables}
-\title{Returns a vector of all `variable` parameter options for `get_nibrs_offense()`.}
+\title{Returns a vector of all \code{variable} parameter options for \code{get_nibrs_offense()}.}
 \usage{
 list_nibrs_offense_variables()
 }
 \value{
-A character vector of all `variable` parameter options for `get_nibrs_offense()`.
+A character vector of all \code{variable} parameter options for \code{get_nibrs_offense()}.
 }
 \description{
-Returns a vector of all `variable` parameter options for `get_nibrs_offense()`.
+Returns a vector of all \code{variable} parameter options for \code{get_nibrs_offense()}.
 }
 \examples{
 list_nibrs_offense_variables()

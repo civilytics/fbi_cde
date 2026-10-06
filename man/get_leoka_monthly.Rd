@@ -12,10 +12,10 @@ get_leoka_monthly(year, month)
 \item{month}{Month, 1-12.}
 }
 \value{
-A one-row data.frame; see [get_leoka()] for columns.
+A one-row data.frame; see \code{\link[=get_leoka]{get_leoka()}} for columns.
 }
 \description{
-National only; see [get_leoka()].
+National only; see \code{\link[=get_leoka]{get_leoka()}}.
 }
 \examples{
 \dontrun{

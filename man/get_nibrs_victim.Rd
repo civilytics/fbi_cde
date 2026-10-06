@@ -16,30 +16,30 @@ get_nibrs_victim(
 \arguments{
 \item{ori}{A string of the 9-character ORI code for the desired agency.}
 
-\item{state_abb}{String for state abbreviation. If `NULL` (default) returns
+\item{state_abb}{String for state abbreviation. If \code{NULL} (default) returns
 national data.}
 
 \item{from}{Start date in MM-YYYY format (default "01-2015").}
 
 \item{to}{End date in MM-YYYY format (default "12-2020").}
 
-\item{offense}{Offense code (default `"V"`, violent crime): a summary group
-such as `"V"`, `"P"`, `"ROB"` or `"BUR"`, or a NIBRS offense code such as
-`"13B"` or `"35A"`. See [list_nibrs_offenses()]. Offense names such as
-`"robbery"` are rejected: the API returns no data for them.}
+\item{offense}{Offense code (default \code{"V"}, violent crime): a summary group
+such as \code{"V"}, \code{"P"}, \code{"ROB"} or \code{"BUR"}, or a NIBRS offense code such as
+\code{"13B"} or \code{"35A"}. See \code{\link[=list_nibrs_offenses]{list_nibrs_offenses()}}. Offense names such as
+\code{"robbery"} are rejected: the API returns no data for them.}
 
-\item{variable}{The variable to break victims down by (default `"race"`).
-See [list_nibrs_victim_variables()].}
+\item{variable}{The variable to break victims down by (default \code{"race"}).
+See \code{\link[=list_nibrs_victim_variables]{list_nibrs_victim_variables()}}.}
 }
 \value{
 A data.frame with columns: geography, offense (the code), period,
-  demographic_type (the variable), demographic_value, count.
+demographic_type (the variable), demographic_value, count.
 }
 \description{
 Retrieves victim counts by a demographic or situational variable (age,
 ethnicity, location, race, relationship, sex) for one offense, summed over
-the date range, from the CDE API endpoint `nibrs/<level>/<offense>` with
-`type=totals`.
+the date range, from the CDE API endpoint \verb{nibrs/<level>/<offense>} with
+\code{type=totals}.
 }
 \details{
 An agency or state that did not report to NIBRS in the period returns zero

@@ -7,12 +7,12 @@
 cde_request(path, query = list(), get_fun = httr::GET)
 }
 \arguments{
-\item{path}{Character string with the API path (e.g. `"summarized/national/V"`).}
+\item{path}{Character string with the API path (e.g. \code{"summarized/national/V"}).}
 
-\item{query}{Named list of query parameters (default: `list()`).}
+\item{query}{Named list of query parameters (default: \code{list()}).}
 
 \item{get_fun}{Function to perform the HTTP GET request. Defaults to
-`httr::GET`. Inject this for testing (e.g. with a mock response).}
+\code{httr::GET}. Inject this for testing (e.g. with a mock response).}
 }
 \value{
 The parsed JSON response as a list.
@@ -26,10 +26,10 @@ the parsed JSON list.
 Transient failures are retried with exponential backoff (1, 2, 4, ...
 seconds, capped at 30): an error raised by the request itself (a network
 failure or timeout) and HTTP 408, 429, 500, 502, 503 or 504. A
-`Retry-After` header given in seconds is honoured, capped at 60. Any other
+\code{Retry-After} header given in seconds is honoured, capped at 60. Any other
 status fails immediately. Two options tune this:
-`getOption("fbiCDE.max_retries", 3)`, the number of retries after the first
-attempt, and `getOption("fbiCDE.timeout", 60)`, the per-attempt timeout in
+\code{getOption("fbiCDE.max_retries", 3)}, the number of retries after the first
+attempt, and \code{getOption("fbiCDE.timeout", 60)}, the per-attempt timeout in
 seconds.
 }
 \keyword{internal}

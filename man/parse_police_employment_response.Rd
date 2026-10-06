@@ -13,11 +13,11 @@ parse_police_employment_response(response, geography)
 }
 \value{
 A wide data.frame with columns: year, male_officers, female_officers,
-  male_civilians, female_civilians, ori, male_total, female_total,
-  civilians_total, officers_total, employees_total
+male_civilians, female_civilians, ori, male_total, female_total,
+civilians_total, officers_total, employees_total
 }
 \description{
 Response shape (CDE API):
-  A named list where each top-level key maps to a list of period-value pairs.
+A named list where each top-level key maps to a list of period-value pairs.
 }
 \keyword{internal}

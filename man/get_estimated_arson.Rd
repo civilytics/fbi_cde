@@ -12,19 +12,19 @@ get_estimated_arson(
 )
 }
 \arguments{
-\item{state_abb}{String for state abbreviation. If `NULL` (default) returns
+\item{state_abb}{String for state abbreviation. If \code{NULL} (default) returns
 national data.}
 
 \item{from}{Start date in MM-YYYY format (default "01-2015").}
 
 \item{to}{End date in MM-YYYY format (default "12-2020").}
 
-\item{comparison}{If `TRUE`, a state query also returns the national
-comparison series (rate only). Default `FALSE` returns only the state's
+\item{comparison}{If \code{TRUE}, a state query also returns the national
+comparison series (rate only). Default \code{FALSE} returns only the state's
 own series. Has no effect on a national query.}
 }
 \value{
-A data.frame with the columns described in [get_agency_crime()].
+A data.frame with the columns described in \code{\link[=get_agency_crime]{get_agency_crime()}}.
 }
 \description{
 Get estimated arson data

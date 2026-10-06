@@ -7,8 +7,8 @@
 \format{
 A data frame with 112 rows and 2 variables:
 \describe{
-  \item{offense}{Offense name, as passed to `get_arrest_count(offense = )`}
-  \item{level}{`"name"` (34), `"category"` (29) or `"breakdown"` (49)}
+\item{offense}{Offense name, as passed to \code{get_arrest_count(offense = )}}
+\item{level}{\code{"name"} (34), \code{"category"} (29) or \code{"breakdown"} (49)}
 }
 }
 \source{
@@ -18,9 +18,9 @@ A data frame with 112 rows and 2 variables:
 ucr_arrest_offenses
 }
 \description{
-The offense names `get_arrest_count()` accepts: every key of the three maps
+The offense names \code{get_arrest_count()} accepts: every key of the three maps
 in the CDE's arrest totals response, with the map it comes from. A name can
-appear at more than one level. Use [list_ucr_arrest_offenses()] to list them.
-Built by `data-raw/api_vocabularies.R`.
+appear at more than one level. Use \code{\link[=list_ucr_arrest_offenses]{list_ucr_arrest_offenses()}} to list them.
+Built by \code{data-raw/api_vocabularies.R}.
 }
 \keyword{datasets}
