@@ -100,6 +100,16 @@ test_that("cde_request() leaves an HTML error page out of the message", {
   expect_no_match(conditionMessage(err), "DOCTYPE")
 })
 
+test_that("cde_request() keeps the status when the error body is unreadable", {
+  # Embedded NULs make rawToChar() fail.
+  fake_resp <- fake_response(500L, as.raw(c(0x41, 0x00, 0x42)))
+  withr::local_options(fbiCDE.max_retries = 0)
+  expect_error(
+    cde_request("summarized/national/V", get_fun = function(url, ...) fake_resp),
+    "HTTP 500 for [^ ]+$"
+  )
+})
+
 test_that("cde_request() survives a JSON scalar error body", {
   fake_resp <- fake_response(400L, charToRaw('"Bad request"'))
   expect_error(

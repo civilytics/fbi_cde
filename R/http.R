@@ -173,7 +173,12 @@ cde_request <- function(path, query = list(), get_fun = httr::GET) {
   if (length(body_raw) == 0) {
     return("")
   }
-  text <- tryCatch(rawToChar(body_raw), error = function(e) "")
+  # Never let a body we cannot read hide the HTTP status itself.
+  tryCatch(.cde_error_text(body_raw), error = function(e) "")
+}
+
+.cde_error_text <- function(body_raw) {
+  text <- rawToChar(body_raw)
   parsed <- tryCatch(jsonlite::fromJSON(text, simplifyVector = FALSE),
                      error = function(e) NULL)
   detail <- if (is.list(parsed) && is.character(parsed$message) &&
