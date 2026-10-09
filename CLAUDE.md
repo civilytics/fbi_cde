@@ -146,10 +146,45 @@ spec → plan → implementation cycle; tracked as Gitea issues):
   reader in `specs/2026-10-06-bulk-downloads-decision.md`). Any reader needs
   its own mockable network seam beside `cde_request()`.
 
+## Remotes: Gitea is primary, GitHub is the public copy
+
+- **Gitea** (`gitea.civilytics.org/Civilytics/fbi_cde`, private) is where `main`
+  is decided. **GitHub** (`github.com/civilytics/fbi_cde`, public) feeds
+  r-universe and the Windows/macOS CI. There is **no push mirror** between them:
+  GitHub only moves when someone runs `git push github main`. Do not add a Gitea
+  push mirror (it force-pushes and deletes GitHub-only branches such as
+  `claude/*`) or a second push URL on `origin` (every branch would go public).
+- **Local clones** have `origin` = Gitea and a `github` remote. Push to Gitea
+  first, then GitHub; never force-push either.
+- **In a cloud session (Claude Code on the web) you are on GitHub.** Work on a
+  `claude/*` branch and open a pull request. **Do not merge it.** It is landed
+  locally, then pushed to both remotes, and GitHub marks it merged on its own.
+  Its commits are unsigned, and that is accepted; the local merge commit is
+  signed. Bare `#N` numbers in this file are Gitea issues, which a cloud
+  session cannot see (see Workflow).
+- **Landing a GitHub PR:**
+  ```sh
+  git fetch github
+  git switch main && git pull --ff-only origin main
+  git merge --no-ff github/<branch>
+  git push origin main && git push github main
+  ```
+  If it was merged on GitHub anyway: `git pull --ff-only github main && git push
+  origin main`. If `--ff-only` refuses, Gitea moved in the meantime; merge by
+  hand, don't force.
+- **Before starting a cloud session**, `git push github main`, or the session
+  branches from stale code.
+
 ## Workflow
 
-- **Issue-driven** on Gitea (`gitea.civilytics.org/Civilytics/fbiCDE`); default
-  branch `main`. Conventional commits (`feat:`/`fix:`/`refactor:`/`test:`/`docs:`).
+- **Issues live on GitHub** (`github.com/civilytics/fbi_cde/issues`) from
+  2026-10-09; default branch `main`. Bare `#N` numbers already in this file,
+  `NEWS.md`, `specs/` and old commits are **Gitea** issues, which stay there.
+  Both forges number from 1, so in new commits write GitHub issues as `GH-N`
+  (GitHub links it; Gitea ignores it) and never put a closing keyword
+  (`fixes #N`) in a commit message: Gitea sees the push first and would close
+  its own `#N`. Close GitHub issues by hand after landing.
+- Conventional commits (`feat:`/`fix:`/`refactor:`/`test:`/`docs:`).
   Record changes in `NEWS.md`. CI: `.gitea/workflows/R-CMD-check.yaml`.
 - **Design docs go in `specs/`, plans in `specs/plans/` — never
   `docs/superpowers/`** (#61). This overrides the superpowers skills' default
