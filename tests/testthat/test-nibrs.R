@@ -3,6 +3,7 @@
 #
 #   nibrs-agency-OHCOP0000-BUR.json  Columbus PD, burglary: populated
 #   nibrs-state-OH-BUR.json          Ohio, burglary: populated
+#   nibrs-national-BUR.json          the nation, burglary: populated
 #   nibrs-agency-CA0010900-ROB.json  Oakland PD, robbery: every count null,
 #                                    which is how the API answers for a
 #                                    geography with no NIBRS data that period
@@ -23,6 +24,23 @@ test_that("get_nibrs_victim parses an agency's victim breakdown", {
   expect_equal(unique(result$offense), "BUR")
   expect_equal(unique(result$demographic_type), "age")
   expect_equal(result$count[result$demographic_value == "20-29"], 967)
+})
+
+test_that("get_nibrs_victim parses the national breakdown", {
+  seen <- character(0)
+  fixture <- read_fixture("nibrs-national-BUR.json")
+  testthat::local_mocked_bindings(
+    cde_request = function(path, ...) {
+      seen <<- c(seen, path)
+      fixture
+    },
+    .package = "fbiCDE"
+  )
+  result <- get_nibrs_victim(offense = "BUR", variable = "age",
+                             from = "01-2023", to = "12-2023")
+  expect_equal(seen, "nibrs/national/BUR")
+  expect_equal(unique(result$geography), "US")
+  expect_equal(result$count[result$demographic_value == "20-29"], 104442)
 })
 
 test_that("get_nibrs_offender parses a state's offender ages", {
@@ -187,6 +205,16 @@ test_that("get_nibrs_victim returns data from the live API", {
                              from = "01-2023", to = "12-2023")
   expect_gt(nrow(result), 0)
   expect_gt(sum(result$count), 0)
+})
+
+test_that("get_nibrs_victim returns agency and national data live", {
+  skip_if_no_fbi_api()
+  agency <- get_nibrs_victim("OHCOP0000", offense = "BUR", variable = "age",
+                             from = "01-2023", to = "12-2023")
+  expect_gt(sum(agency$count), 0)
+  national <- get_nibrs_victim(offense = "BUR", variable = "age",
+                               from = "01-2023", to = "12-2023")
+  expect_gt(sum(national$count), sum(agency$count))
 })
 
 test_that("get_nibrs_offender returns data from the live API", {

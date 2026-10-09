@@ -10,7 +10,7 @@ set_api_key(key)
 \item{key}{A character string with the API key (ignored).}
 }
 \value{
-\code{NULL}. A deprecation message is printed on first call.
+\code{NULL}. A deprecation message is printed on every call.
 }
 \description{
 \strong{Deprecated.} The current CDE API (\verb{cde.ucr.cjis.gov/LATEST/}) does not

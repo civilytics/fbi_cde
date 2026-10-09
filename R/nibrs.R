@@ -122,13 +122,8 @@ parse_nibrs_response <- function(response, geography, offense, section, variable
 # Shared body of the three get_nibrs_*() functions.
 .get_nibrs <- function(section, valid_vars, lister, ori, state_abb, from, to,
                        offense, variable) {
-  if (!is.null(ori) && !is_valid_ori(ori)) {
-    stop(
-      "Invalid ORI code: ", ori,
-      ". Must be 9 characters: 2 letters followed by 7 alphanumerics",
-      " (e.g., CA0010900 or CA001300X)",
-      call. = FALSE
-    )
+  if (!is.null(ori)) {
+    ori <- .check_ori(ori)
   }
   if (!is.null(state_abb) && !is_valid_state(state_abb)) {
     stop("Invalid state abbreviation: ", state_abb, call. = FALSE)

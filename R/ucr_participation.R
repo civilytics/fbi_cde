@@ -1,3 +1,24 @@
+# A state the CDE's directory does not know (AS, CZ, or an ORI prefix such as
+# NB) is answered with a query echo rather than an empty list:
+# `{"cde_agencies_query": {"counties": null, "parameters": {...}, ...}}`.
+# Read as a county, that crashed the parser on its timestamp string.
+.is_empty_agency_directory <- function(response) {
+  is.null(response) || length(response) == 0 ||
+    identical(names(response), "cde_agencies_query")
+}
+
+# The CDE files an agency in its directory under the state's postal code,
+# but two states' ORIs start with an older code: Nebraska's with NB (all 269
+# bundled agencies) and Guam's with GM. Map an ORI prefix, or a bundled
+# `state_abbr` (Guam is "GM" there too), to the directory's key.
+.ORI_PREFIX_STATES <- c(NB = "NE", GM = "GU")
+
+.directory_state <- function(code) {
+  code <- toupper(code)
+  mapped <- unname(.ORI_PREFIX_STATES[code])
+  ifelse(is.na(mapped), code, mapped)
+}
+
 # Internal helper: flatten a CDE `agency/byStateAbbr/{state}` response (a
 # list keyed by county name -> agency records) into one row per agency.
 #
@@ -11,7 +32,7 @@ parse_agency_participation_response <- function(response) {
     stringsAsFactors = FALSE
   )
 
-  if (is.null(response) || length(response) == 0) {
+  if (.is_empty_agency_directory(response)) {
     return(empty)
   }
 
@@ -49,8 +70,9 @@ parse_agency_participation_response <- function(response) {
 #' probing the live API -- see Issue #1). This is a modernized
 #' reimplementation: it reports whether `ori` currently reports to NIBRS,
 #' sourced live from `agency/byStateAbbr/` (state derived from the first two
-#' characters of `ori`), in place of the retired year-by-year
-#' SRS/NIBRS participation series.
+#' characters of `ori`; Nebraska's `NB` and Guam's `GM` are looked up as `NE`
+#' and `GU`), in place of the retired year-by-year SRS/NIBRS participation
+#' series.
 #'
 #' @family UCR crime functions
 #' @param ori A string of the 9-character ORI code for the desired agency.
@@ -66,17 +88,8 @@ parse_agency_participation_response <- function(response) {
 #' get_agency_participation("CA0010900")
 #' }
 get_agency_participation <- function(ori, key = get_api_key()) {
-  if (!is_valid_ori(ori)) {
-    stop(
-      "Invalid ORI code: ", ori,
-      ". Must be 9 characters: 2 letters followed by 7 alphanumerics",
-      " (e.g., CA0010900 or CA001300X)",
-      call. = FALSE
-    )
-  }
-
-  ori <- toupper(ori)
-  state_abb <- substr(ori, 1, 2)
+  ori <- .check_ori(ori)
+  state_abb <- .directory_state(substr(ori, 1, 2))
   path <- paste0("agency/byStateAbbr/", state_abb)
 
   response <- cde_request(path)
@@ -164,7 +177,9 @@ get_region_participation <- function(region_name, key = get_api_key()) {
   states_in_region <- unique(
     fbiCDE::fbi_api_agencies$state_abbr[fbiCDE::fbi_api_agencies$region_name == region_name]
   )
-  states_in_region <- states_in_region[!is.na(states_in_region)]
+  states_in_region <- unique(.directory_state(
+    states_in_region[!is.na(states_in_region)]
+  ))
 
   if (length(states_in_region) == 0) {
     return(data.frame(

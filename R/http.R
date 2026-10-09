@@ -145,20 +145,9 @@ cde_request <- function(path, query = list(), get_fun = httr::GET) {
   }
 
   if (response$status_code != 200L) {
-    body_raw <- response$content
-    msg <- ""
-    if (length(body_raw) > 0) {
-      body_text <- rawToChar(body_raw)
-      parsed <- tryCatch(
-        jsonlite::fromJSON(body_text, simplifyVector = FALSE),
-        error = function(e) NULL
-      )
-      if (!is.null(parsed) && !is.null(parsed$message)) {
-        msg <- paste0(" - ", parsed$message)
-      }
-    }
     stop(
-      "HTTP ", response$status_code, " for ", full_url, attempts, msg,
+      "HTTP ", response$status_code, " for ", full_url, attempts,
+      .cde_error_detail(response$content),
       call. = FALSE
     )
   }
@@ -172,6 +161,39 @@ cde_request <- function(path, query = list(), get_fun = httr::GET) {
   }
 
   jsonlite::fromJSON(rawToChar(body_raw), simplifyVector = FALSE)
+}
+
+# The explanation in an error response body, as " - <text>", or "" if none.
+# The CDE answers a bad request with plain text served as application/json
+# ("From year and month date is not valid, expected format MM-YYYY."), which
+# does not parse; only a JSON `message` field used to be reported, so the
+# error said just "HTTP 400". An HTML page (the 404 for an unknown path) adds
+# nothing, and a long body is cut short.
+.cde_error_detail <- function(body_raw) {
+  if (length(body_raw) == 0) {
+    return("")
+  }
+  text <- tryCatch(rawToChar(body_raw), error = function(e) "")
+  parsed <- tryCatch(jsonlite::fromJSON(text, simplifyVector = FALSE),
+                     error = function(e) NULL)
+  detail <- if (is.list(parsed) && is.character(parsed$message) &&
+                length(parsed$message) == 1L) {
+    parsed$message
+  } else if (is.character(parsed) && length(parsed) == 1L) {
+    parsed
+  } else if (is.null(parsed) && !grepl("^\\s*<", text)) {
+    text
+  } else {
+    ""
+  }
+  detail <- trimws(gsub("\\s+", " ", detail))
+  if (!nzchar(detail)) {
+    return("")
+  }
+  if (nchar(detail) > 300L) {
+    detail <- paste0(substr(detail, 1L, 297L), "...")
+  }
+  paste0(" - ", detail)
 }
 
 # Statuses worth retrying: request timeout, rate limiting, and server-side
@@ -226,7 +248,7 @@ cde_request <- function(path, query = list(), get_fun = httr::GET) {
 #'   `"national"`, `"state/XX"` (replace XX with state abbreviation), or
 #'   `"agency/XX"` (replace XX with ORI code).
 #' @param offense Optional character string with the offense identifier
-#'   (e.g. `"V"` for violent crime, `"LARC"` for larceny). Defaults to `NULL`.
+#'   (e.g. `"V"` for violent crime, `"LAR"` for larceny). Defaults to `NULL`.
 #'
 #' @return A character string with the API path, e.g.
 #'   `"summarized/national/V"` or `"shr/state/CA"`.
@@ -303,6 +325,22 @@ cde_query <- function(from, to, type = NULL, four_digit_year = FALSE) {
 #' is_valid_ori("abc123")
 is_valid_ori <- function(ori) {
   grepl("^[A-Z]{2}[A-Z0-9]{7}$", toupper(ori))
+}
+
+# Validate one ORI and return it upper-cased, ready for a request path. The
+# CDE matches ORIs case-sensitively: `agency/ca0010900` is an unknown agency,
+# answered with HTTP 200 and no counts, so a lower-case ORI that passed
+# is_valid_ori() used to return zero rows instead of the agency's data.
+.check_ori <- function(ori) {
+  if (length(ori) != 1L || !is_valid_ori(ori)) {
+    stop(
+      "Invalid ORI code: ", paste(ori, collapse = ", "),
+      ". Must be 9 characters: 2 letters followed by 7 alphanumerics",
+      " (e.g., CA0010900 or CA001300X)",
+      call. = FALSE
+    )
+  }
+  toupper(ori)
 }
 
 #' Validate a state abbreviation

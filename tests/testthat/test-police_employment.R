@@ -31,6 +31,27 @@ test_that("get_police_employment parses agency-level response", {
   expect_equal(result$employees_total[1], 1010)
 })
 
+test_that("a category the response leaves null is NA, not 0", {
+  # The recorded Oakland response, with 2020's female officers nulled. A zero
+  # there made 2020's officer total 632 instead of unknown.
+  response <- read_fixture("pe-agency-CA0010900.json")
+  response$actuals$`Female Officers`$`2020` <- NULL
+  out <- parse_police_employment_response(response, "CA0010900")
+
+  y2020 <- out[out$year == 2020, ]
+  expect_true(is.na(y2020$female_officers))
+  expect_true(is.na(y2020$officers_total))
+  expect_true(is.na(y2020$employees_total))
+  expect_equal(y2020$male_officers, 632)
+  # Other years are untouched.
+  expect_equal(out$officers_total[out$year == 2019], 740)
+})
+
+test_that("get_police_employment rejects an inverted year range", {
+  expect_error(get_police_employment(state_abb = "CA", from = 2020, to = 2018),
+               "Invalid date range")
+})
+
 test_that("get_police_employment parses a national response", {
   local_fbi_fixture("pe-national.json")
   result <- get_police_employment(from = "2018", to = "2020")

@@ -51,13 +51,8 @@ get_arrest_count <- function(ori = NULL,
                               to = "12-2020",
                               offense = "all",
                               comparison = FALSE) {
-  if (!is.null(ori) && !is_valid_ori(ori)) {
-    stop(
-      "Invalid ORI code: ", ori,
-      ". Must be 9 characters: 2 letters followed by 7 alphanumerics",
-      " (e.g., CA0010900 or CA001300X)",
-      call. = FALSE
-    )
+  if (!is.null(ori)) {
+    ori <- .check_ori(ori)
   }
 
   if (!is.null(state_abb) && !is_valid_state(state_abb)) {
@@ -119,7 +114,8 @@ get_arrest_count <- function(ori = NULL,
   }
 
   # A name the totals report but no code covers: the API has no arrests
-  # under it (Rape and Runaway, as of the bundled vintage).
+  # under it (Rape, Rape - Not Specified and Runaway, as of the bundled
+  # vintage).
   known <- fbiCDE::ucr_arrest_offenses$offense
   idx <- match(key, tolower(known))
   if (!is.na(idx)) {
@@ -192,13 +188,8 @@ get_arrest_demographics <- function(ori = NULL,
                                      from = "01-2015",
                                      to = "12-2020",
                                      offense = "all") {
-  if (!is.null(ori) && !is_valid_ori(ori)) {
-    stop(
-      "Invalid ORI code: ", ori,
-      ". Must be 9 characters: 2 letters followed by 7 alphanumerics",
-      " (e.g., CA0010900 or CA001300X)",
-      call. = FALSE
-    )
+  if (!is.null(ori)) {
+    ori <- .check_ori(ori)
   }
 
   if (!is.null(state_abb) && !is_valid_state(state_abb)) {
@@ -353,8 +344,9 @@ parse_arrest_demographics_response <- function(response, geography, offense) {
 #' List the offense names `get_arrest_count()` accepts
 #'
 #' The CDE reports arrests at three levels of detail, and `get_arrest_count()`
-#' and `get_arrest_demographics()` accept a name from any of them. Two names
-#' it lists, `"Rape"` and `"Runaway"`, have no arrests in the API; see
+#' and `get_arrest_demographics()` accept a name from any of them. Three names
+#' it lists, `"Rape"`, `"Rape - Not Specified"` and `"Runaway"`, have no
+#' arrests in the API; see
 #' [ucr_arrest_offense_codes] for the codes behind the rest.
 #'
 #' @family UCR arrest functions
