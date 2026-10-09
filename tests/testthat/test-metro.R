@@ -25,6 +25,27 @@ test_that("an ambiguous short name errors listing the candidates", {
   expect_match(conditionMessage(err), "Albany")
 })
 
+test_that("a hyphenated or slashed city name resolves as a short name", {
+  expect_equal(unique(.resolve_cbsa("Winston-Salem")$cbsa_title),
+               "Winston-Salem, NC")
+  expect_equal(unique(.resolve_cbsa("Louisville")$cbsa_title),
+               "Louisville/Jefferson County, KY-IN")
+  expect_equal(unique(.resolve_cbsa("Dallas-Fort Worth-Arlington")$cbsa_title),
+               "Dallas-Fort Worth-Arlington, TX")
+  expect_equal(unique(.resolve_cbsa("Dallas")$cbsa_title),
+               "Dallas-Fort Worth-Arlington, TX")
+})
+
+test_that("the ambiguity error suggests a state that works", {
+  # It used to suggest the first title's whole suffix, state = "GA-AL",
+  # which matches nothing.
+  err <- tryCatch(.resolve_cbsa("Columbus"), error = conditionMessage)
+  suggested <- sub('.*state = "([^"]+)".*', "\\1", err)
+  expect_equal(suggested, "GA")
+  expect_equal(unique(.resolve_cbsa("Columbus", suggested)$cbsa_title),
+               "Columbus, GA-AL")
+})
+
 test_that("state disambiguates an ambiguous short name", {
   out <- .resolve_cbsa("Albany", "OR")
   expect_equal(unique(out$cbsa_title), "Albany, OR")

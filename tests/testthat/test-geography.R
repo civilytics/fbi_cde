@@ -103,16 +103,23 @@ test_that("county_agencies still excludes agencies from unrelated counties", {
 
 test_that("county matching is not substring-based", {
   # "YORK" must not match "NEW YORK": a substring test would wrongly cross-match.
+  # county_name is the queried county on every row, so check the CDE's own
+  # list: each agency must name NEW YORK itself, not just contain "YORK".
   ny <- county_agencies("New York", "NY")
   expect_gt(nrow(ny), 0L)
-  expect_true(all(grepl("NEW YORK", toupper(ny$county_name))))
+  expect_true(all(vapply(
+    strsplit(ny$agency_county_names, ";", fixed = TRUE),
+    function(p) "NEW YORK" %in% trimws(p), logical(1)
+  )))
+  york <- county_agencies("York", "PA")
+  expect_false(any(grepl("NEW YORK", york$agency_county_names)))
 })
 
 test_that("a single-county agency matches only its own county", {
   alameda <- county_agencies("Alameda", "CA")
   expect_gt(nrow(alameda), 0L)
   expect_true(all(vapply(
-    strsplit(toupper(alameda$county_name), ";", fixed = TRUE),
+    strsplit(toupper(alameda$agency_county_names), ";", fixed = TRUE),
     function(p) "ALAMEDA" %in% trimws(p), logical(1)
   )))
 })
@@ -145,9 +152,40 @@ test_that("the bundled agency table has real column types", {
   expect_s3_class(ag$nibrs_start_date, "Date")
   # The source's placeholder strings are gone.
   chr <- vapply(ag, is.character, logical(1))
-  expect_false(any(vapply(ag[chr], function(x) any(x == "NULL"), logical(1))))
+  expect_false(any(vapply(ag[chr], function(x) any(x %in% "NULL"),
+                          logical(1))))
   # Coordinates are plausible where present (the one -9/-9 placeholder is NA).
   expect_false(any(ag$latitude == -9, na.rm = TRUE))
+})
+
+test_that("Louisiana and Alaska agencies carry real types, not placeholders", {
+  # The snapshot typed every Louisiana agency "Parish" and every Alaska agency
+  # by its borough or census area, so all of Louisiana classed as sheriffs.
+  # data-raw/agency_type_repair.R takes the live directory's types instead.
+  ag <- fbi_api_agencies
+  placeholders <- c("Parish", "Borough", "Census Area", "City and Borough",
+                    "Municipality")
+  expect_false(any(ag$agency_type_name %in% placeholders))
+  type_of <- function(ori) ag$agency_type_name[ag$ori == ori]
+  expect_equal(type_of("LANPD0000"), "City")                   # New Orleans PD
+  expect_equal(type_of("LA0360200"), "University or College")  # Delgado CC
+  expect_equal(type_of("AKAST0100"), "State Police")           # AK Troopers
+  # An agency the live directory no longer lists has an unknown type.
+  expect_true(is.na(type_of("LA0070900")))                     # Ringgold PD
+})
+
+test_that("a Louisiana city resolves as a place and not as its parish's own", {
+  nola <- place_agencies("New Orleans", "LA")
+  expect_equal(nola$ori, "LANPD0000")
+  expect_equal(nola$place_fips, "2255000")
+
+  orleans <- county_agencies("Orleans", "LA")
+  expect_equal(orleans$agency_class[orleans$ori == "LANPD0000"], "municipal")
+  expect_equal(orleans$agency_class[orleans$ori == "LA0360200"], "campus")
+  expect_false(any(orleans$agency_class == "county_primary"))
+
+  ebr <- county_agencies("East Baton Rouge", "LA")
+  expect_equal(sum(ebr$agency_class == "county_primary"), 1L)
 })
 
 # ---- Agencies the CDE leaves without a county --------------------------------

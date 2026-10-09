@@ -203,6 +203,65 @@ test_that("get_county_crime_detail queries sub-state agencies by default; others
   expect_equal(queried(agency_class = "tribal"), "CA0000005")
 })
 
+test_that("the fan-out parses a recorded agency response like get_agency_crime", {
+  # Every other fan-out test uses a hand-built response; this one reads the
+  # recorded Oakland fixture.
+  oakland <- county_agencies("Alameda", "CA")
+  oakland <- oakland[oakland$ori == "CA0010900", ]
+  fixture <- read_fixture("summarized-agency-CA0010900-V.json")
+  testthat::local_mocked_bindings(
+    county_agencies = function(county, state) oakland,
+    cde_request = function(path, ...) fixture,
+    .package = "fbiCDE"
+  )
+  detail <- get_county_crime_detail("Alameda", "CA", from = "01-2019",
+                                    to = "03-2019")
+  series <- get_agency_crime("CA0010900", from = "01-2019", to = "03-2019")
+  offenses <- series[series$measure == "offenses", ]
+
+  expect_equal(detail$period, offenses$period)
+  expect_equal(detail$count, offenses$count)
+  expect_equal(detail$population, offenses$population)
+  expect_true(all(detail$reported))
+  expect_equal(unique(detail$agency_county_names), "ALAMEDA")
+})
+
+test_that("an unknown county warns once, from the resolver", {
+  warnings <- character(0)
+  out <- withCallingHandlers(
+    get_county_crime_detail("Nowhere", "CA", from = "01-2021", to = "01-2021"),
+    warning = function(w) {
+      warnings <<- c(warnings, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    }
+  )
+  expect_equal(nrow(out), 0L)
+  expect_length(warnings, 1L)
+  expect_match(warnings, "No agencies match county")
+})
+
+test_that("get_county_crime_detail carries each agency's own county list", {
+  agencies <- data.frame(
+    ori = "OHCOP0000", agency_name = "Columbus Police Department",
+    agency_type_name = "City", agency_class = "municipal",
+    county_name = "DELAWARE", state_abbr = "OH", county_fips = "39041",
+    latitude = 0, longitude = 0,
+    agency_county_names = "DELAWARE; FAIRFIELD; FRANKLIN",
+    stringsAsFactors = FALSE
+  )
+  testthat::local_mocked_bindings(
+    county_agencies = function(county, state) agencies,
+    cde_request = function(path, query = list(), ...) {
+      make_agency_response("Columbus Police Department", c("01-2021" = 1))
+    },
+    .package = "fbiCDE"
+  )
+  out <- get_county_crime_detail("Delaware", "OH", from = "01-2021",
+                                 to = "01-2021")
+  expect_equal(names(out), .DETAIL_COLS)
+  expect_equal(out$agency_county_names, "DELAWARE; FAIRFIELD; FRANKLIN")
+})
+
 test_that("get_county_crime_detail works live for a small county", {
   skip_if_no_fbi_api()
   out <- get_county_crime_detail("Alameda", "CA", offense = "V",

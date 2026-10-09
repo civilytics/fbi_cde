@@ -77,6 +77,47 @@ test_that("cde_request() includes API message in error", {
   expect_match(conditionMessage(err), "HTTP 400")
 })
 
+test_that("cde_request() reports the CDE's plain-text error body", {
+  # The CDE's 400s are plain text served as application/json; they do not
+  # parse, and used to be dropped, leaving a bare "HTTP 400".
+  body <- "From year and month date is not valid, expected format MM-YYYY."
+  fake_resp <- fake_response(400L, charToRaw(body))
+  err <- expect_error(
+    cde_request("summarized/national/V", get_fun = function(url, ...) fake_resp),
+    "expected format MM-YYYY", fixed = TRUE
+  )
+  expect_match(conditionMessage(err), "HTTP 400")
+})
+
+test_that("cde_request() leaves an HTML error page out of the message", {
+  page <- paste0("<!DOCTYPE html><html><head><title>CDE</title></head>",
+                 "<body><h1>Not Found</h1></body></html>")
+  fake_resp <- fake_response(404L, charToRaw(page))
+  err <- expect_error(
+    cde_request("no/such/path", get_fun = function(url, ...) fake_resp),
+    "HTTP 404"
+  )
+  expect_no_match(conditionMessage(err), "DOCTYPE")
+})
+
+test_that("cde_request() keeps the status when the error body is unreadable", {
+  # Embedded NULs make rawToChar() fail.
+  fake_resp <- fake_response(500L, as.raw(c(0x41, 0x00, 0x42)))
+  withr::local_options(fbiCDE.max_retries = 0)
+  expect_error(
+    cde_request("summarized/national/V", get_fun = function(url, ...) fake_resp),
+    "HTTP 500 for [^ ]+$"
+  )
+})
+
+test_that("cde_request() survives a JSON scalar error body", {
+  fake_resp <- fake_response(400L, charToRaw('"Bad request"'))
+  expect_error(
+    cde_request("summarized/national/V", get_fun = function(url, ...) fake_resp),
+    "HTTP 400 .* - Bad request"
+  )
+})
+
 test_that("cde_request() returns parsed JSON on success", {
   api_body <- jsonlite::toJSON(list(offenses = list(V = 100)),
                                auto_unbox = TRUE,
@@ -327,4 +368,45 @@ test_that("invalid retry and timeout options fail clearly", {
   expect_error(cde_request("x", get_fun = g$fun), "fbiCDE.max_retries")
   withr::local_options(fbiCDE.max_retries = 3, fbiCDE.timeout = "soon")
   expect_error(cde_request("x", get_fun = g$fun), "fbiCDE.timeout")
+})
+
+# ---- ORI case ----------------------------------------------------------------
+
+test_that("a lower-case ORI is requested upper-cased", {
+  # The CDE matches ORIs case-sensitively: agency/ca0010900 is an unknown
+  # agency, answered with HTTP 200 and no counts, so a lower-case ORI that
+  # passed validation returned zero rows.
+  seen <- character(0)
+  fixture <- read_fixture("summarized-agency-CA0010900-V.json")
+  testthat::local_mocked_bindings(
+    cde_request = function(path, ...) {
+      seen <<- c(seen, path)
+      fixture
+    },
+    .package = "fbiCDE"
+  )
+
+  out <- get_agency_crime("ca0010900", from = "01-2019", to = "03-2019")
+  expect_equal(seen[1], "summarized/agency/CA0010900/V")
+  expect_equal(unique(out$geography), "CA0010900")
+
+  # The other agency-level wrappers build their paths the same way.
+  # Their parsers reject this fixture; only the requested path matters here.
+  quietly <- function(expr) {
+    try(suppressWarnings(suppressMessages(expr)), silent = TRUE)
+  }
+  quietly(get_shr(ori = "ca0010900"))
+  quietly(get_arrest_count(ori = "ca0010900"))
+  quietly(get_arrest_demographics(ori = "ca0010900"))
+  quietly(get_nibrs_victim(ori = "ca0010900"))
+  quietly(get_police_employment(ori = "ca0010900"))
+  agency_paths <- seen[grepl("CA0010900", seen, ignore.case = TRUE)]
+  expect_length(agency_paths, 6L)
+  expect_false(any(grepl("ca0010900", agency_paths, fixed = TRUE)))
+})
+
+test_that("an ORI argument must be a single valid code", {
+  expect_error(get_agency_crime(c("CA0010900", "CA0010100")),
+               "Invalid ORI code")
+  expect_error(get_shr(ori = character(0)), "Invalid ORI code")
 })

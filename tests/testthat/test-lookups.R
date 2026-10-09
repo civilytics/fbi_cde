@@ -120,3 +120,21 @@ test_that("get_states returns expected shape from live API", {
   expect_true(nrow(result) > 0)
   expect_true("CA" %in% result$stateAbbreviation)
 })
+
+# ---- get_agency_info() (bundled table, no network) ---------------------------
+
+test_that("get_agency_info finds an agency by exact name and state", {
+  out <- get_agency_info("Oakland Police Department", state = "california")
+  expect_equal(out$ori, "CA0010900")
+  expect_named(get_agency_info("Oakland Police Department", ori_only = TRUE),
+               c("agency_name", "ori"))
+})
+
+test_that("get_agency_info matches every pattern in a vector", {
+  # grep() used only the first pattern, with a warning.
+  out <- expect_no_warning(get_agency_info(
+    c("^Oakland Police Department$", "^Berkeley Police Department$"),
+    state = "California", exact_match = FALSE
+  ))
+  expect_setequal(out$ori, c("CA0010900", "CA0010300"))
+})

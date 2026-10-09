@@ -5,8 +5,8 @@
 # toolchain, but the optional geography features
 # (add_place_spatial_members()) pull sf and tigris from Suggests, and sf's
 # GDAL/GEOS/PROJ dependency chain is exactly the kind of thing that behaves
-# differently across Windows/macOS/Linux. This package targets CRAN, where
-# that variance gets caught either way -- better to catch it here first.
+# differently across Windows/macOS/Linux. r-universe builds the package for
+# all three, so catch that variance here first.
 #
 # Gitea reads .gitea/workflows and GitHub reads .github/workflows, so this
 # file is inert on the canonical repo and coexists with the Gitea CI that

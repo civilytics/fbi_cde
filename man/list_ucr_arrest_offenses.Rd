@@ -18,8 +18,9 @@ A sorted character vector of offense names.
 }
 \description{
 The CDE reports arrests at three levels of detail, and \code{get_arrest_count()}
-and \code{get_arrest_demographics()} accept a name from any of them. Two names
-it lists, \code{"Rape"} and \code{"Runaway"}, have no arrests in the API; see
+and \code{get_arrest_demographics()} accept a name from any of them. Three names
+it lists, \code{"Rape"}, \code{"Rape - Not Specified"} and \code{"Runaway"}, have no
+arrests in the API; see
 \link{ucr_arrest_offense_codes} for the codes behind the rest.
 }
 \examples{

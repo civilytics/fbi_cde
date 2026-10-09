@@ -65,6 +65,7 @@ test_that("get_county_crime_detail empty frame agrees with its populated frame",
     state_abbr = "CA",
     county_fips = "06999",
     latitude = 0, longitude = 0,
+    agency_county_names = "TESTONIA",
     stringsAsFactors = FALSE
   )
   response <- make_response("Alpha PD", c("01-2021" = 10, "02-2021" = 12))

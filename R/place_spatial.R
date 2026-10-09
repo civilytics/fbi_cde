@@ -85,9 +85,7 @@ add_place_spatial_members <- function(x, vintage = NULL, places_fun = NULL) {
   }
 
   # Idempotency: if spatial members are already present, adding them again
-  # would duplicate ORIs and reset the first application's place_fips to NA
-  # (since the pre-existing point_in_polygon rows don't carry latitude/
-  # longitude the second pass expects). Central invariant of this package is
+  # would duplicate their ORIs. Central invariant of this package is
   # "no double-count", so refuse rather than silently corrupt.
   if (any(x$attribution == "point_in_polygon", na.rm = TRUE)) {
     message("'x' already has spatially-attributed members (attribution == ",

@@ -46,14 +46,7 @@ get_agency_crime <- function(ori,
                              to = "12-2020",
                              offense = "V",
                              comparison = FALSE) {
-  if (!is_valid_ori(ori)) {
-    stop(
-      "Invalid ORI code: ", ori,
-      ". Must be 9 characters: 2 letters followed by 7 alphanumerics",
-      " (e.g., CA0010900 or CA001300X)",
-      call. = FALSE
-    )
-  }
+  ori <- .check_ori(ori)
 
   cde_validate_dates(from, to, "mm-yyyy")
 
@@ -65,7 +58,16 @@ get_agency_crime <- function(ori,
                             level = "agency", comparison = comparison)
 }
 
-#' Get state- or national-level estimated crime counts
+#' Get state- or national-level reported crime counts
+#'
+#' Despite its name, this returns the sum of what the agencies that reported
+#' each month sent, not the FBI's published estimates, which also impute for
+#' agencies that did not report. Compare `participated_population` with
+#' `population` to see how much of the state or nation a month covers. The
+#' FBI's state and national SRS estimates are published as a bulk download
+#' only, which the package does not read; the
+#' [download recipe](https://github.com/civilytics/fbi_cde/blob/main/specs/2026-10-06-bulk-downloads-decision.md)
+#' fetches it.
 #'
 #' @family UCR crime functions
 #' @param state_abb String for state abbreviation. If `NULL` (default) returns
@@ -113,7 +115,10 @@ get_estimated_crime <- function(state_abb = NULL,
                             comparison = comparison)
 }
 
-#' Get estimated arson data
+#' Get state- or national-level reported arson counts
+#'
+#' [get_estimated_crime()] for arson (`offense = "ARS"`): reported sums, not
+#' the FBI's estimates.
 #'
 #' @family UCR crime functions
 #' @inheritParams get_estimated_crime

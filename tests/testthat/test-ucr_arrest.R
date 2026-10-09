@@ -234,6 +234,14 @@ test_that("get_arrest_demographics defaults to offense = all", {
   expect_s3_class(result, "data.frame")
 })
 
+test_that("get_arrest_demographics_all warns and returns all-offense demographics", {
+  local_fbi_fixture("arrest-national-all-totals.json")
+  expect_warning(out <- get_arrest_demographics_all(offense = "Robbery"),
+                 "deprecated")
+  expect_equal(out, get_arrest_demographics(offense = "all"))
+  expect_gt(nrow(out), 0L)
+})
+
 # Live tests
 
 test_that("get_arrest_count returns expected shape from live API", {
@@ -254,6 +262,19 @@ test_that("get_arrest_demographics returns expected shape from live API", {
   expect_true(nrow(result) > 0)
   expect_true("demographic_type" %in% names(result))
   expect_true("demographic_value" %in% names(result))
+})
+
+test_that("national and state all-offense arrests come back live", {
+  skip_if_no_fbi_api()
+  national <- get_arrest_count(from = "01-2023", to = "03-2023")
+  expect_gt(nrow(national), 0L)
+  expect_equal(unique(national$geography), "US")
+  expect_true(all(national$count > 0))
+
+  demo <- get_arrest_demographics(state_abb = "OH", from = "01-2023",
+                                  to = "12-2023")
+  expect_gt(nrow(demo), 0L)
+  expect_equal(unique(demo$geography), "OH")
 })
 
 test_that("one offense by code reconciles with the all-offense totals, live", {

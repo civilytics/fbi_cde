@@ -39,13 +39,8 @@ get_police_employment <- function(ori = NULL,
                                     from = "2015",
                                     to = "2020") {
 
-  if (!is.null(ori) && !is_valid_ori(ori)) {
-    stop(
-      "Invalid ORI code: ", ori,
-      ". Must be 9 characters: 2 letters followed by 7 alphanumerics",
-      " (e.g., CA0010900 or CA001300X)",
-      call. = FALSE
-    )
+  if (!is.null(ori)) {
+    ori <- .check_ori(ori)
   }
 
   if (!is.null(state_abb) && !is_valid_state(state_abb)) {
@@ -58,7 +53,6 @@ get_police_employment <- function(ori = NULL,
   # null; that read as "staffing is published for agencies only". It is not.
   # No region form returns data.
   if (!is.null(ori)) {
-    ori <- toupper(ori)
     path <- paste("pe", substr(ori, 1L, 2L), ori, sep = "/")
     geography <- ori
   } else if (!is.null(state_abb)) {
@@ -74,6 +68,9 @@ get_police_employment <- function(ori = NULL,
   }
 
   query <- cde_query(from, to, four_digit_year = TRUE)
+  if (grepl("^\\d{4}$", query$from) && grepl("^\\d{4}$", query$to)) {
+    cde_validate_dates(query$from, query$to, "yyyy")
+  }
 
   response <- cde_request(path, query)
   out <- parse_police_employment_response(response, geography)
@@ -149,12 +146,16 @@ parse_police_employment_response <- function(response, geography) {
   }
 
   # Build wide data.frame
+  # The four categories start as NA, not 0: a category the response leaves
+  # null (or renames) for a year is unknown, and a 0 there undercounted every
+  # total built from it.
+  na_int <- rep(NA_integer_, length(all_years))
   result <- data.frame(
     year = all_years,
-    male_officers = integer(length(all_years)),
-    female_officers = integer(length(all_years)),
-    male_civilians = integer(length(all_years)),
-    female_civilians = integer(length(all_years)),
+    male_officers = na_int,
+    female_officers = na_int,
+    male_civilians = na_int,
+    female_civilians = na_int,
     ori = rep(geography, length(all_years)),
     male_total = integer(length(all_years)),
     female_total = integer(length(all_years)),

@@ -17,6 +17,7 @@ make_detail <- function(ori, offense = "V", periods, counts,
     county_name = "TESTONIA",
     state_abbr = "CA",
     county_fips = "06999",
+    agency_county_names = "TESTONIA",
     offense = rep(offense, n),
     period = periods,
     count = counts,
@@ -153,17 +154,45 @@ test_that("multiple agencies are processed independently", {
 })
 
 test_that("gaps at the edges (before first / after last reported) are not filled", {
-  # Reports only in the middle period — gaps at both edges.
+  # Two reported months with a gap between them, and a gap at each edge.
   detail <- make_detail(
     ori = "CA9990001",
-    periods = c("01-2021", "02-2021", "03-2021"),
-    counts = c(NA, 12, NA)
+    periods = c("01-2021", "02-2021", "03-2021", "04-2021", "05-2021"),
+    counts = c(NA, 10, NA, 14, NA)
   )
 
   out <- impute_reporting_gaps(detail, method = "interpolate")
 
-  # Only one reported period — need at least 2 to interpolate.
-  expect_false(any(out$imputed))
+  expect_equal(out$imputed, c(FALSE, FALSE, TRUE, FALSE, FALSE))
+  expect_equal(out$count[3], 12)
+  expect_true(is.na(out$count[1]))
+  expect_true(is.na(out$count[5]))
+})
+
+test_that("interpolation counts months across a year boundary", {
+  # Months were numbered YYYYMM, so 12-2020 and 01-2021 were 89 apart and a
+  # gap spanning a new year was filled nearly flat at the later value.
+  detail <- make_detail(
+    ori = "CA9990001",
+    periods = c("11-2020", "12-2020", "01-2021", "02-2021"),
+    counts = c(30, NA, NA, 60)
+  )
+  out <- impute_reporting_gaps(detail, method = "interpolate")
+  expect_equal(out$count, c(30, 40, 50, 60))
+
+  # The 2021 California hole: 0 in 12-2020, nothing in 2021, 130 in 01-2022.
+  periods <- c("12-2020", sprintf("%02d-2021", 1:12), "01-2022")
+  hole <- make_detail(ori = "CA9990002", periods = periods,
+                      counts = c(0, rep(NA, 12), 130))
+  filled <- impute_reporting_gaps(hole, method = "interpolate")
+  expect_equal(filled$count[2:13], seq(10, 120, by = 10))
+})
+
+test_that("impute_reporting_gaps requires the population it falls back to", {
+  detail <- make_detail(ori = "CA9990001", periods = c("01-2021", "02-2021"),
+                        counts = c(10, NA))
+  detail$population <- NULL
+  expect_error(impute_reporting_gaps(detail), "population")
 })
 
 test_that("drifting denominator is respected via rate interpolation", {

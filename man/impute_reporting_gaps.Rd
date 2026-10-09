@@ -9,7 +9,8 @@ impute_reporting_gaps(detail, method = "interpolate")
 \arguments{
 \item{detail}{A data.frame as returned by \code{\link[=get_county_crime_detail]{get_county_crime_detail()}}, with at
 least the columns: \code{ori}, \code{offense}, \code{period}, \code{count},
-\code{participated_population}, \code{rate}, \code{reported}.}
+\code{population}, \code{participated_population}, \code{rate},
+\code{reported}.}
 
 \item{method}{Imputation method. Currently only \code{"interpolate"} is supported,
 which uses linear interpolation of \code{rate} across time (in months), then
