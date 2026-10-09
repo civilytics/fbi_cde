@@ -73,8 +73,8 @@ parse_agency_detail <- function(response, ori, offense, from, to) {
 }
 
 .DETAIL_COLS <- c(
-  "ori", "agency_name", "agency_type_name", "agency_class", "default_member",
-  "county_name", "state_abbr", "offense", "period", "count",
+  "ori", "agency_name", "agency_type_name", "agency_class",
+  "county_name", "state_abbr", "county_fips", "offense", "period", "count",
   "population", "participated_population", "rate", "reported"
 )
 
@@ -91,9 +91,9 @@ parse_agency_detail <- function(response, ori, offense, from, to) {
     agency_name = character(0),
     agency_type_name = character(0),
     agency_class = character(0),
-    default_member = logical(0),
     county_name = character(0),
     state_abbr = character(0),
+    county_fips = character(0),
     offense = character(0),
     period = character(0),
     count = numeric(0),
@@ -112,26 +112,43 @@ parse_agency_detail <- function(response, ori, offense, from, to) {
 #' coverage (`population`, `participated_population`, `reported`), and a
 #' per-agency `rate` (`count / participated_population * 1e5`). This is the
 #' transparent, power-user primitive; it applies no aggregation and takes no
-#' stance on denominators. Filter with `agency_class`/`default_only`; the default
-#' returns *every* attributed agency, typed.
+#' stance on denominators.
+#'
+#' By default it queries the agencies whose jurisdiction is a specific area
+#' below the state: the sheriff, city police and campus police. Add state
+#' agencies with `include_statewide = TRUE`. Special-purpose agencies (transit,
+#' school, airport, port, park and railroad police, task forces) and tribal
+#' agencies are queried only when named in `agency_class`: the first group
+#' mixes single-site agencies with multi-county task forces attributed to one
+#' county, and how tribal agencies should attribute to counties is unresolved.
+#'
+#' An agency that polices several counties reports one series, which is
+#' returned in full for each of its counties: Columbus PD's rows are the same
+#' for Delaware, Fairfield and Franklin counties, OH. The extreme case is New
+#' York City, where the NYPD is the police of all five boroughs: any borough
+#' returns **citywide** NYPD counts with New York City's population. Do not
+#' sum counties that share an agency; see [county_agencies()].
 #'
 #' @param county County name (case-insensitive).
 #' @param state Two-letter state abbreviation.
 #' @param offense Offense code (default `"V"`; see `get_offense_codes()`).
 #' @param from,to Date range in `MM-YYYY` format.
-#' @param agency_class Optional character vector; keep only these classes
-#'   (`"county_primary"`, `"municipal"`, `"campus"`, `"state"`, `"tribal"`,
-#'   `"special"`).
-#' @param default_only If `TRUE`, keep only default members (`county_primary` +
-#'   `municipal`). Ignored if `agency_class` is supplied.
+#' @param agency_class Optional character vector of classes to query instead
+#'   of the default set (`"county_primary"`, `"municipal"`, `"campus"`):
+#'   any of those plus `"special"`, `"state"` and `"tribal"`. See
+#'   [county_agencies()] for what each class holds.
+#' @param include_statewide If `TRUE`, also query state agencies (state police
+#'   and highway patrol, other state agencies). Many of their records are
+#'   county or troop units, but some are headquarters records covering the
+#'   whole state, attributed to the county they sit in, and agency type does
+#'   not tell the two apart. Default `FALSE`.
 #' @param progress If `TRUE`, print a simple progress line per agency.
-#' @return A data.frame (columns listed in Details). Agencies whose request or
-#'   parse fails are dropped with a warning and recorded in `attr(x, "dropped")`.
-#'   Agencies classed `state` (e.g. Highway Patrol) or `tribal` are attributed
-#'   to a county by HQ location, not jurisdiction; their figures reflect
-#'   statewide/jurisdiction-wide totals, not county-specific crime. They are
-#'   excluded by default (`default_member` is `FALSE` for both classes) and
-#'   should be interpreted with care if opted in via `agency_class`.
+#' @return A data.frame with one row per agency-period: the agency metadata from
+#'   [county_agencies()] (including `county_fips`, which [join_census_pop()]
+#'   needs), then `offense`, `period`, `count`, `population`,
+#'   `participated_population`, `rate`, and `reported`. Agencies whose request
+#'   or parse fails are dropped with a warning; their ORIs are recorded in
+#'   `attr(x, "dropped")` and the errors in `attr(x, "dropped_reasons")`.
 #' @export
 #' @examples
 #' \dontrun{
@@ -139,23 +156,25 @@ parse_agency_detail <- function(response, ori, offense, from, to) {
 #' }
 get_county_crime_detail <- function(county, state, offense = "V",
                                     from = "01-2015", to = "12-2020",
-                                    agency_class = NULL, default_only = FALSE,
+                                    agency_class = NULL,
+                                    include_statewide = FALSE,
                                     progress = FALSE) {
   cde_validate_dates(from, to, "mm-yyyy")
 
   agencies <- county_agencies(county, state)
-  agencies <- .filter_agency_members(agencies, agency_class, default_only)
+  agencies <- .filter_agency_members(agencies, agency_class, include_statewide)
 
   if (nrow(agencies) == 0) {
     warning("No agencies to query for '", county, "', ", state,
-            " after filtering", call. = FALSE)
+            " after filtering (", .filter_desc(agency_class, include_statewide),
+            ")", call. = FALSE)
     return(.empty_detail_frame())
   }
 
   .fanout_agency_detail(
     agencies = agencies,
     meta_cols = c("agency_name", "agency_type_name", "agency_class",
-                  "default_member", "county_name", "state_abbr"),
+                  "county_name", "state_abbr", "county_fips"),
     cols = .DETAIL_COLS,
     empty_fn = .empty_detail_frame,
     offense = offense, from = from, to = to, progress = progress
@@ -170,6 +189,7 @@ get_county_crime_detail <- function(county, state, offense = "V",
 #' (`get_county_crime_detail()`).
 #'
 #' @inheritParams get_county_crime_detail
+#' @inheritParams get_agency_crime
 #' @return The `get_agency_crime()` data.frame for the county's primary agency.
 #' @export
 #' @examples
@@ -177,7 +197,8 @@ get_county_crime_detail <- function(county, state, offense = "V",
 #' get_county_agency_crime("Alameda", "CA")
 #' }
 get_county_agency_crime <- function(county, state, offense = "V",
-                                    from = "01-2015", to = "12-2020") {
+                                    from = "01-2015", to = "12-2020",
+                                    comparison = FALSE) {
   agencies <- county_agencies(county, state)
   prim <- agencies[agencies$agency_class == "county_primary", , drop = FALSE]
 
@@ -189,7 +210,8 @@ get_county_agency_crime <- function(county, state, offense = "V",
     warning("Multiple county-primary agencies for '", county, "', ", state,
             "; using ", prim$ori[1], call. = FALSE)
   }
-  get_agency_crime(prim$ori[1], from = from, to = to, offense = offense)
+  get_agency_crime(prim$ori[1], from = from, to = to, offense = offense,
+                   comparison = comparison)
 }
 
 # ---- Layer 2: county aggregate (v0.3) ------------------------------------
@@ -256,13 +278,15 @@ get_county_agency_crime <- function(county, state, offense = "V",
 #'   value used), `participated_population` (sum of participated populations),
 #'   `rate` (`count / population * 1e5`), `denominator_type` (which strategy was
 #'   used), and `coverage_fraction` (`participated_population / population`).
-#'   Returns a zero-row frame with correct columns if `detail` is empty.
+#'   Returns a zero-row frame with correct columns if `detail` is empty. If
+#'   `detail` carries `attr(detail, "dropped")` (agencies whose request failed
+#'   in [get_county_crime_detail()]), the result warns and keeps that attribute:
+#'   those agencies are missing from every total, including the denominator.
 #' @export
 #' @examples
 #' \dontrun{
 #' detail <- get_county_crime_detail("Alameda", "CA",
-#'                                   from = "01-2019", to = "12-2019",
-#'                                   default_only = TRUE)
+#'                                   from = "01-2019", to = "12-2019")
 #' get_county_crime(detail)
 #'
 #' # Coverage-consistent rate instead of the full jurisdiction denominator.
@@ -293,9 +317,23 @@ get_county_crime <- function(detail, denominator = "jurisdiction_pop") {
          "in detail (e.g. from join_census_pop())", call. = FALSE)
   }
 
+  # Agencies the fan-out could not fetch have no rows at all, so they are
+  # missing from count AND population, and coverage_fraction cannot see them.
+  # Say so, and carry the record forward on the result.
+  dropped <- attr(detail, "dropped")
+  if (length(dropped) > 0) {
+    warning(length(dropped), " agenc", if (length(dropped) == 1) "y" else "ies",
+            " could not be fetched and ", if (length(dropped) == 1) "is" else "are",
+            " absent from these totals (", paste(dropped, collapse = ", "),
+            "); coverage_fraction does not account for ",
+            if (length(dropped) == 1) "it" else "them", ".", call. = FALSE)
+  }
+
   # Handle empty input.
   if (nrow(detail) == 0L) {
-    return(.empty_aggregate_frame())
+    out <- .empty_aggregate_frame()
+    attr(out, "dropped") <- dropped
+    return(out)
   }
 
   # Group by (county_name, state_abbr, offense, period) and aggregate.
@@ -352,6 +390,8 @@ get_county_crime <- function(detail, denominator = "jurisdiction_pop") {
 
   out <- do.call(rbind, agg_rows)
   rownames(out) <- NULL
-  out[, .AGGREGATE_COLS, drop = FALSE]
+  out <- out[, .AGGREGATE_COLS, drop = FALSE]
+  attr(out, "dropped") <- dropped
+  out
 }
 

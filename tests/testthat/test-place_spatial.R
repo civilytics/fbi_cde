@@ -21,12 +21,25 @@ test_that("add_place_spatial_members returns input unchanged when sf is absent",
   expect_message(out <- add_place_spatial_members(x), "sf")
   expect_equal(nrow(out), nrow(x))
   expect_equal(out$ori, x$ori)
-  # Blocker 2: the degradation path must still carry place_type/place_fips,
-  # so downstream code like out[!is.na(out$place_type), ] behaves the same
-  # whether or not sf/tigris are installed.
-  expect_true(all(c("place_type", "place_fips") %in% names(out)))
-  expect_true(all(is.na(out$place_type)))
-  expect_true(all(is.na(out$place_fips)))
+  # The degradation path must still carry the Census code columns, so
+  # downstream code behaves the same whether or not sf/tigris are installed,
+  # and must not touch the codes the input already had.
+  expect_true(all(c("place_type", "place_fips", "cousub_fips") %in% names(out)))
+  expect_equal(out$place_fips, x$place_fips)
+  expect_equal(out$place_type, x$place_type)
+})
+
+test_that("add_place_spatial_members fills codes on a frame that lacks them", {
+  x <- place_agencies("Lufkin", "TX")
+  x$place_type <- NULL
+  x$place_fips <- NULL
+  x$cousub_fips <- NULL
+  testthat::local_mocked_bindings(
+    .spatial_deps_available = function() FALSE,
+    .package = "fbiCDE"
+  )
+  expect_message(out <- add_place_spatial_members(x), "sf")
+  expect_equal(out$place_fips, "4845072")
 })
 
 test_that("add_place_spatial_members is idempotent", {
@@ -47,7 +60,7 @@ test_that("add_place_spatial_members widens the required-columns check to catch 
   # message rather than dying later with a cryptic subscript error.
   bad <- data.frame(
     ori = "TX1234567", agency_name = "x", agency_type_name = "City",
-    agency_class = "place_primary", default_member = TRUE,
+    agency_class = "place_primary",
     place_name = "Lufkin", county_name = "ANGELINA", state_abbr = "TX",
     attribution = "name_identity",
     offense = "V", period = "01-2021", count = 1,
@@ -108,7 +121,6 @@ test_that("add_place_spatial_members attributes an embedded agency inside the pl
   expect_equal(nrow(added), 1L)
   expect_equal(added$ori, "TX1234567")
   expect_equal(added$agency_class, "campus")
-  expect_false(added$default_member)
   expect_equal(added$place_type, "incorporated")
   expect_equal(added$place_fips, "4845384")
 })
@@ -203,16 +215,15 @@ test_that("add_place_spatial_members skips agencies with unusable coordinates", 
 
   x <- place_agencies("Lufkin", "TX")
 
-  # The bundled table stores coordinates as character and uses the literal
-  # string "NULL" for missing ones, which is.na() does not catch.
+  # The bundled table stores missing coordinates as NA.
   fake_agencies <- data.frame(
     ori = c("TX4444444", "TX5555555"),
     agency_name = c("Good Coords College", "No Coords College"),
     agency_type_name = "University or College",
     state_abbr = "TX",
     county_name = x$county_name,
-    latitude = c("31.3", "NULL"),
-    longitude = c("-94.7", "NULL"),
+    latitude = c(31.3, NA),
+    longitude = c(-94.7, NA),
     stringsAsFactors = FALSE
   )
   testthat::local_mocked_bindings(
@@ -275,7 +286,7 @@ test_that("add_place_spatial_members resolves the containing polygon when a name
   expect_equal(added$place_type, "incorporated")
 })
 
-test_that("add_place_spatial_members leaves name_identity rows with NA place_fips", {
+test_that("add_place_spatial_members keeps the name_identity row's Census code", {
   skip_if_not_installed("sf")
 
   x <- place_agencies("Lufkin", "TX")
@@ -283,8 +294,10 @@ test_that("add_place_spatial_members leaves name_identity rows with NA place_fip
 
   primary <- out[out$attribution == "name_identity", , drop = FALSE]
   expect_equal(nrow(primary), 1L)
-  expect_true(is.na(primary$place_fips))
-  expect_true(is.na(primary$place_type))
+  # The promised key from the place crosswalk, not the fixture polygon's GEOID.
+  expect_equal(primary$place_fips, "4845072")
+  expect_equal(primary$place_type, "incorporated")
+  expect_equal(names(out), .PLACE_AGENCY_COLS)
 })
 
 # ---- Defensiveness: polygon frame is not trusted blindly ------------------

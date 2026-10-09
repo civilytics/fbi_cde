@@ -7,10 +7,20 @@
 get_agencies()
 }
 \value{
-A data.frame with agency information (ORI, name, state, county, etc.).
+A data.frame with one row per agency and one column per field the
+API returns (currently \code{ori}, \code{counties}, \code{is_nibrs}, \code{latitude},
+\code{longitude}, \code{state_abbr}, \code{state_name}, \code{agency_name}, \code{agency_type_name},
+\code{nibrs_start_date}), all stored as character and sorted by \code{ori}. These
+field names follow the live API and differ from the bundled
+\link{fbi_api_agencies} snapshot (e.g. \code{counties} rather than \code{county_name}).
+States whose request fails are skipped with a warning and listed in
+\code{attr(x, "failed_states")}.
 }
 \description{
-Iterates over all state lookup endpoints to rebuild the full agency table.
+Iterates over every state in \code{\link[=get_states]{get_states()}} and fetches its agency directory
+from the CDE endpoint \code{agency/byStateAbbr/{state}} (the same endpoint the
+participation functions use) to rebuild the full agency table. This issues
+one request per state.
 }
 \examples{
 \dontrun{

@@ -15,26 +15,46 @@
 # What stays with each caller: its own signature, defaults, validation, resolver
 # call, warning wording, and any level-specific guard (metro's max_agencies).
 
-# Apply the agency_class / default_only filter. Pure -- warnings about an
-# emptied set belong to the caller, whose message names its own geography.
+# Choose which classified agencies to query. By default, every class except
+# special, state and tribal (see R/agency_class.R for why). `agency_class`
+# replaces that default set; `include_statewide = TRUE` adds the "state" class
+# to whichever set applies. Pure -- warnings about an emptied set belong to the
+# caller, whose message names its own geography.
 .filter_agency_members <- function(agencies, agency_class = NULL,
-                                   default_only = FALSE) {
+                                   include_statewide = FALSE) {
+  if (!is.logical(include_statewide) || length(include_statewide) != 1L ||
+      is.na(include_statewide)) {
+    stop("'include_statewide' must be TRUE or FALSE", call. = FALSE)
+  }
+  cls <- agencies$agency_class
   if (!is.null(agency_class)) {
-    return(agencies[agencies$agency_class %in% agency_class, , drop = FALSE])
+    unknown <- setdiff(agency_class, .ALL_AGENCY_CLASSES)
+    if (length(unknown) > 0) {
+      stop("Unknown agency_class: ", paste(unknown, collapse = ", "),
+           ". Valid classes: ", paste(.ALL_AGENCY_CLASSES, collapse = ", "),
+           call. = FALSE)
+    }
+    keep <- cls %in% agency_class
+  } else {
+    keep <- !is.na(cls) & !cls %in% .EXCLUDED_BY_DEFAULT_CLASSES
   }
-  if (isTRUE(default_only)) {
-    return(agencies[agencies$default_member, , drop = FALSE])
+  if (include_statewide) {
+    keep <- keep | cls %in% "state"
   }
-  agencies
+  agencies[keep, , drop = FALSE]
 }
 
-# Describe which filter emptied the set, for the caller's warning message.
-.filter_desc <- function(agency_class = NULL) {
-  if (!is.null(agency_class)) {
+# Describe the filter that emptied the set, for the caller's warning message.
+.filter_desc <- function(agency_class = NULL, include_statewide = FALSE) {
+  desc <- if (!is.null(agency_class)) {
     paste0("agency_class = ", paste(agency_class, collapse = ", "))
   } else {
-    "default_only = TRUE"
+    "the default agency classes"
   }
+  if (isTRUE(include_statewide)) {
+    desc <- paste0(desc, ", include_statewide = TRUE")
+  }
+  desc
 }
 
 # Fan out one cde_request() per member ORI and stack the per-agency-period rows.
@@ -47,10 +67,12 @@
 # @param empty_fn Zero-argument constructor for the level's typed empty frame.
 # @param progress Print a progress line per agency.
 # @return A data.frame with `cols`. Agencies whose request or parse fails are
-#   dropped with a warning and recorded in `attr(x, "dropped")`.
+#   dropped with a warning; their ORIs are recorded in `attr(x, "dropped")` and
+#   the error messages, named by ORI, in `attr(x, "dropped_reasons")`.
 .fanout_agency_detail <- function(agencies, meta_cols, cols, empty_fn,
                                   offense, from, to, progress = FALSE) {
   dropped <- character(0)
+  reasons <- character(0)
   parts <- vector("list", nrow(agencies))
 
   for (i in seq_len(nrow(agencies))) {
@@ -67,6 +89,7 @@
     )
     if (inherits(res, "error")) {
       dropped <- c(dropped, ori)
+      reasons <- c(reasons, conditionMessage(res))
       next
     }
     for (col in meta_cols) {
@@ -85,12 +108,16 @@
     rownames(out) <- NULL
   }
 
+  # The old wording ("returned no data") was wrong for an HTTP error or a
+  # parse failure, and the error itself was discarded. Keep it.
   if (length(dropped) > 0) {
     warning("Dropped ", length(dropped),
             " agenc", if (length(dropped) == 1) "y" else "ies",
-            " that returned no data: ", paste(dropped, collapse = ", "),
+            " whose request or parse failed: ", paste(dropped, collapse = ", "),
+            ". See attr(x, \"dropped_reasons\") for the errors.",
             call. = FALSE)
     attr(out, "dropped") <- dropped
+    attr(out, "dropped_reasons") <- stats::setNames(reasons, dropped)
   }
   out
 }

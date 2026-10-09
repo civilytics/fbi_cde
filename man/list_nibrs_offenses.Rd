@@ -2,15 +2,18 @@
 % Please edit documentation in R/nibrs.R
 \name{list_nibrs_offenses}
 \alias{list_nibrs_offenses}
-\title{Return a vector of all offenses in the NIBRS data.}
+\title{List the offense codes the NIBRS functions accept.}
 \usage{
 list_nibrs_offenses()
 }
 \value{
-A character vector of NIBRS offense codes.
+A data.frame with columns \code{code} and \code{label}: the summary groups (\code{"V"},
+\code{"P"}, \code{"ROB"}, \code{"BUR"}, ...) and the NIBRS offense codes from the CDE's
+offense lookup. The API also accepts NIBRS offense codes missing from that
+lookup, such as \code{"13A"} (aggravated assault) or \code{"120"} (robbery).
 }
 \description{
-Return a vector of all offenses in the NIBRS data.
+List the offense codes the NIBRS functions accept.
 }
 \examples{
 list_nibrs_offenses()

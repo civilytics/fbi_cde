@@ -5,7 +5,7 @@
 \alias{nibrs_victim_variables}
 \title{All available variables for NIBRS victim data.}
 \format{
-A vector with 7 elements:
+A character vector with 6 elements.
 }
 \source{
 \url{https://cde.ucr.cjis.gov/LATEST/}
@@ -14,8 +14,7 @@ A vector with 7 elements:
 nibrs_victim_variables
 }
 \description{
-The `get_nibrs_victim()` function requires a string input for
-which variable you want data on. This is a vector of strings
-with all possible variables.
+The values \code{get_nibrs_victim()} accepts for \code{variable}: the keys of a
+NIBRS response's victim section. Built by \code{data-raw/api_vocabularies.R}.
 }
 \keyword{datasets}

@@ -11,7 +11,7 @@ get_county_crime_detail(
   from = "01-2015",
   to = "12-2020",
   agency_class = NULL,
-  default_only = FALSE,
+  include_statewide = FALSE,
   progress = FALSE
 )
 }
@@ -20,36 +20,54 @@ get_county_crime_detail(
 
 \item{state}{Two-letter state abbreviation.}
 
-\item{offense}{Offense code (default `"V"`; see `get_offense_codes()`).}
+\item{offense}{Offense code (default \code{"V"}; see \code{get_offense_codes()}).}
 
-\item{from, to}{Date range in `MM-YYYY` format.}
+\item{from, to}{Date range in \code{MM-YYYY} format.}
 
-\item{agency_class}{Optional character vector; keep only these classes
-(`"county_primary"`, `"municipal"`, `"campus"`, `"state"`, `"tribal"`,
-`"special"`).}
+\item{agency_class}{Optional character vector of classes to query instead
+of the default set (\code{"county_primary"}, \code{"municipal"}, \code{"campus"}):
+any of those plus \code{"special"}, \code{"state"} and \code{"tribal"}. See
+\code{\link[=county_agencies]{county_agencies()}} for what each class holds.}
 
-\item{default_only}{If `TRUE`, keep only default members (`county_primary` +
-`municipal`). Ignored if `agency_class` is supplied.}
+\item{include_statewide}{If \code{TRUE}, also query state agencies (state police
+and highway patrol, other state agencies). Many of their records are
+county or troop units, but some are headquarters records covering the
+whole state, attributed to the county they sit in, and agency type does
+not tell the two apart. Default \code{FALSE}.}
 
-\item{progress}{If `TRUE`, print a simple progress line per agency.}
+\item{progress}{If \code{TRUE}, print a simple progress line per agency.}
 }
 \value{
-A data.frame (columns listed in Details). Agencies whose request or
-  parse fails are dropped with a warning and recorded in `attr(x, "dropped")`.
-  Agencies classed `state` (e.g. Highway Patrol) or `tribal` are attributed
-  to a county by HQ location, not jurisdiction; their figures reflect
-  statewide/jurisdiction-wide totals, not county-specific crime. They are
-  excluded by default (`default_member` is `FALSE` for both classes) and
-  should be interpreted with care if opted in via `agency_class`.
+A data.frame with one row per agency-period: the agency metadata from
+\code{\link[=county_agencies]{county_agencies()}} (including \code{county_fips}, which \code{\link[=join_census_pop]{join_census_pop()}}
+needs), then \code{offense}, \code{period}, \code{count}, \code{population},
+\code{participated_population}, \code{rate}, and \code{reported}. Agencies whose request
+or parse fails are dropped with a warning; their ORIs are recorded in
+\code{attr(x, "dropped")} and the errors in \code{attr(x, "dropped_reasons")}.
 }
 \description{
 Fans out one request per member agency and returns their crime series
-**unsummed** — one row per agency-period — with each agency's `agency_class`,
-coverage (`population`, `participated_population`, `reported`), and a
-per-agency `rate` (`count / participated_population * 1e5`). This is the
+\strong{unsummed} — one row per agency-period — with each agency's \code{agency_class},
+coverage (\code{population}, \code{participated_population}, \code{reported}), and a
+per-agency \code{rate} (\code{count / participated_population * 1e5}). This is the
 transparent, power-user primitive; it applies no aggregation and takes no
-stance on denominators. Filter with `agency_class`/`default_only`; the default
-returns *every* attributed agency, typed.
+stance on denominators.
+}
+\details{
+By default it queries the agencies whose jurisdiction is a specific area
+below the state: the sheriff, city police and campus police. Add state
+agencies with \code{include_statewide = TRUE}. Special-purpose agencies (transit,
+school, airport, port, park and railroad police, task forces) and tribal
+agencies are queried only when named in \code{agency_class}: the first group
+mixes single-site agencies with multi-county task forces attributed to one
+county, and how tribal agencies should attribute to counties is unresolved.
+
+An agency that polices several counties reports one series, which is
+returned in full for each of its counties: Columbus PD's rows are the same
+for Delaware, Fairfield and Franklin counties, OH. The extreme case is New
+York City, where the NYPD is the police of all five boroughs: any borough
+returns \strong{citywide} NYPD counts with New York City's population. Do not
+sum counties that share an agency; see \code{\link[=county_agencies]{county_agencies()}}.
 }
 \examples{
 \dontrun{

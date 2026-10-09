@@ -1,193 +1,48 @@
-nibrs_offenses <- c("aggravated-assault",
-                    "all-offenses",
-                    "all-other-larceny",
-                    "all-other-offenses",
-                    "animal-cruelty",
-                    "arson",
-                    "assault-offenses",
-                    "assisting-or-promoting-prostitution",
-                    "bad-checks",
-                    "betting",
-                    "bribery",
-                    "burglary-breaking-and-entering",
-                    "counterfeiting-forgery",
-                    "credit-card-automated-teller-machine-fraud",
-                    "crime-against-person",
-                    "crime-against-property",
-                    "crime-against-society",
-                    "curfew-loitering-vagrancy-violations",
-                    "destruction-damage-vandalism-of-property",
-                    "driving-under-the-influence",
-                    "drug-equipment-violations", # GIVE SAME RESULTS AS NARCOTIC OFFENSES
-                    "drug-violations", # GIVES EQUIPMENT VIOLATIONS RESULT
-                    "drugs-narcotic-offenses", # GIVE SAME RESULTS AS EQUIPMENT VIOLATIONS
-                    "drunkenness",
-                    "embezzlement",
-                    "extortion-blackmail",
-                    "false-pretenses-swindle-confidence-game",
-                    "fondling",
-                    "fraud-offenses",
-                    "gambling-equipment-violation",
-                    "gambling-offenses",
-                    "hacking-computer-invasion",
-                    "homicide-offenses",
-                    "human-trafficking-commerical-involuntary-servitude",
-                    "human-trafficking-commerical-sex-acts",
-                    "human-trafficking-offenses",
-                    "identity-theft",
-                    "impersonation",
-                    "incest",
-                    "intimidation",
-                    "justifiable-homicide",
-                    "kidnapping-abduction",
-                    "larceny-theft-offenses",
-                    "liquor-law-violations",
-                    "motor-vehicle-theft",
-                    "murder-and-nonnegligent-manslaughter",
-                    "negligent-manslaughter",
-                    #  "not-specified",
-                    "operating-promoting-assiting-gambling",
-                    "peeping-tom,pocket-picking",
-                    "pornography-obscence-material",
-                    "prostitution",
-                    "prostitution-offenses",
-                    "purchasing-prostitution",
-                    "purse-snatching",
-                    "rape",
-                    "robbery",
-                    "sex-offenses",
-                    "sex-offenses-non-forcible",
-                    "sexual-assult-with-an-object",
-                    "shoplifting",
-                    "simple-assault",
-                    "sodomy",
-                    "sports-tampering",
-                    "statutory-rape",
-                    "stolen-property-offenses",
-                    "theft-from-building",
-                    "theft-from-coin-operated-machine-or-device",
-                    "theft-from-motor-vehicle",
-                    "theft-of-motor-vehicle-parts-or-accessories",
-                    "weapon-law-violation",
-                    "welfare-fraud",
-                    "wire-fraud")
-
-
-nibrs_victim_variables <- sort(c("age",
-                                 "count",
-                                 "ethnicity",
-                                 "race",
-                                 "sex",
-                                 "relationship",
-                                 "location"))
-
-nibrs_offender_variables <- c("age",
-                              "count",
-                              "ethnicity",
-                              "race",
-                              "sex")
-
-nibrs_offense_variables <- sort(c("count",
-                                  "weapons",
-                                  "linkedoffense",
-                                  "suspectusing",
-                                  "criminal_activity",
-                                  "property_recovered",
-                                  "property_stolen",
-                                  "bias"))
-
-
-# Offense vocabulary taken verbatim from the live CDE API
-# `arrest/{level}/all?type=totals` "Offense Name" keys. The CDE arrest endpoint
-# no longer accepts a per-offense URL segment; these names are used as
-# response-side filter keys by `get_arrest_count()`.
-ucr_arrest_offenses <- c("Aggravated Assault",
-                         "All Other Offenses",
-                         "Arson",
-                         "Burglary",
-                         "Counterfeiting/Forgery",
-                         "Curfew and Loitering Law Violations",
-                         "Disorderly Conduct",
-                         "Drive Under the Influence",
-                         "Drug Abuse Violations",
-                         "Drug Possession",
-                         "Drug Sale/Manufacturing",
-                         "Drunkenness",
-                         "Embezzlement",
-                         "Fraud",
-                         "Gambling",
-                         "Human Trafficking",
-                         "Larceny",
-                         "Liquor Law Violations",
-                         "Manslaughter by Negligence",
-                         "Motor Vehicle Theft",
-                         "Murder and Nonnegligent Homicide",
-                         "Offenses Against the Family and Children",
-                         "Prostitution and Commercialized Vice",
-                         "Rape",
-                         "Rape (Legacy)",
-                         "Robbery",
-                         "Runaway",
-                         "Sex Offenses",
-                         "Simple Assault",
-                         "Stolen Property",
-                         "Suspicion",
-                         "Vagrancy",
-                         "Vandalism",
-                         "Weapons")
-
-regions <- c("U.S. Territories",
-             "Northeast",
-             "Midwest",
-             "South",
-             "West",
-             "Other")
-
-# usethis::use_data(nibrs_offender_variables,
-#                   nibrs_offense_variables,
-#                   nibrs_offenses,
-#                   nibrs_victim_variables,
-#                   regions,
-#                   ucr_arrest_offenses)
-
+# Documentation for the bundled datasets in data/. The datasets themselves are
+# built by scripts in data-raw/ (api_vocabularies.R rebuilds the NIBRS and
+# arrest vocabularies from the live API). This file used to also define copies
+# of several of them as package objects, a second, stale source of truth that
+# unqualified references silently picked up.
 
 #' All available variables for NIBRS offender data.
 #'
-#' The `get_nibrs_offender()` function requires a string input for
-#' which variable you want data on. This is a vector of strings
-#' with all possible variables.
+#' The values `get_nibrs_offender()` accepts for `variable`: the keys of a
+#' NIBRS response's offender section. Built by `data-raw/api_vocabularies.R`.
 #'
-#'
-#' @format A vector with 5 elements:
+#' @format A character vector with 4 elements.
 #' @source \url{https://cde.ucr.cjis.gov/LATEST/}
 "nibrs_offender_variables"
 
 #' All available variables for NIBRS offense data.
 #'
-#' The `get_nibrs_offense()` function requires a string input for
-#' which variable you want data on. This is a vector of strings
-#' with all possible variables.
+#' The values `get_nibrs_offense()` accepts for `variable`: the keys of a
+#' NIBRS response's offense section. Built by `data-raw/api_vocabularies.R`.
 #'
-#' @format A vector with 8 elements:
+#' @format A character vector with 2 elements.
 #' @source \url{https://cde.ucr.cjis.gov/LATEST/}
 "nibrs_offense_variables"
 
-#' All offenses available to get NIBRS data for.
+#' Offense codes the NIBRS functions accept.
 #'
-#' This is a vector of strings with the names of every offense available
-#' for the NIBRS data functions.
+#' The summary groups (`"V"`, `"P"`, `"ROB"`, `"BUR"`, ...) and the NIBRS
+#' offense codes from the CDE's offense lookup. The API also accepts NIBRS
+#' codes missing from the lookup, such as `"13A"` or `"120"`. Built by
+#' `data-raw/api_vocabularies.R`.
 #'
-#' @format A vector with 72 elements:
+#' @format A data frame with 73 rows and 2 variables:
+#' \describe{
+#'   \item{code}{Offense code, as passed to `offense`}
+#'   \item{label}{Offense name}
+#' }
 #' @source \url{https://cde.ucr.cjis.gov/LATEST/}
 "nibrs_offenses"
 
 #' All available variables for NIBRS victim data.
 #'
-#' The `get_nibrs_victim()` function requires a string input for
-#' which variable you want data on. This is a vector of strings
-#' with all possible variables.
+#' The values `get_nibrs_victim()` accepts for `variable`: the keys of a
+#' NIBRS response's victim section. Built by `data-raw/api_vocabularies.R`.
 #'
-#' @format A vector with 7 elements:
+#' @format A character vector with 6 elements.
 #' @source \url{https://cde.ucr.cjis.gov/LATEST/}
 "nibrs_victim_variables"
 
@@ -203,38 +58,73 @@ regions <- c("U.S. Territories",
 
 #' All offenses available to get UCR arrest counts for.
 #'
-#' A vector of the offense names accepted by `get_arrest_count()`. These match
-#' the "Offense Name" keys returned by the live CDE arrest endpoint and are
-#' used as response-side filters (the API no longer supports a per-offense
-#' URL segment).
+#' The offense names `get_arrest_count()` accepts: every key of the three maps
+#' in the CDE's arrest totals response, with the map it comes from. A name can
+#' appear at more than one level. Use [list_ucr_arrest_offenses()] to list them.
+#' Built by `data-raw/api_vocabularies.R`.
 #'
-#' @format A character vector with 34 elements.
+#' @format A data frame with 112 rows and 2 variables:
+#' \describe{
+#'   \item{offense}{Offense name, as passed to `get_arrest_count(offense = )`}
+#'   \item{level}{`"name"` (34), `"category"` (29) or `"breakdown"` (49)}
+#' }
 #' @source \url{https://cde.ucr.cjis.gov/LATEST/}
 "ucr_arrest_offenses"
+
+#' Arrest offense codes
+#'
+#' The CDE's arrest endpoint addresses one offense by numeric code
+#' (`arrest/<level>/<code>`); an offense name is rejected. Each code is one
+#' breakdown, and reports its arrests under one offense name and one category.
+#' [get_arrest_count()] and [get_arrest_demographics()] resolve a name at any
+#' level to its codes and sum them. Built by `data-raw/api_vocabularies.R`
+#' from the `lookup/offenses?type=arrest` codes (plus Suspicion, 320, which
+#' the lookup omits), placing each by the names its own response reports.
+#' Two names in [ucr_arrest_offenses], `"Rape"` and `"Runaway"`, have no code
+#' and no arrests.
+#'
+#' @format A data frame with 47 rows and 5 variables:
+#' \describe{
+#'   \item{code}{The code, as a string}
+#'   \item{label}{The CDE lookup's label for it}
+#'   \item{name}{The offense name it reports under}
+#'   \item{category}{The category it reports under}
+#'   \item{breakdown}{The breakdown it reports under}
+#' }
+#' @source \url{https://cde.ucr.cjis.gov/LATEST/}
+"ucr_arrest_offense_codes"
 
 
 #' All agencies included in the FBI's Crime Data Explorer API.
 #'
 #' A dataset containing information about the 18,459 agencies included in the
-#' FBI's API.
+#' FBI's API. It is a snapshot: NIBRS start dates run to September 2019, so the
+#' NIBRS columns predate the large 2020-2021 transition. Use
+#' [get_agency_participation()] for an agency's current NIBRS status.
 #'
 #' @format A data frame with 18459 rows and 13 variables:
 #' \describe{
-#'   \item{ori}{9-digit unique ID number for the agency}
+#'   \item{ori}{9-character unique ID for the agency (ORI)}
 #'   \item{agency_name}{Agency name}
-#'   \item{agency_type_name}{Type of department - e.g city, county, school}
+#'   \item{agency_type_name}{Type of department, e.g. City, County,
+#'   University or College}
 #'   \item{state_name}{State name}
 #'   \item{state_abbr}{State abbreviation}
 #'   \item{division_name}{Census division name}
 #'   \item{region_name}{Census region name}
 #'   \item{region_desc}{Census region code}
-#'   \item{county_name}{County name}
-#'   \item{nibrs}{Boolean on whether the agency reports to NBIRS}
-#'   \item{latitude}{Agency latitude}
-#'   \item{longitude}{Agency longitude}
-#'   \item{nibrs_start_date}{Date agency started reporting to NIBRS. NULL if
-#'   the agency does not report to NIBRS}
-#'
+#'   \item{county_name}{County name, uppercase. Semicolon-separated for an
+#'   agency that polices several counties; \code{"N/A"} when the agency has
+#'   no county. This is the CDE's own value: the geography functions also
+#'   attribute three \code{"N/A"} agencies (the NYPD, DC's Metropolitan
+#'   Police and the Baltimore City Sheriff) to their counties, which this
+#'   table does not show; see \code{\link{county_agencies}}}
+#'   \item{nibrs}{Logical: whether the agency reported to NIBRS as of the
+#'   snapshot}
+#'   \item{latitude}{Numeric agency latitude; \code{NA} when unknown}
+#'   \item{longitude}{Numeric agency longitude; \code{NA} when unknown}
+#'   \item{nibrs_start_date}{Date the agency started reporting to NIBRS;
+#'   \code{NA} if it had not}
 #' }
 #' @source \url{https://cde.ucr.cjis.gov/LATEST/}
 "fbi_api_agencies"

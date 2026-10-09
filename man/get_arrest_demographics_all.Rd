@@ -7,19 +7,18 @@
 get_arrest_demographics_all(...)
 }
 \arguments{
-\item{...}{Arguments passed to `get_arrest_demographics()` (e.g. `ori`,
-`state_abb`, `from`, `to`). Any `offense` argument is ignored.}
+\item{...}{Arguments passed to \code{get_arrest_demographics()} (e.g. \code{ori},
+\code{state_abb}, \code{from}, \code{to}). Any \code{offense} argument is ignored.}
 }
 \value{
 A data.frame with columns: geography, offense, period,
-  demographic_type, demographic_value, count
+demographic_type, demographic_value, count
 }
 \description{
-**Deprecated.** Per-offense arrest demographics are no
-longer available from the CDE API, which only provides demographics
-aggregated across all offenses. This function now returns the same result as
-`get_arrest_demographics()` and emits a warning. It is retained for backward
-compatibility and may be removed in a future release.
+\strong{Deprecated.} Use \code{\link[=get_arrest_demographics]{get_arrest_demographics()}}, which takes an
+\code{offense}. This alias returns all-offense demographics (\code{offense = "all"})
+and emits a warning. It is retained for backward compatibility and may be
+removed in a future release.
 }
 \examples{
 \dontrun{

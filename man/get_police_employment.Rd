@@ -2,7 +2,7 @@
 % Please edit documentation in R/police_employment.R
 \name{get_police_employment}
 \alias{get_police_employment}
-\title{Get agency-, state-, region-, or national-level police staffing data.}
+\title{Get police staffing data}
 \usage{
 get_police_employment(
   ori = NULL,
@@ -15,32 +15,40 @@ get_police_employment(
 \arguments{
 \item{ori}{A string of the 9-character ORI code for the desired agency.}
 
-\item{state_abb}{String for state abbreviation. If `NULL` (default) returns
+\item{state_abb}{String for state abbreviation. If \code{NULL} (default) returns
 national data.}
 
-\item{region}{Character string for the census region (e.g. "Northeast",
-"Midwest", "South", "West").}
+\item{region}{Not supported: the CDE publishes no region-level police
+employment, and passing a region is an error. Sum the states instead.}
 
-\item{from}{Start date in MM-YYYY format (default "01-2015").}
-
-\item{to}{End date in MM-YYYY format (default "12-2020").}
+\item{from, to}{First and last year, as four-digit \code{YYYY} strings (defaults
+\code{"2015"} and \code{"2020"}). Unlike the other data functions, police
+employment is annual.}
 }
 \value{
-A data.frame with columns for annual number of employees and officers
-  (also broken up by gender).
+A data.frame with one row per year: \code{year}, \code{male_officers},
+\code{female_officers}, \code{male_civilians}, \code{female_civilians}, \code{ori} (the
+requested geography), and the totals \code{male_total}, \code{female_total},
+\code{civilians_total}, \code{officers_total} and \code{employees_total}, then
+\code{participated_population} (the population of the agencies that
+reported) and \code{employees_per_1000} (employees per 1,000 of that
+population). For a state or the nation the counts are sums over the
+agencies that reported, so they move with coverage: compare years by the
+rate, not the count. Zero rows, with a message, when the CDE returns no
+data.
 }
 \description{
-Get agency-, state-, region-, or national-level police staffing data.
+Returns annual counts of sworn officers and civilian employees, by sex, for
+an agency, a state, or the nation, from the CDE's police employment (\code{pe})
+endpoint.
 }
 \examples{
 \dontrun{
-# Gets only Oakland Police Department in California
-get_police_employment("CA0010900")
+# Oakland Police Department, California
+get_police_employment("CA0010900", from = "2018", to = "2020")
 
-# Gets California state-level estimates
-get_police_employment(state_abb = "CA")
-
-# Gets national-level estimates
-get_police_employment()
+# California, and the nation
+get_police_employment(state_abb = "CA", from = "2018", to = "2020")
+get_police_employment(from = "2018", to = "2020")
 }
 }

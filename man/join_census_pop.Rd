@@ -13,52 +13,51 @@ join_census_pop(
 )
 }
 \arguments{
-\item{detail}{A data.frame as returned by [get_county_crime_detail()], with at
-least the columns: `county_name`, `state_abbr`, and `county_fips` (the last
-supplied by [county_agencies()]).}
+\item{detail}{A data.frame as returned by \code{\link[=get_county_crime_detail]{get_county_crime_detail()}}, with at
+least the columns: \code{county_name}, \code{state_abbr}, and \code{county_fips} (the last
+supplied by \code{\link[=county_agencies]{county_agencies()}}).}
 
 \item{key}{Census API key. Defaults to the \code{CENSUS_KEY} environment
 variable. Obtain a free key from
 \url{https://api.census.gov/data/key_signup.html}.}
 
 \item{year}{ACS vintage year. Defaults to two years before the current year,
-because the ACS 5-year release for year `Y` does not publish until December
-of `Y + 1`.}
+because the ACS 5-year release for year \code{Y} does not publish until December
+of \code{Y + 1}.}
 
-\item{dataset}{Census dataset name passed to `censusapi::getCensus()`.
-Defaults to `"acs/acs5"`; use `"acs/acs1"` for the 1-year release.}
+\item{dataset}{Census dataset name passed to \code{censusapi::getCensus()}.
+Defaults to \code{"acs/acs5"}; use \code{"acs/acs1"} for the 1-year release.}
 
 \item{census_fun}{Function used to call the Census API. Defaults to
-`censusapi::getCensus()`. Exposed for testing; you should not need to set it.}
+\code{censusapi::getCensus()}. Exposed for testing; you should not need to set it.}
 }
 \value{
-The input `detail` data.frame with an additional `census_population`
-  column (integer, one value per county). If \code{censusapi} is unavailable
-  or the request fails, the column is all `NA`.
+The input \code{detail} data.frame with an additional \code{census_population}
+column (integer, one value per county). If \code{censusapi} is unavailable
+or the request fails, the column is all \code{NA}.
 }
 \description{
 Fetches an American Community Survey (ACS) total-population estimate for each
-county represented in `detail`, keyed by the `county_fips` column. Returns the
-detail frame with an added `census_population` column (integer). Counties
-without a FIPS match or without Census data get `NA`.
+county represented in \code{detail}, keyed by the \code{county_fips} column. Returns the
+detail frame with an added \code{census_population} column (integer). Counties
+without a FIPS match or without Census data get \code{NA}.
 }
 \details{
 This is an optional feature requiring the \code{censusapi} package (in
 \sQuote{Suggests}) and a free Census API key (set via the \code{CENSUS_KEY}
 environment variable or the \code{key} argument). Without \code{censusapi},
-the function returns `detail` with an all-`NA` `census_population` column and
+the function returns \code{detail} with an all-\code{NA} \code{census_population} column and
 a message.
 
-The default dataset is the ACS 5-year release (`"acs/acs5"`). The 1-year
-release (`"acs/acs1"`) only publishes estimates for geographies of 65,000+
+The default dataset is the ACS 5-year release (\code{"acs/acs5"}). The 1-year
+release (\code{"acs/acs1"}) only publishes estimates for geographies of 65,000+
 people, which excludes roughly two-thirds of US counties — so 5-year is the
 correct default for a county denominator.
 }
 \examples{
 \dontrun{
 detail <- get_county_crime_detail("Alameda", "CA",
-                                  from = "01-2019", to = "12-2019",
-                                  default_only = TRUE)
+                                  from = "01-2019", to = "12-2019")
 detail_with_pop <- join_census_pop(detail)
 agg <- get_county_crime(detail_with_pop, denominator = "census_pop")
 }

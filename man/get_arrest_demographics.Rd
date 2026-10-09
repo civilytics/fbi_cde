@@ -15,30 +15,41 @@ get_arrest_demographics(
 \arguments{
 \item{ori}{A string of the 9-character ORI code for the desired agency.}
 
-\item{state_abb}{String for state abbreviation. If `NULL` (default) returns
+\item{state_abb}{String for state abbreviation. If \code{NULL} (default) returns
 national data.}
 
 \item{from}{Start date in MM-YYYY format (default "01-2015").}
 
 \item{to}{End date in MM-YYYY format (default "12-2020").}
 
-\item{offense}{Must be `"all"` (the default). The CDE API only provides
-arrest demographics aggregated across all offenses; it does not break
-demographics down by offense, so any other value raises an error.}
+\item{offense}{\code{"all"} (the default), or one offense, as in
+\code{\link[=get_arrest_count]{get_arrest_count()}}. A name covering several codes is the sum of their
+demographics.}
 }
 \value{
 A data.frame with columns: geography, offense, period,
-  demographic_type, demographic_value, count
+demographic_type, demographic_value, count
 }
 \description{
-Retrieves arrest counts broken down by demographic categories (sex, age,
-race) for a specific offense. Uses the CDE API endpoint
-`arrest/<level>/<offense>` with `type=totals`.
+Retrieves arrest counts broken down by demographic categories (sex, age by
+sex, race) over the date range, for all offenses or one. Uses the CDE API
+endpoint \verb{arrest/<level>/<code>} with \code{type=totals}. With an offense this is
+the offense-by-age cross-tabulation: juvenile arrests for larceny, say.
 }
+\section{All-offense demographics are incomplete}{
+
+The API's all-offense demographics leave out arrests filed under the five
+"(Unspecified)" offense codes (140, 150, 151, 156 and 170, e.g. "Drug
+Abuse Violations (Unspecified)"), although its all-offense counts include
+them: in Ohio in 2023, 883 of 188,836 arrests, 57 of them juvenile.
+Summing \code{get_arrest_demographics()} over the offense names includes them.
+}
+
 \examples{
 \dontrun{
 get_arrest_demographics(ori = "CA0010900")
 get_arrest_demographics(state_abb = "CA")
+get_arrest_demographics(state_abb = "OH", offense = "Larceny")
 }
 }
 \seealso{

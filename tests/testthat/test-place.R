@@ -90,13 +90,96 @@ test_that("(state, county, place) is a collision-free key", {
   expect_equal(sum(table(key) > 1), 0L)
 })
 
-test_that("only the two known (state, place) keys are ambiguous", {
-  mun <- fbi_api_agencies[
-    fbi_api_agencies$agency_type_name %in% .MUNICIPAL_TYPES, , drop = FALSE
-  ]
-  key <- paste(mun$state_abbr, derive_place_name(mun$agency_name))
-  ambiguous <- sort(names(which(table(key) > 1)))
-  expect_equal(ambiguous, c("PA Foster Township", "PA Jefferson Township"))
+test_that("every (state, county, place) key is unique", {
+  # Same-named townships are common within a state (once their ", X County"
+  # disambiguators are stripped), but never within a county, which is what
+  # place_agencies(county = ) relies on.
+  mun <- .municipal_agencies()
+  key <- paste(mun$state_abbr, mun$county_name, toupper(mun$place_name))
+  expect_false(anyDuplicated(key) > 0)
+})
+
+test_that("derive_place_name drops a county disambiguator in either position", {
+  expect_equal(
+    derive_place_name("Clay Township Police Department, Montgomery County"),
+    "Clay Township"
+  )
+  expect_equal(
+    derive_place_name("Hamilton Township, Mercer County Police Department"),
+    "Hamilton Township"
+  )
+  # No derived place name keeps a disambiguator.
+  expect_false(any(grepl(",", .municipal_agencies()$place_name)))
+})
+
+test_that("a disambiguated township resolves by name with its county", {
+  expect_error(place_agencies("Hamilton Township", "NJ"), "ambiguous")
+  out <- place_agencies("Hamilton Township", "NJ", county = "Mercer")
+  expect_equal(out$ori, "NJ0110300")
+})
+
+# ---- Census codes (#46) -----------------------------------------------------
+
+test_that("place_agencies carries the Census code of the unit it polices", {
+  lufkin <- place_agencies("Lufkin", "TX")
+  expect_equal(names(lufkin), .PLACE_AGENCY_COLS)
+  expect_equal(lufkin$place_type, "incorporated")
+  expect_equal(lufkin$place_fips, "4845072")
+  expect_true(is.na(lufkin$cousub_fips))
+
+  # A township is a county subdivision, not a Census place.
+  hamilton <- place_agencies("Hamilton Township", "NJ", county = "Mercer")
+  expect_equal(hamilton$place_type, "county_subdivision")
+  expect_true(is.na(hamilton$place_fips))
+  expect_equal(hamilton$cousub_fips, "3402129310")
+
+  # So is a New England town.
+  reading <- place_agencies("Reading", "MA")
+  expect_equal(reading$place_type, "county_subdivision")
+  expect_equal(reading$cousub_fips, "2501756130")
+
+  # New York City spans five counties; its place code is the city's.
+  expect_equal(place_agencies("New York City", "NY")$place_fips, "3651000")
+})
+
+test_that("an agency matching more than one unit in its county gets NA", {
+  # Superior, WI is both a city and a village in Douglas County.
+  superior <- place_agencies("Superior", "WI")
+  expect_true(is.na(superior$place_type))
+  expect_true(is.na(superior$place_fips))
+  expect_true(is.na(superior$cousub_fips))
+})
+
+test_that("the place crosswalk keeps its invariants", {
+  cw <- place_crosswalk
+  mun <- .municipal_agencies()
+
+  expect_false(anyDuplicated(cw$ori) > 0)
+  expect_true(all(cw$ori %in% mun$ori))
+  expect_true(all(cw$place_type %in% c("incorporated", "cdp", "county_subdivision")))
+  # Exactly one code per row, the one its type calls for.
+  expect_true(all(xor(is.na(cw$place_fips), is.na(cw$cousub_fips))))
+  expect_equal(cw$place_type == "county_subdivision", !is.na(cw$cousub_fips))
+  expect_true(all(grepl("^[0-9]{7}$", cw$place_fips[!is.na(cw$place_fips)])))
+  expect_true(all(grepl("^[0-9]{10}$", cw$cousub_fips[!is.na(cw$cousub_fips)])))
+
+  # Every code is in the agency's own state, and a county subdivision is in
+  # one of the agency's own counties.
+  ag <- mun[match(cw$ori, mun$ori), ]
+  code <- ifelse(is.na(cw$place_fips), cw$cousub_fips, cw$place_fips)
+  state_fips <- vapply(ag$state_abbr, .state_abbr_to_fips, "")
+  expect_equal(unname(substr(code, 1L, 2L)), unname(state_fips))
+  sub_rows <- which(!is.na(cw$cousub_fips))
+  in_county <- vapply(sub_rows, function(i) {
+    counties <- trimws(strsplit(ag$county_name[i], ";", fixed = TRUE)[[1]])
+    fips <- vapply(counties, function(cty) county_to_fips(ag$state_abbr[i], cty), "")
+    substr(cw$cousub_fips[i], 1L, 5L) %in% fips
+  }, logical(1))
+  expect_true(all(in_county))
+
+  # Coverage the documentation promises.
+  expect_gte(nrow(cw) / nrow(mun), 0.98)
+  expect_equal(attr(cw, "vintage"), PLACE_VINTAGE)
 })
 
 # ---- classify_place_agency() -----------------------------------------------
@@ -111,7 +194,17 @@ test_that("classify_place_agency maps municipal types to place_primary", {
 test_that("classify_place_agency maps embedded types", {
   expect_equal(classify_place_agency("University or College"), "campus")
   expect_equal(classify_place_agency("Other"), "special")
-  expect_equal(classify_place_agency("Other State Agency"), "special")
+  # Other state agencies (a state park's rangers) class as "state", queried
+  # only with include_statewide = TRUE.
+  expect_equal(classify_place_agency("Other State Agency"), "state")
+  # Alaska city police departments carry the "Census Area" type.
+  expect_equal(classify_place_agency("Census Area"), "place_primary")
+})
+
+test_that("an Alaska city police department resolves as a place", {
+  out <- place_agencies("Nome", "AK")
+  expect_equal(out$ori, "AK0010600")
+  expect_equal(out$agency_class, "place_primary")
 })
 
 test_that("classify_place_agency maps non-place types to NA", {
@@ -131,7 +224,7 @@ test_that("place_agencies resolves a place to its own municipal agency", {
   expect_equal(nrow(out), 1L)
   expect_equal(out$place_name, "Lufkin")
   expect_equal(out$agency_class, "place_primary")
-  expect_true(out$default_member)
+  expect_false("default_member" %in% names(out))
   expect_equal(out$attribution, "name_identity")
   expect_equal(out$state_abbr, "TX")
   expect_match(out$ori, "^[A-Z]{2}[A-Z0-9]{7}$")
@@ -194,9 +287,9 @@ test_that("place_agencies rejects an invalid state", {
 
 test_that(".empty_place_agency_frame types match a populated result", {
   # Asserted against the populated frame rather than a hardcoded list: an
-  # earlier version of this test hardcoded numeric latitude/longitude and so
-  # passed while the empty frame disagreed with the populated one, which stores
-  # coordinates as character. The contract is agreement, not a fixed guess.
+  # earlier version of this test hardcoded the coordinate types and so passed
+  # while the empty frame disagreed with the populated one. The contract is
+  # agreement, not a fixed guess.
   empty <- .empty_place_agency_frame()
   populated <- place_agencies("Lufkin", "TX")
 
@@ -206,7 +299,6 @@ test_that(".empty_place_agency_frame types match a populated result", {
     vapply(empty, function(x) class(x)[1], character(1)),
     vapply(populated, function(x) class(x)[1], character(1))
   )
-  expect_equal(vapply(empty, class, character(1))[["default_member"]], "logical")
 })
 
 test_that("an unmatched-place empty frame rbinds cleanly against a real result", {
@@ -222,4 +314,16 @@ test_that("an unmatched-place empty frame rbinds cleanly against a real result",
   classes <- vapply(out, class, character(1))
   expect_equal(classes[["ori"]], "character")
   expect_equal(out$ori, real$ori)
+})
+
+test_that("place_agencies county filter matches a multi-county agency", {
+  # Columbus PD's county_name is "DELAWARE; FAIRFIELD; FRANKLIN"; an exact
+  # comparison with county = "Franklin" used to find nothing.
+  out <- place_agencies("Columbus", "OH", county = "Franklin")
+  expect_equal(out$ori, "OHCOP0000")
+  expect_warning(
+    none <- place_agencies("Columbus", "OH", county = "Hocking"),
+    "No municipal agency"
+  )
+  expect_equal(nrow(none), 0L)
 })

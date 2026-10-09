@@ -17,8 +17,8 @@ knitr::opts_chunk$set(
 
 <!-- badges: start -->
 
-[![R-CMD-check](https://github.com/Civilytics/fbiCDE/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Civilytics/fbiCDE/actions/workflows/R-CMD-check.yaml)
-[![r-universe](https://civilytics.r-universe.dev/badges/fbiCDE)](https://civilytics.r-universe.dev/packages/fbiCDE)
+[![R-CMD-check](https://github.com/civilytics/fbi_cde/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/civilytics/fbi_cde/actions/workflows/R-CMD-check.yaml)
+[![r-universe](https://civilytics.r-universe.dev/badges/fbiCDE)](https://civilytics.r-universe.dev/fbiCDE)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.md)
 <!-- badges: end -->
 
@@ -28,10 +28,21 @@ All network requests go through `cde_request()`, the single network seam for the
 
 ## Installation
 
-The package is not on CRAN. Install the development version from GitHub:
+fbiCDE is distributed through
+[r-universe](https://civilytics.r-universe.dev/fbiCDE), not CRAN. Install the
+released version with:
 
 ```r
-remotes::install_github("Civilytics/fbiCDE")
+install.packages(
+  "fbiCDE",
+  repos = c("https://civilytics.r-universe.dev", "https://cloud.r-project.org")
+)
+```
+
+or the development version from GitHub:
+
+```r
+remotes::install_github("civilytics/fbi_cde")
 ```
 
 ## Quick Start
@@ -49,7 +60,7 @@ get_offense_codes()
 get_agency_crime("CA0010900")
 
 # Get arrest demographics for a state
-get_arrest_demographics(state_abb = "CA", offense = "murder")
+get_arrest_demographics(state_abb = "CA")
 ```
 
 ## Table of Contents
@@ -115,19 +126,22 @@ Functions for querying UCR arrest statistics.
 
 | Function | Description |
 |---|---|
-| `get_arrest_count()` | Get arrest offense counts |
-| `get_arrest_demographics()` | Get arrestee demographics |
-| `get_arrest_demographics_all()` | Get demographics for all UCR arrest offenses |
-| `list_ucr_arrest_offenses()` | List all UCR arrest offense codes |
+| `get_arrest_count()` | Monthly arrests, for all offenses or one |
+| `get_arrest_demographics()` | Arrestees by sex, race and age, for all offenses or one |
+| `get_arrest_demographics_all()` | Deprecated alias of `get_arrest_demographics()` |
+| `list_ucr_arrest_offenses()` | The offense names those functions accept |
 
 ```{r, eval=FALSE}
 # Total arrests for an agency
 get_arrest_count(ori = "CA0010900")
 
-# Arrest demographics for a state
-get_arrest_demographics(state_abb = "CA", offense = "murder")
+# One offense, monthly
+get_arrest_count(state_abb = "CA", offense = "Robbery")
 
-# All arrest offenses
+# Arrestees by sex, race and age, for one offense
+get_arrest_demographics(state_abb = "CA", offense = "Larceny")
+
+# The offense names they accept
 list_ucr_arrest_offenses()
 ```
 
@@ -148,13 +162,16 @@ Functions for querying National Incident-Based Reporting System data.
 
 ```{r, eval=FALSE}
 # Victim demographics (race)
-get_nibrs_victim(ori = "CA0010900", variable = "race")
+get_nibrs_victim(state_abb = "OH", offense = "ROB", variable = "race",
+                 from = "01-2023", to = "12-2023")
 
 # Offender demographics
-get_nibrs_offender(state_abb = "CA", offense = "murder", variable = "race")
+get_nibrs_offender(state_abb = "OH", offense = "BUR", variable = "age",
+                   from = "01-2023", to = "12-2023")
 
 # Offense characteristics (weapons)
-get_nibrs_offense(state_abb = "CA", offense = "robbery", variable = "weapons")
+get_nibrs_offense(state_abb = "OH", offense = "ROB", variable = "weapons",
+                  from = "01-2023", to = "12-2023")
 ```
 
 ### SHR
@@ -183,13 +200,11 @@ Functions for querying police staffing data.
 
 ```{r, eval=FALSE}
 # Oakland PD staffing
-get_police_employment("CA0010900")
+get_police_employment("CA0010900", from = "2018", to = "2020")
 
-# California state-level staffing
-get_police_employment(state_abb = "CA")
-
-# National-level staffing
-get_police_employment()
+# California, and the nation
+get_police_employment(state_abb = "CA", from = "2018", to = "2020")
+get_police_employment(from = "2018", to = "2020")
 ```
 
 ### Utilities
@@ -236,11 +251,26 @@ is_valid_state("CA")
 The package uses `cde_request()` as its single network seam. All API calls route through this function, which:
 
 1. Builds the full URL from `cde_base_url()` + `cde_path()` + `cde_query()`
-2. Performs the HTTP GET request via `httr::GET`
+2. Performs the HTTP GET request via `httr::GET`, retrying transient failures
 3. Parses the JSON response via `jsonlite::fromJSON()`
 4. Returns a list for downstream parsing
 
-This design makes it straightforward to mock the API in tests by injecting a custom `get_fun` argument.
+Tests mock `cde_request()` itself, so the whole suite runs offline. Live tests
+against the real API run only when `FBI_CDE_LIVE=true` is set:
+
+```sh
+FBI_CDE_LIVE=true NOT_CRAN=true Rscript -e 'testthat::test_local()'
+```
+
+### Network settings
+
+Network errors and HTTP 408, 429 and 5xx responses are retried with
+exponential backoff (honouring `Retry-After`). Two options tune this:
+
+```r
+options(fbiCDE.max_retries = 3)  # retries after the first attempt; 0 disables
+options(fbiCDE.timeout = 60)     # seconds allowed per attempt
+```
 
 ## Data Sources
 

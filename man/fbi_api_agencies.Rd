@@ -7,21 +7,27 @@
 \format{
 A data frame with 18459 rows and 13 variables:
 \describe{
-  \item{ori}{9-digit unique ID number for the agency}
-  \item{agency_name}{Agency name}
-  \item{agency_type_name}{Type of department - e.g city, county, school}
-  \item{state_name}{State name}
-  \item{state_abbr}{State abbreviation}
-  \item{division_name}{Census division name}
-  \item{region_name}{Census region name}
-  \item{region_desc}{Census region code}
-  \item{county_name}{County name}
-  \item{nibrs}{Boolean on whether the agency reports to NBIRS}
-  \item{latitude}{Agency latitude}
-  \item{longitude}{Agency longitude}
-  \item{nibrs_start_date}{Date agency started reporting to NIBRS. NULL if
-  the agency does not report to NIBRS}
-
+\item{ori}{9-character unique ID for the agency (ORI)}
+\item{agency_name}{Agency name}
+\item{agency_type_name}{Type of department, e.g. City, County,
+University or College}
+\item{state_name}{State name}
+\item{state_abbr}{State abbreviation}
+\item{division_name}{Census division name}
+\item{region_name}{Census region name}
+\item{region_desc}{Census region code}
+\item{county_name}{County name, uppercase. Semicolon-separated for an
+agency that polices several counties; \code{"N/A"} when the agency has
+no county. This is the CDE's own value: the geography functions also
+attribute three \code{"N/A"} agencies (the NYPD, DC's Metropolitan
+Police and the Baltimore City Sheriff) to their counties, which this
+table does not show; see \code{\link{county_agencies}}}
+\item{nibrs}{Logical: whether the agency reported to NIBRS as of the
+snapshot}
+\item{latitude}{Numeric agency latitude; \code{NA} when unknown}
+\item{longitude}{Numeric agency longitude; \code{NA} when unknown}
+\item{nibrs_start_date}{Date the agency started reporting to NIBRS;
+\code{NA} if it had not}
 }
 }
 \source{
@@ -32,6 +38,8 @@ fbi_api_agencies
 }
 \description{
 A dataset containing information about the 18,459 agencies included in the
-FBI's API.
+FBI's API. It is a snapshot: NIBRS start dates run to September 2019, so the
+NIBRS columns predate the large 2020-2021 transition. Use
+\code{\link[=get_agency_participation]{get_agency_participation()}} for an agency's current NIBRS status.
 }
 \keyword{datasets}

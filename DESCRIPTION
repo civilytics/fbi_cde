@@ -1,13 +1,11 @@
 Package: fbiCDE
 Title: R Wrapper for the FBI Crime Data Explorer (CDE) API
-Version: 0.1.0
+Version: 0.1.0.9000
 Authors@R: 
     person(given = "Jared E.",
            family = "Knowles",
            role = c("aut", "cre"),
-           email = "1+jared@noreply.localhost")
-Author: Jared E. Knowles [aut, cre]
-Maintainer: Jared E. Knowles <1+jared@noreply.localhost>
+           email = "jared@civilytics.com")
 Description: An R wrapper for the FBI Crime Data Explorer (CDE) API
     (<https://cde.ucr.cjis.gov/LATEST/>) providing access to UCR and NIBRS
     crime data. Functions cover lookups (agencies, offense codes, states),
@@ -18,8 +16,9 @@ Description: An R wrapper for the FBI Crime Data Explorer (CDE) API
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
-URL: https://gitea.civilytics.org/Civilytics/fbiCDE
-BugReports: https://gitea.civilytics.org/Civilytics/fbiCDE/issues
+URL: https://github.com/civilytics/fbi_cde,
+    https://civilytics.r-universe.dev/fbiCDE
+BugReports: https://github.com/civilytics/fbi_cde/issues
 Depends:
     R (>= 3.5.0)
 Suggests:
@@ -38,5 +37,6 @@ Imports:
     utils
 Language: en-US
 Config/testthat/edition: 3
+Roxygen: list(markdown = TRUE)
 Config/roxygen2/version: 8.0.0
 VignetteBuilder: knitr

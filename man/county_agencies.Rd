@@ -7,24 +7,65 @@
 county_agencies(county, state)
 }
 \arguments{
-\item{county}{County name (case-insensitive; e.g. `"Alameda"`).}
+\item{county}{County name (case-insensitive; e.g. \code{"Alameda"}).}
 
-\item{state}{Two-letter state abbreviation (e.g. `"CA"`).}
+\item{state}{Two-letter state abbreviation (e.g. \code{"CA"}).}
 }
 \value{
-A data.frame with columns `ori`, `agency_name`, `agency_type_name`,
-  `agency_class`, `default_member`, `county_name`, `state_abbr`, `county_fips`,
-  `latitude`, `longitude`. `county_fips` is the 5-digit county FIPS code
-  (character, preserving leading zeros). `default_member` is `TRUE` for
-  `county_primary` and `municipal` agencies. Returns a zero-row frame
-  (with a warning) if no agencies match.
+A data.frame with columns \code{ori}, \code{agency_name}, \code{agency_type_name},
+\code{agency_class}, \code{county_name}, \code{state_abbr}, \code{county_fips},
+\code{latitude}, \code{longitude}, \code{agency_county_names}. \code{county_name} and
+\code{county_fips} (5-digit, character, preserving leading zeros) identify the
+queried county on every row. \code{agency_county_names} is the CDE's own county
+list for the agency: semicolon-separated for an agency that polices several
+counties (e.g. Columbus PD, \code{"DELAWARE; FAIRFIELD; FRANKLIN"}). Such an
+agency is attributed in full to each of its counties, so summing results
+across counties counts it more than once. \code{agency_class} is one of
+\code{"county_primary"} (sheriff, parish), \code{"municipal"} (city police),
+\code{"campus"}, \code{"state"} (state police and other state agencies),
+\code{"special"} (transit, school, airport, port, park and railroad police,
+task forces) or \code{"tribal"}. Returns a zero-row frame (with a warning) if
+no agencies match.
 }
 \description{
-Returns every agency in the bundled agency table whose county and state match,
-classified by `agency_class` and flagged with a conservative `default_member`
-indicator. This is an *attribution* model, not a spatial one: it reports the
-agencies attributed to a county, not crime known to have occurred there.
+Returns every agency in the bundled agency table whose county and state
+match, classified by \code{agency_class}. This is an \emph{attribution} model, not a
+spatial one: it reports the agencies attributed to a county, not crime known
+to have occurred there. It returns every class; the crime functions
+(\code{\link[=get_county_crime_detail]{get_county_crime_detail()}}, \code{\link[=get_metro_crime_detail]{get_metro_crime_detail()}}) then choose which
+classes to query.
 }
+\section{Agencies the CDE leaves without a county}{
+
+The CDE assigns no county to three agencies that each police a whole county
+or county-equivalent, so the package attributes them itself, by ORI:
+\itemize{
+\item New York City Police Department (\code{NY0303000}): the five boroughs, Bronx,
+Kings, New York, Queens and Richmond counties.
+\item Metropolitan Police Department of the District of Columbia
+(\code{DCMPD0000}): the District of Columbia.
+\item Baltimore City Sheriff's Office (\code{MD0040600}): Baltimore city.
+}
+
+Connecticut agencies are also attributed to their \strong{planning region}, the
+county equivalent Connecticut adopted in 2022 and the unit its metro areas
+are built from, as the CDE's live agency directory reports it. Query either
+a traditional county (\code{county_agencies("Hartford", "CT")}) or a region
+(\code{county_agencies("Capitol Planning Region", "CT")}), but do not add the
+two systems together: every agency is in one of each. Six agencies have no
+region in the directory (the state police, the DMV, two tribal agencies,
+and Yale and UConn Health, which it lists under other identifiers).
+
+The NYPD reports one series for the whole city; the CDE has no borough
+breakdown. Like any multi-county agency it is attributed in full to each
+of its counties, so \code{county_agencies("Kings", "NY")} includes the NYPD, and
+the crime functions return \strong{citywide} NYPD figures for Brooklyn, with
+New York City's population. A borough's results therefore describe the
+city, not the borough. Use the New York metro, or the NYPD itself, rather
+than summing boroughs. For these agencies \code{agency_county_names} holds the
+package's attribution, not a list from the CDE.
+}
+
 \examples{
 \dontrun{
 county_agencies("Alameda", "CA")

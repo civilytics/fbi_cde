@@ -18,7 +18,7 @@
 # Note this takes several minutes and issues a few hundred API requests.
 # ============================================================================
 
-needed <- c("knitr", "ggplot2", "sf", "tigris", "scales")
+needed <- c("knitr", "pkgload", "ggplot2", "sf", "tigris", "scales")
 missing <- needed[!vapply(needed, requireNamespace, logical(1), quietly = TRUE)]
 if (length(missing) > 0) {
   stop("precompute needs these packages: ", paste(missing, collapse = ", "))

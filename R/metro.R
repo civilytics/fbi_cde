@@ -3,8 +3,9 @@
 # so this delegates to county_agencies() and adds the CBSA columns.
 
 .METRO_AGENCY_COLS <- c(
-  "ori", "agency_name", "agency_type_name", "agency_class", "default_member",
+  "ori", "agency_name", "agency_type_name", "agency_class",
   "county_name", "state_abbr", "county_fips", "latitude", "longitude",
+  "agency_county_names",
   "cbsa_code", "cbsa_title", "cbsa_type", "central_outlying"
 )
 
@@ -16,12 +17,12 @@
     agency_name = character(0),
     agency_type_name = character(0),
     agency_class = character(0),
-    default_member = logical(0),
     county_name = character(0),
     state_abbr = character(0),
     county_fips = character(0),
-    latitude = character(0),
-    longitude = character(0),
+    latitude = numeric(0),
+    longitude = numeric(0),
+    agency_county_names = character(0),
     cbsa_code = character(0),
     cbsa_title = character(0),
     cbsa_type = character(0),
@@ -72,9 +73,8 @@
 #'
 #' Resolves a Core Based Statistical Area (CBSA) to the union of its member
 #' counties' agency sets. A metro is a set of *whole counties*, so this simply
-#' stacks [county_agencies()] across them -- `agency_class` and
-#' `default_member` keep exactly the meaning they have at county level,
-#' including that a county sheriff is a default member.
+#' stacks [county_agencies()] across them, and `agency_class` keeps exactly
+#' its county-level meaning.
 #'
 #' CBSA titles are unique nationally, so `state` is only needed to disambiguate
 #' a short name shared by several metros (`"Albany"` matches GA, OR and NY).
@@ -85,37 +85,35 @@
 #'   disambiguate an ambiguous short name.
 #' @return A data.frame with the [county_agencies()] columns plus `cbsa_code`,
 #'   `cbsa_title`, `cbsa_type` (`"metro"`/`"micro"`), and `central_outlying`
-#'   (whether the agency's county is central or outlying in the CBSA). Returns a
-#'   zero-row frame with a warning when the metro is unknown.
+#'   (whether the agency's county is central or outlying in the CBSA). Each ORI
+#'   appears once: an agency that polices several member counties is attributed
+#'   to the first of them in delineation order, and its `agency_county_names`
+#'   lists all of them. Returns a zero-row frame with a warning when the metro
+#'   is unknown.
 #' @section Coverage limitations:
-#' The bundled crosswalk has 1,915 county-CBSA rows, about 61% of the 3,131
-#' counties known to [county_agencies()]. That row count overstates coverage
-#' slightly, because some rows are Connecticut planning regions or Puerto
-#' Rico municipios that never join a CDE county name (see below). Counted as
-#' distinct, CDE-reachable counties instead, coverage is about 58.5% (1,831 of
-#' 3,131). Either way, rural counties belong to no CBSA at all; that is a
-#' property of the 2023 OMB delineation, not a gap in the data.
+#' The bundled crosswalk has 1,915 county-CBSA rows, about 61% of the 3,143
+#' counties and county equivalents known to [county_agencies()]. That row
+#' count overstates coverage slightly, because Puerto Rico's municipios never
+#' join a CDE county name (see below). Counted as distinct, CDE-reachable
+#' counties instead, coverage is about 58.6% (1,843 of 3,143). Either way,
+#' rural counties belong to no CBSA at all; that is a property of the 2023 OMB
+#' delineation, not a gap in the data.
 #'
-#' Connecticut's seven metros are not supported: Bridgeport-Stamford-Danbury,
-#' Hartford-West Hartford-East Hartford, New Haven,
-#' Norwich-New London-Willimantic, Putnam, Torrington, and Waterbury-Shelton.
-#' The 2023 delineation delineates Connecticut by planning regions (FIPS
-#' 09110-09190), which replaced its counties in 2022, while the CDE still
-#' reports Connecticut agencies by traditional county (09001-09015). The two
-#' vocabularies do not join, so all seven Connecticut metros resolve to zero
-#' counties. This function warns explicitly in that case rather than
-#' returning a silent empty frame, because a quiet zero-row result would read
-#' as "no agencies report here", which is false. Tracked as Gitea issue #52.
+#' Connecticut's metros are built from its nine planning regions, the county
+#' equivalents it adopted in 2022, and its agencies are attributed to their
+#' planning region as the CDE reports it (see [county_agencies()]). Two
+#' Connecticut campus agencies have no region in the CDE's directory, Yale
+#' and UConn Health, so the New Haven and Hartford metros lack them.
 #'
-#' Puerto Rico's 10 CBSAs are unmapped too, but that is academic: the CDE has
+#' Puerto Rico's 10 CBSAs are unmapped, but that is academic: the CDE has
 #' exactly one Puerto Rico agency.
 #'
-#' Agencies whose `county_name` is `"N/A"` -- state police, tribal agencies,
-#' and the District of Columbia -- cannot be reached from any county-keyed
-#' geography, so a metro that includes one is incomplete even when every one
-#' of its counties joins cleanly. Washington-Arlington-Alexandria, DC-VA-MD-WV
-#' is the visible case: it lists 23 counties but only 22 resolve, because
-#' DC's 3 agencies all carry `county_name = "N/A"`.
+#' Agencies whose `county_name` is `"N/A"` -- mostly state police, other
+#' state agencies and tribal agencies -- cannot be reached from any
+#' county-keyed geography. Three that police a whole county-equivalent are
+#' attributed by the package instead (the NYPD, DC's Metropolitan Police and
+#' the Baltimore City Sheriff; see [county_agencies()]), so the New York and
+#' Washington metros include them.
 #' @seealso [list_metros()] to discover metro names,
 #'   [county_agencies()].
 #' @export
@@ -152,22 +150,15 @@ metro_agencies <- function(metro, state = NULL) {
 
   # Coverage must never be silent. A CBSA whose counties do not join our
   # crosswalk would otherwise return a quiet zero-row frame, which reads as
-  # "no agencies report here" -- false, and materially misleading. The live
-  # case is Connecticut: the 2023 delineation uses planning regions
-  # (09110-09190) while the CDE reports traditional counties (09001-09015),
-  # so all seven CT metros resolve to nothing.
+  # "no agencies report here" -- false, and materially misleading. This was
+  # the case for all seven Connecticut metros until their planning regions
+  # were attributed (#52); Puerto Rico's remain.
   resolved <- sum(hit$county_fips %in% names(fips_to_county))
   if (resolved < nrow(hit)) {
     warning("Metro '", hit$cbsa_title[1], "' lists ", nrow(hit),
             " counties but only ", resolved,
-            " could be matched to CDE county names",
-            if (any(substr(hit$county_fips, 1L, 2L) == "09")) {
-              paste0(". Connecticut is delineated by planning regions, which ",
-                     "the CDE does not use, so its metros are not supported")
-            } else {
-              ""
-            },
-            ". Results are incomplete.", call. = FALSE)
+            " could be matched to CDE county names. Results are incomplete.",
+            call. = FALSE)
   }
 
   out <- rbind_fill(parts)
@@ -183,7 +174,9 @@ metro_agencies <- function(metro, state = NULL) {
   # no-double-count invariant the metro layer rests on (#56).
   #
   # The first match is kept, which is the first member county in delineation
-  # order; the retained row's county_name still lists every county it covers.
+  # order: the retained row is attributed to that county (county_name,
+  # county_fips and central_outlying all describe it), and its
+  # agency_county_names still lists every county the agency covers.
   out <- out[!duplicated(out$ori), , drop = FALSE]
 
   out <- out[, .METRO_AGENCY_COLS, drop = FALSE]
@@ -197,7 +190,7 @@ metro_agencies <- function(metro, state = NULL) {
 # The crosswalk is keyed by the CDE's raw county_name, which includes
 # multi-county strings ("FAIRFIELD; LICKING"), so county_fips is NOT unique
 # across all rows. Filtering to names without a semicolon gives the canonical
-# entry: 3,131 such rows for 3,131 distinct FIPS -- an exact 1:1, with every
+# entry: 3,143 such rows for 3,143 distinct FIPS -- an exact 1:1, with every
 # FIPS represented. Skipping that filter would sometimes pick a multi-county
 # row, and county_agencies() matches county_name exactly, so it would return a
 # subset of the county rather than the county.

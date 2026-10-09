@@ -7,53 +7,55 @@
 get_county_crime(detail, denominator = "jurisdiction_pop")
 }
 \arguments{
-\item{detail}{A data.frame as returned by [get_county_crime_detail()], with at
-least the columns: `offense`, `period`, `count`, `population`,
-`participated_population`, `reported`.}
+\item{detail}{A data.frame as returned by \code{\link[=get_county_crime_detail]{get_county_crime_detail()}}, with at
+least the columns: \code{offense}, \code{period}, \code{count}, \code{population},
+\code{participated_population}, \code{reported}.}
 
 \item{denominator}{Denominator strategy. One of:
 \itemize{
-  \item \code{"jurisdiction_pop"} — sum of agency `population` columns
-    (default; coherent with CDE population semantics).
-  \item \code{"participated_pop"} — sum of agency
-    `participated_population` columns (coverage-consistent; the rate
-    reflects only reporting coverage).
-  \item \code{"census_pop"} — use a single external population value per
-    period. Requires `detail` to have a `census_population` column (e.g.
-    from [join_census_pop()]).
+\item \code{"jurisdiction_pop"} — sum of agency \code{population} columns
+(default; coherent with CDE population semantics).
+\item \code{"participated_pop"} — sum of agency
+\code{participated_population} columns (coverage-consistent; the rate
+reflects only reporting coverage).
+\item \code{"census_pop"} — use a single external population value per
+period. Requires \code{detail} to have a \code{census_population} column (e.g.
+from \code{\link[=join_census_pop]{join_census_pop()}}).
 }}
 }
 \value{
-A data.frame with columns: `county_name`, `state_abbr`, `offense`,
-  `period`, `count` (sum of reported counts), `population` (the denominator
-  value used), `participated_population` (sum of participated populations),
-  `rate` (`count / population * 1e5`), `denominator_type` (which strategy was
-  used), and `coverage_fraction` (`participated_population / population`).
-  Returns a zero-row frame with correct columns if `detail` is empty.
+A data.frame with columns: \code{county_name}, \code{state_abbr}, \code{offense},
+\code{period}, \code{count} (sum of reported counts), \code{population} (the denominator
+value used), \code{participated_population} (sum of participated populations),
+\code{rate} (\code{count / population * 1e5}), \code{denominator_type} (which strategy was
+used), and \code{coverage_fraction} (\code{participated_population / population}).
+Returns a zero-row frame with correct columns if \code{detail} is empty. If
+\code{detail} carries \code{attr(detail, "dropped")} (agencies whose request failed
+in \code{\link[=get_county_crime_detail]{get_county_crime_detail()}}), the result warns and keeps that attribute:
+those agencies are missing from every total, including the denominator.
 }
 \description{
-Sums itemized agency-level detail (from [get_county_crime_detail()]) into a
+Sums itemized agency-level detail (from \code{\link[=get_county_crime_detail]{get_county_crime_detail()}}) into a
 single county-wide series. Unlike the FBI's published county rate, this
-function **never emits a bare rate**: every row carries the chosen denominator
-value, which denominator was used (`denominator_type`), and a
-`coverage_fraction` (participated / total population) so the user can see
+function \strong{never emits a bare rate}: every row carries the chosen denominator
+value, which denominator was used (\code{denominator_type}), and a
+\code{coverage_fraction} (participated / total population) so the user can see
 exactly how much of the county is covered by reporting agencies.
 }
 \details{
-The default denominator (`"jurisdiction_pop"`) sums each agency's own
-`population` column. Empirical probes confirm this is coherent: a sheriff's
-population is the *unincorporated remainder* it polices, and contract cities
-report under their own ORI — so the sum of `jurisdiction_pop` approximates
-the full county with no double-count. Use `denominator = "participated_pop"` for a coverage-
-consistent rate (drops uncovered months), or `denominator = "census_pop"`
-to supply an external Census population (requires the `county_fips` column
-from [county_agencies()] and a Census join).
+The default denominator (\code{"jurisdiction_pop"}) sums each agency's own
+\code{population} column. Empirical probes confirm this is coherent: a sheriff's
+population is the \emph{unincorporated remainder} it polices, and contract cities
+report under their own ORI — so the sum of \code{jurisdiction_pop} approximates
+the full county with no double-count. Use \code{denominator = "participated_pop"} for a coverage-
+consistent rate (drops uncovered months), or \code{denominator = "census_pop"}
+to supply an external Census population (requires the \code{county_fips} column
+from \code{\link[=county_agencies]{county_agencies()}} and a Census join).
 }
 \examples{
 \dontrun{
 detail <- get_county_crime_detail("Alameda", "CA",
-                                  from = "01-2019", to = "12-2019",
-                                  default_only = TRUE)
+                                  from = "01-2019", to = "12-2019")
 get_county_crime(detail)
 
 # Coverage-consistent rate instead of the full jurisdiction denominator.

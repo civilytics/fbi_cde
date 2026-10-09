@@ -3,9 +3,13 @@
 \docType{data}
 \name{nibrs_offenses}
 \alias{nibrs_offenses}
-\title{All offenses available to get NIBRS data for.}
+\title{Offense codes the NIBRS functions accept.}
 \format{
-A vector with 72 elements:
+A data frame with 73 rows and 2 variables:
+\describe{
+\item{code}{Offense code, as passed to \code{offense}}
+\item{label}{Offense name}
+}
 }
 \source{
 \url{https://cde.ucr.cjis.gov/LATEST/}
@@ -14,7 +18,9 @@ A vector with 72 elements:
 nibrs_offenses
 }
 \description{
-This is a vector of strings with the names of every offense available
-for the NIBRS data functions.
+The summary groups (\code{"V"}, \code{"P"}, \code{"ROB"}, \code{"BUR"}, ...) and the NIBRS
+offense codes from the CDE's offense lookup. The API also accepts NIBRS
+codes missing from the lookup, such as \code{"13A"} or \code{"120"}. Built by
+\code{data-raw/api_vocabularies.R}.
 }
 \keyword{datasets}

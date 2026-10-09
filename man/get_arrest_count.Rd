@@ -9,33 +9,52 @@ get_arrest_count(
   state_abb = NULL,
   from = "01-2015",
   to = "12-2020",
-  offense = "all"
+  offense = "all",
+  comparison = FALSE
 )
 }
 \arguments{
 \item{ori}{A string of the 9-character ORI code for the desired agency.}
 
-\item{state_abb}{String for state abbreviation. If `NULL` (default) returns
+\item{state_abb}{String for state abbreviation. If \code{NULL} (default) returns
 national data.}
 
 \item{from}{Start date in MM-YYYY format (default "01-2015").}
 
 \item{to}{End date in MM-YYYY format (default "12-2020").}
 
-\item{offense}{Offense name (default "all" for total arrests). With "all" the
-result is a monthly time series. For a specific offense the CDE API only
-exposes an aggregate count over the whole `from`-`to` range (the endpoint no
-longer accepts a per-offense URL segment, so the offense is selected from
-the all-offenses response). See `list_ucr_arrest_offenses()` for valid names.}
+\item{offense}{\code{"all"} (the default) for total arrests, or one offense.
+An offense is a name from any of the API's three levels, matched
+case-insensitively: offense names (\code{"Robbery"}, \code{"Drug Possession"}),
+categories (\code{"Drug/Narcotic Offenses"}) and breakdowns
+(\code{"Drug Possession - Marijuana"}); see \code{\link[=list_ucr_arrest_offenses]{list_ucr_arrest_offenses()}}. The
+API addresses offenses by numeric code (\link{ucr_arrest_offense_codes}), one
+per breakdown, so a name covering several (a category such as
+\code{"Drug/Narcotic Offenses"} has 11) costs one request per code, and the
+series is their sum. A string that is a name at more than one level
+resolves as an offense name first: \code{"Sex Offenses"} is code 240, not the
+category of that name, which holds only \code{"Rape (Legacy)"}. Note that
+\code{"Drug Abuse Violations"} is only the drug arrests not classed as
+possession or sale; total drug arrests are \code{"Drug/Narcotic Offenses"}.}
+
+\item{comparison}{If \code{TRUE}, also return the comparison series the API
+sends alongside an agency's or state's own: its state's and the nation's
+arrest rates (these have no \code{count}). Default \code{FALSE} returns only the
+queried geography's own series.}
 }
 \value{
-A data.frame with columns: geography, offense, period, count, rate.
-  For a specific offense, `period` and `rate` are `NA` and a single aggregate
-  `count` row is returned.
+A data.frame with one row per month: \code{geography}, \code{offense}
+(\code{"all"}, or the API's spelling of the offense name), \code{measure}
+(\code{"arrests"}), \code{period}, \code{count}, \code{rate} (per 100,000 population, for
+that month), and the \code{population} and \code{participated_population}
+described in \code{\link[=get_agency_crime]{get_agency_crime()}} (their ratio is the reporting
+coverage). With \code{comparison = TRUE}, \code{series} and \code{series_name} columns
+follow \code{geography}, as in \code{\link[=get_agency_crime]{get_agency_crime()}}.
 }
 \description{
-Retrieves arrest counts by offense for an agency, state, or nationally.
-Uses the CDE API endpoint `arrest/<level>/<offense>` with `type=counts`.
+Retrieves monthly arrest counts for an agency, a state, or the nation, for
+all offenses or one, from the CDE API endpoint \verb{arrest/<level>/<code>}
+with \code{type=counts}.
 }
 \examples{
 \dontrun{
@@ -43,6 +62,7 @@ get_arrest_count(ori = "CA0010900")
 get_arrest_count(state_abb = "CA")
 get_arrest_count()
 get_arrest_count(state_abb = "CA", offense = "Robbery")
+get_arrest_count(state_abb = "CA", offense = "Drug/Narcotic Offenses")
 }
 }
 \seealso{

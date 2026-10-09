@@ -37,11 +37,19 @@ test_that("county_to_fips handles Virginia independent cities", {
   expect_equal(county_to_fips("VA", "ACCOMACK"), "51001")
 })
 
-test_that("county_to_fips handles Connecticut planning regions", {
-  # CT uses planning regions instead of traditional counties
+test_that("county_to_fips handles Connecticut counties and planning regions", {
+  # Traditional counties, as the bundled agency table has them.
   expect_equal(county_to_fips("CT", "HARTFORD"), "09003")
   expect_equal(county_to_fips("CT", "FAIRFIELD"), "09001")
   expect_equal(county_to_fips("CT", "NEW HAVEN"), "09009")
+  # Planning regions, the county equivalents since 2022, by full or bare name.
+  # Bare names used to resolve to an approximate traditional county.
+  expect_equal(county_to_fips("CT", "CAPITOL PLANNING REGION"), "09110")
+  expect_equal(county_to_fips("CT", "Capitol"), "09110")
+  expect_equal(county_to_fips("CT", "NAUGATUCK VALLEY"), "09140")
+  expect_equal(county_to_fips("CT", "WESTERN CONNECTICUT"), "09190")
+  # Region names are not counties elsewhere.
+  expect_true(is.na(county_to_fips("MA", "CAPITOL")))
 })
 
 test_that("county_to_fips handles Alaska boroughs", {
@@ -63,6 +71,16 @@ test_that("county_to_fips returns NA for unresolvable cases", {
   
   # VALDEZ-CORDOVA (dissolved AK borough)
   expect_true(is.na(county_to_fips("AK", "VALDEZ-CORDOVA")))
+})
+
+test_that("county_to_fips resolves counties only attributed agencies use", {
+  # No CDE agency names these counties; the NYPD and DC's police are
+  # attributed to them by the package.
+  expect_equal(county_to_fips("NY", "QUEENS"), "36081")
+  expect_equal(county_to_fips("NY", "RICHMOND"), "36085")
+  expect_equal(county_to_fips("DC", "DISTRICT OF COLUMBIA"), "11001")
+  # Richmond, NY must not disturb Richmond city, VA.
+  expect_equal(county_to_fips("VA", "RICHMOND CITY"), "51760")
 })
 
 test_that("county_to_fips handles state FIPS codes", {
@@ -125,4 +143,43 @@ test_that("Connecticut's own counties are not broken by the #50 fix", {
   expect_equal(county_to_fips("CT", "MIDDLESEX"), "09007")
   expect_equal(county_to_fips("CT", "FAIRFIELD"), "09001")
   expect_equal(county_to_fips("CT", "WINDHAM"), "09015")
+})
+
+test_that("Virginia independent cities that share a county's name resolve to the city", {
+  # The patch logic stripped " CITY" and landed on the same-named county.
+  expect_equal(county_to_fips("VA", "RICHMOND CITY"), "51760")
+  expect_equal(county_to_fips("VA", "FAIRFAX CITY"), "51600")
+  expect_equal(county_to_fips("VA", "FRANKLIN CITY"), "51620")
+  expect_equal(county_to_fips("VA", "ROANOKE CITY"), "51770")
+  # ...while the counties themselves are unchanged.
+  expect_equal(county_to_fips("VA", "RICHMOND"), "51159")
+  expect_equal(county_to_fips("VA", "FAIRFAX"), "51059")
+  expect_equal(county_to_fips("VA", "FRANKLIN"), "51067")
+  expect_equal(county_to_fips("VA", "ROANOKE"), "51161")
+  # Case-insensitive, as county_agencies() passes user input through.
+  expect_equal(county_to_fips("va", "Richmond City"), "51760")
+})
+
+test_that("county_to_fips agrees with the crosswalk for every CDE county name", {
+  ag <- fbi_api_agencies
+  pairs <- unique(ag[, c("state_abbr", "county_name")])
+  got <- mapply(county_to_fips, pairs$state_abbr, pairs$county_name,
+                USE.NAMES = FALSE)
+  cw <- crosswalk
+  want <- cw$county_fips[match(paste(pairs$state_abbr, pairs$county_name),
+                               paste(cw$state_abbr, cw$county_name))]
+  expect_identical(got, want)
+})
+
+test_that("counties_with_fips returns one row per resolvable county", {
+  out <- counties_with_fips()
+  expect_equal(names(out), c("state_abbr", "county_name", "county_fips"))
+  expect_gt(nrow(out), 3000L)
+  expect_false(any(grepl(";", out$county_name, fixed = TRUE)))
+  expect_false(anyNA(out$county_fips))
+  expect_false(any(duplicated(out$county_fips)))
+  expect_equal(
+    out$county_fips[out$state_abbr == "VA" & out$county_name == "RICHMOND CITY"],
+    "51760"
+  )
 })

@@ -16,6 +16,6 @@ A data.frame with columns: geography, period, count
 }
 \description{
 Response shape (CDE API):
-  A list with `actuals`, `tooltips`, and `cde_properties` elements.
+A list with \code{actuals}, \code{tooltips}, and \code{cde_properties} elements.
 }
 \keyword{internal}

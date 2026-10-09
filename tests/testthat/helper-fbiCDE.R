@@ -6,36 +6,40 @@
 #    single HTTP seam so no network is touched. See `local_fbi_fixture()`.
 #
 # 2. LIVE (opt-in): integration tests that hit the real FBI CDE API. These are
-#    guarded by `skip_if_no_fbi_api()` and only run locally when FBI_API_KEY is
-#    set. They are skipped on CI and CRAN. Use them to (re)record fixtures.
+#    guarded by `skip_if_no_fbi_api()` and run only when FBI_CDE_LIVE=true --
+#    locally, or in the scheduled live-API workflow, which is what catches
+#    upstream schema drift. They never run on CRAN. The CDE needs no API key;
+#    this used to be gated on FBI_API_KEY plus skip_on_ci(), which meant the
+#    live tests could not run anywhere automated.
 
 # ---- Live-API guard -------------------------------------------------------
 
-fbi_has_key <- function() {
-  nzchar(Sys.getenv("FBI_API_KEY"))
+fbi_live_enabled <- function() {
+  tolower(Sys.getenv("FBI_CDE_LIVE")) %in% c("true", "1", "yes")
 }
 
-# Skip a test that requires the live FBI CDE API (network + key).
+# Skip a test that requires the live FBI CDE API (network access).
 skip_if_no_fbi_api <- function() {
   testthat::skip_on_cran()
-  testthat::skip_on_ci()
-  if (!fbi_has_key()) {
-    testthat::skip("FBI_API_KEY not set; skipping live API test")
+  if (!fbi_live_enabled()) {
+    testthat::skip("Set FBI_CDE_LIVE=true to run live CDE API tests")
   }
 }
 
 # ---- Offline fixtures -----------------------------------------------------
 
 # Read a saved API response fixture from tests/testthat/fixtures/.
-# Store the *raw* parsed JSON exactly as the API returns it, so the package's
-# own parsing code is exercised by the test.
+# Store the *raw* JSON exactly as the API returns it, and parse it exactly as
+# cde_request() does (simplifyVector = FALSE, nested lists), so tests exercise
+# the shape the parsers see in production. Fixtures used to be simplified to
+# data.frames here, which let a parser that only worked on that shape pass.
 read_fixture <- function(name) {
   path <- testthat::test_path("fixtures", name)
   if (!file.exists(path)) {
     stop("Missing fixture: ", path,
          "\nRecord it from a live response (see tests/testthat/fixtures/README.md).")
   }
-  jsonlite::fromJSON(readLines(path, warn = FALSE), simplifyVector = TRUE)
+  jsonlite::fromJSON(readLines(path, warn = FALSE), simplifyVector = FALSE)
 }
 
 # Run a test with the package's HTTP layer stubbed to return a fixture instead

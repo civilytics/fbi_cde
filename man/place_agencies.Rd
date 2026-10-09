@@ -7,27 +7,28 @@
 place_agencies(place, state, county = NULL)
 }
 \arguments{
-\item{place}{Place name (case-insensitive; e.g. `"Lufkin"`). Supply either
+\item{place}{Place name (case-insensitive; e.g. \code{"Lufkin"}). Supply either
 the bare name or the full agency name — both resolve.}
 
-\item{state}{Two-letter state abbreviation (e.g. `"TX"`).}
+\item{state}{Two-letter state abbreviation (e.g. \code{"TX"}).}
 
 \item{county}{Optional county name, needed only to disambiguate a place name
 that occurs in more than one county of the same state.}
 }
 \value{
-A data.frame with columns `ori`, `agency_name`, `agency_type_name`,
-  `agency_class`, `default_member`, `place_name`, `county_name`,
-  `state_abbr`, `attribution`, `latitude`, `longitude`. `attribution` records
-  how the row earned membership: `"name_identity"` here, or
-  `"point_in_polygon"` for rows added by [add_place_spatial_members()].
-  Returns a zero-row frame (with a warning) when no municipal agency matches.
+A data.frame with columns \code{ori}, \code{agency_name}, \code{agency_type_name},
+\code{agency_class}, \code{place_name}, \code{place_type}, \code{place_fips}, \code{cousub_fips},
+\code{county_name}, \code{state_abbr}, \code{attribution}, \code{latitude}, \code{longitude}.
+\code{attribution} records how the row earned membership: \code{"name_identity"}
+here, or \code{"point_in_polygon"} for rows added by
+\code{\link[=add_place_spatial_members]{add_place_spatial_members()}}. Returns a zero-row frame (with a warning)
+when no municipal agency matches.
 }
 \description{
 Resolves a municipality to the agency that reports crime for it. CDE city
-agencies are named `"<Place> Police Department"`, so the place name is
-recovered from the agency name — the agency *is* the place. This is an
-*attribution* model, not a spatial one.
+agencies are named \code{"<Place> Police Department"}, so the place name is
+recovered from the agency name — the agency \emph{is} the place. This is an
+\emph{attribution} model, not a spatial one.
 }
 \details{
 Sheriffs, state police, and tribal agencies are never place members: a
@@ -35,15 +36,41 @@ sheriff's population is the unincorporated remainder, and contract cities
 report under their own city ORI. A place's crime is therefore carried
 entirely by its own agency, with no double-count and no gap.
 
-Campus and special-district agencies sit *inside* places but cannot be
-attributed from names alone (name-matching achieves only ~26% recall). Add
-them with [add_place_spatial_members()], which is opt-in and requires `sf`
-and `tigris`.
+Campus and special-district agencies sit \emph{inside} places but cannot be
+attributed from names alone (name-matching achieves only ~26\% recall). Add
+them with \code{\link[=add_place_spatial_members]{add_place_spatial_members()}}, which is opt-in and requires \code{sf}
+and \code{tigris}.
 }
+\section{Census codes}{
+
+Each agency carries the Census code of the unit it polices, for joining
+Census data:
+\itemize{
+\item \code{place_fips}: the 7-digit place code (2-digit state + 5-digit place),
+when the agency polices a Census place. \code{place_type} is then
+\code{"incorporated"}, or \code{"cdp"} for the few agencies whose only match is a
+census-designated place.
+\item \code{cousub_fips}: the 10-digit county subdivision code (state + county +
+subdivision), when the agency polices a township, or a New England or New
+York town. Those are governments but not Census places; \code{place_type} is
+then \code{"county_subdivision"} and \code{place_fips} is \code{NA}.
+}
+
+Codes are matched by name within the agency's state, and only among Census
+units lying in one of the agency's own counties; an incorporated place wins
+over a county subdivision, which wins over a CDP. 98.7\% of the 11,646
+municipal agencies resolve. The rest -- regional and multi-municipality
+departments, and two names that match more than one unit in their county --
+get \code{NA} rather than a guess. Codes follow the Census vintage in
+\link{PLACE_VINTAGE}; Connecticut's county subdivision codes are therefore the
+2020 ones, under its old counties, while Census data from 2022 codes them
+under its planning regions.
+}
+
 \examples{
 place_agencies("Lufkin", "TX")
 }
 \seealso{
-[county_agencies()] for the county-level resolver,
-  [get_place_crime_detail()] for the crime series.
+\code{\link[=county_agencies]{county_agencies()}} for the county-level resolver,
+\code{\link[=get_place_crime_detail]{get_place_crime_detail()}} for the crime series.
 }

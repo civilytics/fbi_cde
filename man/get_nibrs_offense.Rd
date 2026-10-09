@@ -9,49 +9,41 @@ get_nibrs_offense(
   state_abb = NULL,
   from = "01-2015",
   to = "12-2020",
-  offense = "all",
-  variable = "count"
+  offense = "V",
+  variable = "weapons"
 )
 }
 \arguments{
 \item{ori}{A string of the 9-character ORI code for the desired agency.}
 
-\item{state_abb}{String for state abbreviation. If `NULL` (default) returns
+\item{state_abb}{String for state abbreviation. If \code{NULL} (default) returns
 national data.}
 
 \item{from}{Start date in MM-YYYY format (default "01-2015").}
 
 \item{to}{End date in MM-YYYY format (default "12-2020").}
 
-\item{offense}{Offense code (default "robbery"). See
-`list_nibrs_offenses()` for available codes.}
+\item{offense}{Offense code (default \code{"V"}, violent crime): a summary group
+such as \code{"V"}, \code{"P"}, \code{"ROB"} or \code{"BUR"}, or a NIBRS offense code such as
+\code{"13B"} or \code{"35A"}. See \code{\link[=list_nibrs_offenses]{list_nibrs_offenses()}}. Offense names such as
+\code{"robbery"} are rejected: the API returns no data for them.}
 
-\item{variable}{A string with the variable to return. Selects which
-sub-object within the offense section to use (e.g., "count", "weapons",
-"linkedoffense", "suspectusing", "criminal_activity",
-"property_recovered", "property_stolen", "bias"). By default returns
-total count of offenses. See `list_nibrs_offense_variables()` for
-available options.}
+\item{variable}{\code{"weapons"} (the default) or \code{"related_offenses"}. See
+\code{\link[=list_nibrs_offense_variables]{list_nibrs_offense_variables()}}.}
 }
 \value{
-A data.frame with columns: geography, offense, period,
-  demographic_type, demographic_value, count
+A data.frame with the columns described in \code{\link[=get_nibrs_victim]{get_nibrs_victim()}}.
 }
 \description{
-**Known issue:** as of this package version, the live endpoint returns no
-data for any input tested (see
-<https://gitea.civilytics.org/Civilytics/fbi_cde/issues/33>). A message is
-emitted whenever the result is empty.
-}
-\details{
-Retrieves offense characteristics (count, weapons, linkedoffense,
-suspectusing, criminal_activity, property_recovered, property_stolen, bias)
-from the CDE API endpoint `nibrs/<level>/<offense>` with `type=totals`.
+Retrieves offense characteristics -- the weapons involved, or the other
+offenses reported in the same incidents -- for one offense, summed over the
+date range, from the CDE API endpoint \verb{nibrs/<level>/<offense>} with
+\code{type=totals}.
 }
 \examples{
 \dontrun{
-get_nibrs_offense(ori = "CA0010900")
-get_nibrs_offense(state_abb = "CA", offense = "murder", variable = "weapons")
+get_nibrs_offense(state_abb = "OH", offense = "ROB", variable = "weapons",
+                  from = "01-2023", to = "12-2023")
 }
 }
 \seealso{

@@ -8,11 +8,12 @@ get_estimated_crime(
   state_abb = NULL,
   from = "01-2015",
   to = "12-2020",
-  offense = "V"
+  offense = "V",
+  comparison = FALSE
 )
 }
 \arguments{
-\item{state_abb}{String for state abbreviation. If `NULL` (default) returns
+\item{state_abb}{String for state abbreviation. If \code{NULL} (default) returns
 national data.}
 
 \item{from}{Start date in MM-YYYY format (default "01-2015").}
@@ -20,10 +21,14 @@ national data.}
 \item{to}{End date in MM-YYYY format (default "12-2020").}
 
 \item{offense}{Offense code (default "V" for violent crime). See
-`get_offense_codes()` for available codes.}
+\code{get_offense_codes()} for available codes.}
+
+\item{comparison}{If \code{TRUE}, a state query also returns the national
+comparison series (rate only). Default \code{FALSE} returns only the state's
+own series. Has no effect on a national query.}
 }
 \value{
-A data.frame with columns: geography, offense, period, count, rate
+A data.frame with the columns described in \code{\link[=get_agency_crime]{get_agency_crime()}}.
 }
 \description{
 Get state- or national-level estimated crime counts

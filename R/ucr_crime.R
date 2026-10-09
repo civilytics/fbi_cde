@@ -1,42 +1,11 @@
-# Internal helper: parse summarized crime API response into a tidy data.frame
-parse_summarized_response <- function(response, geography) {
+# Internal helper: parse a summarized/{level}/{offense} response. The CDE
+# renamed the count payload from `counts` to `actuals`; accept either.
+parse_summarized_response <- function(response, geography, offense, level,
+                                      comparison = FALSE) {
   offenses <- response$offenses
-
-  # The CDE API renamed the count payload from `counts` to `actuals`; accept
-  # either so the parser is resilient to that drift.
-  counts_obj <- offenses$actuals %||% offenses$counts
-
-  # Flatten counts if present
-  if (!is.null(counts_obj) && length(counts_obj) > 0) {
-    counts_df <- flatten_cde_json(counts_obj)
-    names(counts_df) <- c("offense", "period", "count")
-  } else {
-    counts_df <- data.frame(
-      offense = character(), period = character(), count = numeric(),
-      stringsAsFactors = FALSE
-    )
-  }
-
-  # Flatten rates if present
-  if (!is.null(offenses$rates) && length(offenses$rates) > 0) {
-    rates_df <- flatten_cde_json(offenses$rates)
-    names(rates_df) <- c("offense", "period", "rate")
-  } else {
-    rates_df <- data.frame(
-      offense = character(), period = character(), rate = numeric(),
-      stringsAsFactors = FALSE
-    )
-  }
-
-  # Full outer join on offense and period
-  result <- merge(counts_df, rates_df, by = c("offense", "period"), all = TRUE)
-  result$geography <- geography
-
-  # Reorder columns
-  result <- result[, c("geography", "offense", "period", "count", "rate")]
-  rownames(result) <- NULL
-
-  result
+  .parse_series(offenses$actuals %||% offenses$counts, offenses$rates,
+                geography = geography, offense = offense, level = level,
+                comparison = comparison, populations = response$populations)
 }
 
 #' Get agency-level crime data from the UCR Offenses Known and Clearances
@@ -47,18 +16,36 @@ parse_summarized_response <- function(response, geography) {
 #' @param to End date in MM-YYYY format (default "12-2020").
 #' @param offense Offense code (default "V" for violent crime). See
 #'   `get_offense_codes()` for available codes.
+#' @param comparison If `TRUE`, also return the comparison series the API
+#'   sends alongside the agency's own: its state's and the nation's rates
+#'   (these have no `count`). Default `FALSE` returns only the agency's own
+#'   series.
 #'
-#' @return A data.frame with columns: geography, offense, period, count, rate
+#' @return A data.frame with columns `geography`, `offense` (the requested
+#'   code), `measure` (`"offenses"` or `"clearances"`), `period`, `count`,
+#'   `rate` (per 100,000 population, for that month), `population` (the
+#'   population the series covers) and `participated_population` (the
+#'   population of the agencies that reported that month). Their ratio is the
+#'   reporting coverage: a state or national count below full coverage is the
+#'   sum of the agencies that reported, not an estimate for everyone. With
+#'   `comparison = TRUE`, two more columns follow `geography`: `series`
+#'   (`"agency"`, `"state"` or `"national"`) and `series_name` (e.g.
+#'   `"Oakland Police Department"`, `"California"`, `"United States"`).
 #' @export
 #'
 #' @examples
 #' \dontrun{
 #' get_agency_crime("AK0010100")
+#'
+#' # The agency alongside its state and the nation
+#' get_agency_crime("CA0010900", from = "01-2019", to = "03-2019",
+#'                  comparison = TRUE)
 #' }
 get_agency_crime <- function(ori,
                              from = "01-2015",
                              to = "12-2020",
-                             offense = "V") {
+                             offense = "V",
+                             comparison = FALSE) {
   if (!is_valid_ori(ori)) {
     stop(
       "Invalid ORI code: ", ori,
@@ -74,7 +61,8 @@ get_agency_crime <- function(ori,
   query <- list(from = from, to = to, type = "counts")
 
   response <- cde_request(path, query)
-  parse_summarized_response(response, geography = ori)
+  parse_summarized_response(response, geography = ori, offense = offense,
+                            level = "agency", comparison = comparison)
 }
 
 #' Get state- or national-level estimated crime counts
@@ -86,8 +74,11 @@ get_agency_crime <- function(ori,
 #' @param to End date in MM-YYYY format (default "12-2020").
 #' @param offense Offense code (default "V" for violent crime). See
 #'   `get_offense_codes()` for available codes.
+#' @param comparison If `TRUE`, a state query also returns the national
+#'   comparison series (rate only). Default `FALSE` returns only the state's
+#'   own series. Has no effect on a national query.
 #'
-#' @return A data.frame with columns: geography, offense, period, count, rate
+#' @return A data.frame with the columns described in [get_agency_crime()].
 #' @export
 #'
 #' @examples
@@ -97,7 +88,8 @@ get_agency_crime <- function(ori,
 get_estimated_crime <- function(state_abb = NULL,
                                 from = "01-2015",
                                 to = "12-2020",
-                                offense = "V") {
+                                offense = "V",
+                                comparison = FALSE) {
   if (!is.null(state_abb) && !is_valid_state(state_abb)) {
     stop("Invalid state abbreviation: ", state_abb, call. = FALSE)
   }
@@ -116,7 +108,9 @@ get_estimated_crime <- function(state_abb = NULL,
   response <- cde_request(path, query)
 
   geo <- if (is.null(state_abb)) "US" else toupper(state_abb)
-  parse_summarized_response(response, geography = geo)
+  parse_summarized_response(response, geography = geo, offense = offense,
+                            level = if (is.null(state_abb)) "national" else "state",
+                            comparison = comparison)
 }
 
 #' Get estimated arson data
@@ -124,7 +118,7 @@ get_estimated_crime <- function(state_abb = NULL,
 #' @family UCR crime functions
 #' @inheritParams get_estimated_crime
 #'
-#' @return A data.frame with columns: geography, offense, period, count, rate
+#' @return A data.frame with the columns described in [get_agency_crime()].
 #' @export
 #'
 #' @examples
@@ -133,11 +127,13 @@ get_estimated_crime <- function(state_abb = NULL,
 #' }
 get_estimated_arson <- function(state_abb = NULL,
                                 from = "01-2015",
-                                to = "12-2020") {
+                                to = "12-2020",
+                                comparison = FALSE) {
   get_estimated_crime(
     state_abb = state_abb,
     from = from,
     to = to,
-    offense = "ARS"
+    offense = "ARS",
+    comparison = comparison
   )
 }

@@ -1,14 +1,11 @@
-# Internal helper: extract the officers-killed/assaulted totals summary from
+# Internal helper: extract the officers-killed totals summary from
 # a CDE `leoka/ytd` or `leoka/monthly` response.
 #
 # Response shape (CDE API): a length-1 array containing one object keyed
 # "leoka_chart_ytd" or "leoka_chart_monthly", nested as
-# `<key>$data$chart_data$incidents_victim_officer_totals_ytd`. With
-# `simplifyVector = FALSE` (live `cde_request()`) the outer array arrives as
-# a length-1 list to unwrap; with `simplifyVector = TRUE` (offline fixtures)
-# the array is simplified away, so the key sits at the top level. `$`
-# indexing works identically on the nested list/data.frame either way once
-# that outer wrapper is resolved.
+# `<key>$data$chart_data$incidents_victim_officer_totals_ytd`. The outer array
+# arrives as a length-1 unnamed list to unwrap. The key is also accepted at the
+# top level, in case the API stops wrapping it.
 parse_leoka_totals <- function(response, year, month = NA_integer_) {
   empty <- data.frame(
     year = integer(), month = integer(), total_officers = integer(),
@@ -53,6 +50,11 @@ parse_leoka_totals <- function(response, year, month = NA_integer_) {
 #' Get national LEOKA (Law Enforcement Officers Killed and Assaulted) totals
 #'
 #' @description
+#' Counts of law enforcement officers **feloniously killed**, nationally, by
+#' year. Despite the program's name, these are not assault counts: the totals
+#' match the FBI's published felonious-killing figures (46 officers in 2020,
+#' 73 in 2021).
+#'
 #' National only: the live `leoka/ytd` endpoint ignores state/agency query
 #' parameters (verified against the live API -- requests with and without
 #' `state`/`ori` params return identical data), so the current CDE API has no
@@ -67,8 +69,10 @@ parse_leoka_totals <- function(response, year, month = NA_integer_) {
 #'
 #' @return A data.frame with one row per requested year with data and
 #'   columns: year, month (always `NA`; year-to-date totals have no month),
-#'   total_officers, total_incidents, total_officers_dod, total_officers_doi,
-#'   total_incidents_dod, total_incidents_doi.
+#'   total_officers (officers feloniously killed), total_incidents (incidents
+#'   in which they were killed), and the `_dod`/`_doi` splits of each. The API
+#'   does not label those splits (they sum to the totals) and the package does
+#'   not interpret them.
 #' @export
 #' @author Jared E. Knowles, Civilytics Consulting
 #' @examples

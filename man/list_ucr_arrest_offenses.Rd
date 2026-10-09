@@ -2,18 +2,29 @@
 % Please edit documentation in R/ucr_arrest.R
 \name{list_ucr_arrest_offenses}
 \alias{list_ucr_arrest_offenses}
-\title{Return a vector of all offenses in the UCR Arrest data.}
+\title{List the offense names \code{get_arrest_count()} accepts}
 \usage{
-list_ucr_arrest_offenses()
+list_ucr_arrest_offenses(level = c("all", "name", "category", "breakdown"))
+}
+\arguments{
+\item{level}{\code{"all"} (the default) for every name, or one level:
+\code{"name"} (the 34 offense names, e.g. \code{"Drug Possession"}), \code{"category"}
+(29, e.g. \code{"Drug/Narcotic Offenses"}) or \code{"breakdown"} (49, e.g.
+\code{"Drug Possession - Marijuana"}). Within a level the counts do not
+overlap, so ranking offenses means ranking one level.}
 }
 \value{
-A character vector of UCR arrest offense codes.
+A sorted character vector of offense names.
 }
 \description{
-Return a vector of all offenses in the UCR Arrest data.
+The CDE reports arrests at three levels of detail, and \code{get_arrest_count()}
+and \code{get_arrest_demographics()} accept a name from any of them. Two names
+it lists, \code{"Rape"} and \code{"Runaway"}, have no arrests in the API; see
+\link{ucr_arrest_offense_codes} for the codes behind the rest.
 }
 \examples{
 list_ucr_arrest_offenses()
+list_ucr_arrest_offenses("category")
 }
 \seealso{
 Other UCR arrest functions:

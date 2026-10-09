@@ -11,7 +11,9 @@
 #'
 #' @return A character string with the 5-digit county FIPS code (e.g. `"06037"`)
 #'   or `NA_character_` when the county cannot be resolved (e.g. `"N/A"` county,
-#'   dissolved boroughs).
+#'   dissolved boroughs). `counties_with_fips()` returns a data.frame with one
+#'   row per resolvable county: `state_abbr`, `county_name` (as the CDE spells
+#'   it), and `county_fips`.
 #'
 #' @details
 #' The crosswalk is built at package build time from `tigris::counties()` and
@@ -53,6 +55,18 @@ county_to_fips <- function(state, county) {
   state_fips <- .state_abbr_to_fips(state)
   if (is.na(state_fips)) {
     return(NA_character_)
+  }
+
+  # The bundled crosswalk is keyed by every (state, county_name) pair the CDE
+  # uses, so it is authoritative for those names and is consulted first. The
+  # patch logic below exists for other spellings, and it is wrong for the
+  # Virginia independent cities that share a name with a county: it strips
+  # " CITY", so "RICHMOND CITY" resolved to Richmond County (51159) instead of
+  # Richmond city (51760). Same for Fairfax, Franklin and Roanoke.
+  exact_key <- paste(.fips_state_to_abbr(state_fips), toupper(trimws(county)),
+                     sep = "|")
+  if (exact_key %in% names(.fips_tigris_lookup)) {
+    return(unname(.fips_tigris_lookup[[exact_key]]))
   }
 
   # Strip multi-county: take the first county before ";"
@@ -120,9 +134,16 @@ county_to_fips <- function(state, county) {
 #' @rdname county_to_fips
 #' @export
 counties_with_fips <- function() {
-  # crosswalk is internal data (R/sysdata.rda); return a copy so users can
-  # modify the result without affecting package state.
-  crosswalk[NULL, , drop = FALSE]
+  # One row per county: the crosswalk's single-county names (multi-county
+  # strings such as "FAIRFIELD; LICKING" are agency attributes, not counties)
+  # with a resolved FIPS. This previously returned crosswalk[NULL, ], which is
+  # a zero-row frame, not a copy.
+  cw <- crosswalk[!grepl(";", crosswalk$county_name, fixed = TRUE) &
+                    !is.na(crosswalk$county_fips),
+                  c("state_abbr", "county_name", "county_fips"), drop = FALSE]
+  cw <- cw[order(cw$state_abbr, cw$county_name), , drop = FALSE]
+  rownames(cw) <- NULL
+  cw
 }
 
 # ---- Internal helpers ----
@@ -310,17 +331,22 @@ counties_with_fips <- function() {
     "BRISTOL BAY"            = "Bristol Bay",
     "PRINCE OF WALES-HYDER"  = "Prince of Wales-Hyder",
 
-    # ---- Connecticut planning regions → traditional counties ----
-    # tigris returns CT planning regions (not counties). Map to traditional names.
-    "CAPITOL"                = "Hartford",
-    "GREATER BRIDGEPORT"     = "Fairfield",
-    "LOWER CONNECTICUT RIVER VALLEY" = "New London",
-    "NAUGATUCK VALLEY"       = "Litchfield",
-    "NORTHEASTERN CONNECTICUT" = "Windham",
-    "NORTHWEST HILLS"        = "Litchfield",
-    "SOUTH CENTRAL CONNECTICUT" = "New Haven",
-    "SOUTHEASTERN CONNECTICUT"  = "New London",
-    "WESTERN CONNECTICUT"    = "Fairfield",
+    # ---- Connecticut planning regions (county equivalents since 2022) ----
+    # A region's bare name resolves to the region's own FIPS; its full name
+    # ("CAPITOL PLANNING REGION") is in the crosswalk (#52). These entries
+    # used to send each region to one traditional county ("NAUGATUCK VALLEY"
+    # -> Litchfield), which was wrong for much of every region: regions were
+    # drawn from towns and cross county lines. State-scoped, like the
+    # traditional names below.
+    "09__CAPITOL"                        = "09110",
+    "09__GREATER BRIDGEPORT"             = "09120",
+    "09__LOWER CONNECTICUT RIVER VALLEY" = "09130",
+    "09__NAUGATUCK VALLEY"               = "09140",
+    "09__NORTHEASTERN CONNECTICUT"       = "09150",
+    "09__NORTHWEST HILLS"                = "09160",
+    "09__SOUTH CENTRAL CONNECTICUT"      = "09170",
+    "09__SOUTHEASTERN CONNECTICUT"       = "09180",
+    "09__WESTERN CONNECTICUT"            = "09190",
 
     # ---- CT traditional county names (fbi uses these, tigris has planning regions) ----
     # Direct FIPS mapping since tigris doesn't have traditional CT county names.
@@ -375,5 +401,11 @@ counties_with_fips <- function() {
   cbsa_vintage <- attr(cbsa_crosswalk, "vintage")
   if (!is.null(cbsa_vintage)) {
     CBSA_VINTAGE <<- cbsa_vintage
+  }
+
+  # Same for PLACE_VINTAGE (R/place.R) and the place crosswalk.
+  place_vintage <- attr(place_crosswalk, "vintage")
+  if (!is.null(place_vintage)) {
+    PLACE_VINTAGE <<- place_vintage
   }
 }

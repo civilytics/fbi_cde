@@ -39,25 +39,51 @@ test_that("get_states parses state lookup response", {
   expect_equal(result$stateName[result$stateAbbreviation == "CA"], "California")
 })
 
-test_that("get_agencies parses agency lookup response by state", {
-  # get_agencies() calls get_states() first (to enumerate which per-state
-  # lookups to make), then cde_request() once per state -- a single fixed
-  # fixture can't answer both correctly, so route by path.
-  testthat::local_mocked_bindings(
-    cde_request = function(path, ...) {
-      if (identical(path, "lookup/states")) {
-        read_fixture("lookup-states.json")
-      } else {
-        read_fixture("agency-byStateAbbr-CA.json")
-      }
-    },
-    .package = "fbiCDE"
-  )
+# get_agencies() calls get_states() first, then the agency directory once per
+# state. The RI fixture is a recorded `agency/byStateAbbr/RI` response (a
+# county-keyed object, 49 agencies); every other state answers with an empty
+# object.
+mock_agency_directory <- function(fail_state = NULL) {
+  paths <- character(0)
+  states <- read_fixture("lookup-states.json")
+  ri <- read_fixture("participation-agency-byStateAbbr-RI.json")
+  fun <- function(path, ...) {
+    paths <<- c(paths, path)
+    if (identical(path, "lookup/states")) return(states)
+    if (!is.null(fail_state) &&
+        identical(path, paste0("agency/byStateAbbr/", fail_state))) {
+      stop("HTTP 500 for ", path, call. = FALSE)
+    }
+    if (identical(path, "agency/byStateAbbr/RI")) ri else list()
+  }
+  list(fun = fun, paths = function() paths)
+}
+
+test_that("get_agencies flattens the county-keyed directory", {
+  m <- mock_agency_directory()
+  testthat::local_mocked_bindings(cde_request = m$fun, .package = "fbiCDE")
   result <- get_agencies()
 
   expect_s3_class(result, "data.frame")
-  expect_true("ori" %in% names(result))
-  expect_true(nrow(result) > 0)
+  expect_equal(nrow(result), 49L)
+  expect_false(any(duplicated(result$ori)))
+  expect_true(all(grepl("^RI", result$ori)))
+  expect_true(all(c("ori", "agency_name", "agency_type_name", "counties",
+                    "is_nibrs") %in% names(result)))
+  expect_true("Coventry Police Department" %in% result$agency_name)
+  expect_equal(result$ori, sort(result$ori))
+  # One directory request per state, on the endpoint that exists.
+  dir_paths <- setdiff(m$paths(), "lookup/states")
+  expect_true(all(grepl("^agency/byStateAbbr/[A-Z]{2}$", dir_paths)))
+  expect_true("agency/byStateAbbr/RI" %in% dir_paths)
+})
+
+test_that("get_agencies skips a failing state with a warning", {
+  m <- mock_agency_directory(fail_state = "CA")
+  testthat::local_mocked_bindings(cde_request = m$fun, .package = "fbiCDE")
+  expect_warning(result <- get_agencies(), "1 state: CA")
+  expect_equal(nrow(result), 49L)
+  expect_equal(attr(result, "failed_states"), "CA")
 })
 
 # Live tests
@@ -73,6 +99,16 @@ test_that("get_offense_codes returns expected shape from live API", {
     expect_true(nrow(result) > 0)
     expect_false(any(result$code == "crimeGroups"))
   }
+})
+
+test_that("get_agencies returns one row per agency from live API", {
+  skip_if_no_fbi_api()
+  result <- get_agencies()
+
+  expect_s3_class(result, "data.frame")
+  expect_gt(nrow(result), 15000L)
+  expect_false(any(duplicated(result$ori)))
+  expect_true("CA0010900" %in% result$ori)
 })
 
 test_that("get_states returns expected shape from live API", {

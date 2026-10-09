@@ -5,7 +5,11 @@
 \alias{ucr_arrest_offenses}
 \title{All offenses available to get UCR arrest counts for.}
 \format{
-A character vector with 34 elements.
+A data frame with 112 rows and 2 variables:
+\describe{
+\item{offense}{Offense name, as passed to \code{get_arrest_count(offense = )}}
+\item{level}{\code{"name"} (34), \code{"category"} (29) or \code{"breakdown"} (49)}
+}
 }
 \source{
 \url{https://cde.ucr.cjis.gov/LATEST/}
@@ -14,9 +18,9 @@ A character vector with 34 elements.
 ucr_arrest_offenses
 }
 \description{
-A vector of the offense names accepted by `get_arrest_count()`. These match
-the "Offense Name" keys returned by the live CDE arrest endpoint and are
-used as response-side filters (the API no longer supports a per-offense
-URL segment).
+The offense names \code{get_arrest_count()} accepts: every key of the three maps
+in the CDE's arrest totals response, with the map it comes from. A name can
+appear at more than one level. Use \code{\link[=list_ucr_arrest_offenses]{list_ucr_arrest_offenses()}} to list them.
+Built by \code{data-raw/api_vocabularies.R}.
 }
 \keyword{datasets}

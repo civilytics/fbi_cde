@@ -2,15 +2,15 @@
 % Please edit documentation in R/nibrs.R
 \name{list_nibrs_victim_variables}
 \alias{list_nibrs_victim_variables}
-\title{Returns a vector of all `variable` parameter options for `get_nibrs_victim()`.}
+\title{Returns a vector of all \code{variable} parameter options for \code{get_nibrs_victim()}.}
 \usage{
 list_nibrs_victim_variables()
 }
 \value{
-A character vector of all `variable` parameter options for `get_nibrs_victim()`.
+A character vector of all \code{variable} parameter options for \code{get_nibrs_victim()}.
 }
 \description{
-Returns a vector of all `variable` parameter options for `get_nibrs_victim()`.
+Returns a vector of all \code{variable} parameter options for \code{get_nibrs_victim()}.
 }
 \examples{
 list_nibrs_victim_variables()

@@ -1,140 +1,113 @@
-# Offline tests for NIBRS functions using fixtures.
+# Offline tests for NIBRS functions, using responses recorded from the live
+# API for 2023 (nibrs/{level}/{offense}?type=totals):
+#
+#   nibrs-agency-OHCOP0000-BUR.json  Columbus PD, burglary: populated
+#   nibrs-state-OH-BUR.json          Ohio, burglary: populated
+#   nibrs-agency-CA0010900-ROB.json  Oakland PD, robbery: every count null,
+#                                    which is how the API answers for a
+#                                    geography with no NIBRS data that period
+#
+# These replace hand-written fixtures whose variables ("count", "bias") and
+# age buckets the API never returns, which is how the package shipped
+# defaults that could not return data.
 
-# ---- get_nibrs_victim ----
+test_that("get_nibrs_victim parses an agency's victim breakdown", {
+  local_fbi_fixture("nibrs-agency-OHCOP0000-BUR.json")
+  result <- get_nibrs_victim("OHCOP0000", offense = "BUR", variable = "age",
+                             from = "01-2023", to = "12-2023")
 
-test_that("get_nibrs_victim parses agency-level victim response", {
-  local_fbi_fixture("nibrs-victim-robbery.json")
-  result <- get_nibrs_victim("CA0010900")
-
-  expect_s3_class(result, "data.frame")
-  expect_true("geography" %in% names(result))
-  expect_true("offense" %in% names(result))
-  expect_true("demographic_type" %in% names(result))
-  expect_true("demographic_value" %in% names(result))
-  expect_true("count" %in% names(result))
-  expect_equal(result$geography[1], "CA0010900")
-  expect_equal(result$offense[1], "robbery")
-  expect_true(nrow(result) > 0)
+  expect_equal(names(result),
+               c("geography", "offense", "period", "demographic_type",
+                 "demographic_value", "count"))
+  expect_equal(unique(result$geography), "OHCOP0000")
+  expect_equal(unique(result$offense), "BUR")
+  expect_equal(unique(result$demographic_type), "age")
+  expect_equal(result$count[result$demographic_value == "20-29"], 967)
 })
 
-test_that("get_nibrs_victim parses national-level victim response", {
-  local_fbi_fixture("nibrs-victim-national-all.json")
-  result <- get_nibrs_victim()
+test_that("get_nibrs_offender parses a state's offender ages", {
+  local_fbi_fixture("nibrs-state-OH-BUR.json")
+  result <- get_nibrs_offender(state_abb = "OH", offense = "BUR",
+                               variable = "age",
+                               from = "01-2023", to = "12-2023")
 
-  expect_s3_class(result, "data.frame")
-  expect_true("geography" %in% names(result))
-  expect_equal(result$geography[1], "US")
-  expect_true(nrow(result) > 0)
+  expect_equal(unique(result$geography), "OH")
+  # Ten-year buckets: "10-19" straddles 18, so NIBRS cannot isolate juveniles.
+  expect_true(all(c("0-9", "10-19", "Unknown") %in% result$demographic_value))
+  expect_gt(sum(result$count), 0)
 })
 
-test_that("get_nibrs_victim returns correct demographic_type for variable", {
-  local_fbi_fixture("nibrs-victim-robbery.json")
-  result <- get_nibrs_victim("CA0010900", variable = "race")
+test_that("get_nibrs_offense defaults to weapons", {
+  local_fbi_fixture("nibrs-state-OH-BUR.json")
+  result <- get_nibrs_offense(state_abb = "OH", offense = "BUR",
+                              from = "01-2023", to = "12-2023")
 
-  expect_s3_class(result, "data.frame")
-  expect_true(all(result$demographic_type == "race"))
-  expect_true(all(result$demographic_value %in%
-    c("White", "Black", "American Indian/Alaskan Native", "Asian/Pacific Islander", "Other")))
+  expect_equal(unique(result$demographic_type), "weapons")
+  expect_gt(nrow(result), 0)
 })
 
-test_that("get_nibrs_victim returns empty for missing section", {
-  # Issue #33: an empty result now emits a message so users don't mistake
-  # the live API's current all-null NIBRS payload for a genuine zero count.
-  local_mocked_bindings(
-    cde_request = function(...) list(),
-    .package = "fbiCDE"
+test_that("a response with every count null returns zero rows and a message", {
+  local_fbi_fixture("nibrs-agency-CA0010900-ROB.json")
+  expect_message(
+    result <- get_nibrs_victim("CA0010900", offense = "ROB"),
+    "returned no data"
   )
-  expect_message(result <- get_nibrs_victim("CA0010900"), "returned no data")
+  expect_equal(nrow(result), 0)
+  expect_equal(names(result),
+               c("geography", "offense", "period", "demographic_type",
+                 "demographic_value", "count"))
+})
 
-  expect_s3_class(result, "data.frame")
+test_that("a response without the section returns zero rows and a message", {
+  local_mocked_bindings(cde_request = function(...) list(),
+                        .package = "fbiCDE")
+  expect_message(result <- get_nibrs_offender(offense = "BUR"),
+                 "returned no data")
   expect_equal(nrow(result), 0)
 })
 
-test_that("get_nibrs_victim returns empty for missing variable", {
+test_that("the bundled variable lists match a recorded response", {
+  x <- read_fixture("nibrs-state-OH-BUR.json")
+  expect_setequal(list_nibrs_victim_variables(), names(x$victim))
+  expect_setequal(list_nibrs_offender_variables(), names(x$offender))
+  expect_setequal(list_nibrs_offense_variables(), names(x$offense))
+})
+
+# ---- Offense and variable checks ----
+
+test_that("offense names and 'all' are rejected before any request", {
   local_mocked_bindings(
-    cde_request = function(...) list(victim = list()),
+    cde_request = function(...) stop("no request expected"),
     .package = "fbiCDE"
   )
-  expect_message(result <- get_nibrs_victim("CA0010900"), "returned no data")
-
-  expect_s3_class(result, "data.frame")
-  expect_equal(nrow(result), 0)
+  expect_error(get_nibrs_victim(offense = "robbery"), 'Did you mean "ROB"')
+  expect_error(get_nibrs_offense(offense = "burglary-breaking-and-entering"),
+               'Did you mean "BUR"')
+  expect_error(get_nibrs_offender(offense = "all"), "no all-offenses total")
+  expect_error(get_nibrs_offender(offense = "jaywalking"),
+               "not a NIBRS offense code")
 })
 
-# ---- get_nibrs_offender ----
-
-test_that("get_nibrs_offender parses offender response", {
-  local_fbi_fixture("nibrs-offender-all.json")
-  result <- get_nibrs_offender("CA0010900")
-
-  expect_s3_class(result, "data.frame")
-  expect_true("geography" %in% names(result))
-  expect_true("offense" %in% names(result))
-  expect_true("demographic_type" %in% names(result))
-  expect_true("demographic_value" %in% names(result))
-  expect_true("count" %in% names(result))
-  expect_equal(result$geography[1], "CA0010900")
-  expect_equal(result$offense[1], "all")
-  expect_true(nrow(result) > 0)
-})
-
-test_that("get_nibrs_offender returns correct demographic_type for variable", {
-  local_fbi_fixture("nibrs-offender-all.json")
-  result <- get_nibrs_offender("CA0010900", variable = "ethnicity")
-
-  expect_s3_class(result, "data.frame")
-  expect_true(all(result$demographic_type == "ethnicity"))
-  expect_true(all(result$demographic_value %in%
-    c("Hispanic/Latino", "Not Hispanic/Latino", "Unknown")))
-})
-
-test_that("get_nibrs_offender returns empty for missing section", {
+test_that("offense codes are case-insensitive and sent upper-case", {
+  path <- NULL
   local_mocked_bindings(
-    cde_request = function(...) list(),
+    cde_request = function(p, ...) {
+      path <<- p
+      read_fixture("nibrs-state-OH-BUR.json")
+    },
     .package = "fbiCDE"
   )
-  expect_message(result <- get_nibrs_offender("CA0010900"), "returned no data")
-
-  expect_s3_class(result, "data.frame")
-  expect_equal(nrow(result), 0)
+  result <- get_nibrs_offender(state_abb = "OH", offense = "bur",
+                               variable = "sex")
+  expect_equal(path, "nibrs/state/OH/BUR")
+  expect_equal(unique(result$offense), "BUR")
 })
 
-# ---- get_nibrs_offense ----
-
-test_that("get_nibrs_offense parses offense response", {
-  local_fbi_fixture("nibrs-offense-all.json")
-  result <- get_nibrs_offense("CA0010900")
-
-  expect_s3_class(result, "data.frame")
-  expect_true("geography" %in% names(result))
-  expect_true("offense" %in% names(result))
-  expect_true("demographic_type" %in% names(result))
-  expect_true("demographic_value" %in% names(result))
-  expect_true("count" %in% names(result))
-  expect_equal(result$geography[1], "CA0010900")
-  expect_equal(result$offense[1], "all")
-  expect_true(nrow(result) > 0)
-})
-
-test_that("get_nibrs_offense returns correct demographic_type for variable", {
-  local_fbi_fixture("nibrs-offense-all.json")
-  result <- get_nibrs_offense("CA0010900", variable = "weapons")
-
-  expect_s3_class(result, "data.frame")
-  expect_true(all(result$demographic_type == "weapons"))
-  expect_true(all(result$demographic_value %in%
-    c("Firearm", "Knife/Cutting Instrument", "Hands/Feet/Legs", "Other", "Weapon Unknown")))
-})
-
-test_that("get_nibrs_offense returns empty for missing section", {
-  local_mocked_bindings(
-    cde_request = function(...) list(),
-    .package = "fbiCDE"
-  )
-  expect_message(result <- get_nibrs_offense("CA0010900"), "returned no data")
-
-  expect_s3_class(result, "data.frame")
-  expect_equal(nrow(result), 0)
+test_that("an unknown variable is rejected with the valid choices", {
+  expect_error(get_nibrs_offender(offense = "BUR", variable = "count"),
+               "must be one of: age, ethnicity, race, sex")
+  expect_error(get_nibrs_offense(offense = "BUR", variable = "bias"),
+               "related_offenses, weapons")
 })
 
 # ---- Validation tests ----
@@ -186,76 +159,57 @@ test_that("get_nibrs_offense rejects inverted date ranges", {
 
 # ---- list_* functions ----
 
-test_that("list_nibrs_offenses returns a character vector", {
+test_that("list_nibrs_offenses returns codes and labels", {
   result <- list_nibrs_offenses()
-  expect_true(is.character(result))
-  expect_true(length(result) > 0)
-  expect_true("robbery" %in% result)
+  expect_equal(names(result), c("code", "label"))
+  expect_true(all(c("V", "P", "ROB", "BUR", "13B", "35A") %in% result$code))
+  expect_false(any(duplicated(result$code)))
+  # Every listed code passes the offense check.
+  expect_equal(vapply(result$code, .check_nibrs_offense, character(1),
+                      USE.NAMES = FALSE), result$code)
 })
 
-test_that("list_nibrs_victim_variables returns a character vector", {
-  result <- list_nibrs_victim_variables()
-  expect_true(is.character(result))
-  expect_true(length(result) > 0)
-  expect_true("age" %in% result)
-  expect_true("race" %in% result)
-  expect_true("sex" %in% result)
-})
-
-test_that("list_nibrs_offender_variables returns a character vector", {
-  result <- list_nibrs_offender_variables()
-  expect_true(is.character(result))
-  expect_true(length(result) > 0)
-  expect_true("age" %in% result)
-  expect_true("race" %in% result)
-  expect_true("sex" %in% result)
-})
-
-test_that("list_nibrs_offense_variables returns a character vector", {
-  result <- list_nibrs_offense_variables()
-  expect_true(is.character(result))
-  expect_true(length(result) > 0)
-  expect_true("count" %in% result)
-  expect_true("weapons" %in% result)
-  expect_true("bias" %in% result)
+test_that("list_nibrs_*_variables return the response's keys", {
+  expect_equal(list_nibrs_victim_variables(),
+               c("age", "ethnicity", "location", "race", "relationship", "sex"))
+  expect_equal(list_nibrs_offender_variables(),
+               c("age", "ethnicity", "race", "sex"))
+  expect_equal(list_nibrs_offense_variables(),
+               c("related_offenses", "weapons"))
 })
 
 # ---- Live tests ----
-#
-# As of 2026-07 the live NIBRS totals endpoint returns no data for any input
-# (Issue #33) -- these assert today's actual (degraded) behavior, i.e. an
-# empty frame plus the Issue #33 message, so a real regression (an error, or
-# the message disappearing without rows resuming) still fails the suite. When
-# #33 is resolved, flip these back to asserting nrow(result) > 0 with no
-# message.
 
-test_that("get_nibrs_victim returns expected shape from live API", {
+test_that("get_nibrs_victim returns data from the live API", {
   skip_if_no_fbi_api()
-  expect_message(result <- get_nibrs_victim("CA0010900"), "returned no data")
-
-  expect_s3_class(result, "data.frame")
-  expect_equal(nrow(result), 0)
-  expect_true("geography" %in% names(result))
-  expect_true("demographic_type" %in% names(result))
-  expect_true("demographic_value" %in% names(result))
+  result <- get_nibrs_victim(state_abb = "OH", offense = "ROB",
+                             variable = "race",
+                             from = "01-2023", to = "12-2023")
+  expect_gt(nrow(result), 0)
+  expect_gt(sum(result$count), 0)
 })
 
-test_that("get_nibrs_offender returns expected shape from live API", {
+test_that("get_nibrs_offender returns data from the live API", {
   skip_if_no_fbi_api()
-  expect_message(result <- get_nibrs_offender("CA0010900"), "returned no data")
-
-  expect_s3_class(result, "data.frame")
-  expect_equal(nrow(result), 0)
-  expect_true("geography" %in% names(result))
-  expect_true("demographic_type" %in% names(result))
+  result <- get_nibrs_offender(state_abb = "OH", offense = "BUR",
+                               variable = "age",
+                               from = "01-2023", to = "12-2023")
+  expect_gt(nrow(result), 0)
+  expect_gt(sum(result$count), 0)
 })
 
-test_that("get_nibrs_offense returns expected shape from live API", {
+test_that("get_nibrs_offense returns data from the live API", {
   skip_if_no_fbi_api()
-  expect_message(result <- get_nibrs_offense("CA0010900"), "returned no data")
+  result <- get_nibrs_offense(state_abb = "OH", offense = "ROB",
+                              from = "01-2023", to = "12-2023")
+  expect_gt(nrow(result), 0)
+})
 
-  expect_s3_class(result, "data.frame")
-  expect_equal(nrow(result), 0)
-  expect_true("geography" %in% names(result))
-  expect_true("demographic_type" %in% names(result))
+test_that("the live response has exactly the bundled variables", {
+  skip_if_no_fbi_api()
+  x <- cde_request(cde_path("nibrs", "state/OH", "ROB"),
+                   cde_query("01-2023", "12-2023", type = "totals"))
+  expect_setequal(list_nibrs_victim_variables(), names(x$victim))
+  expect_setequal(list_nibrs_offender_variables(), names(x$offender))
+  expect_setequal(list_nibrs_offense_variables(), names(x$offense))
 })

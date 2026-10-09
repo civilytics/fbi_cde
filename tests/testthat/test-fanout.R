@@ -31,7 +31,6 @@ test_that(".filter_agency_members keeps only the requested classes", {
   agencies <- data.frame(
     ori = c("A", "B", "C"),
     agency_class = c("municipal", "campus", "county_primary"),
-    default_member = c(TRUE, FALSE, TRUE),
     stringsAsFactors = FALSE
   )
 
@@ -42,24 +41,39 @@ test_that(".filter_agency_members keeps only the requested classes", {
   )
 })
 
-test_that(".filter_agency_members honours default_only", {
+test_that(".filter_agency_members defaults to sub-state classes; state on request", {
   agencies <- data.frame(
-    ori = c("A", "B", "C"),
-    agency_class = c("municipal", "campus", "county_primary"),
-    default_member = c(TRUE, FALSE, TRUE),
+    ori = c("A", "B", "C", "D", "E", "F"),
+    agency_class = c("municipal", "campus", "county_primary", "special",
+                     "state", "tribal"),
     stringsAsFactors = FALSE
   )
 
-  expect_equal(.filter_agency_members(agencies, NULL, TRUE)$ori, c("A", "C"))
-  # agency_class wins over default_only, matching the documented precedence.
-  expect_equal(.filter_agency_members(agencies, "campus", TRUE)$ori, "B")
-  # Neither filter: unchanged.
-  expect_equal(nrow(.filter_agency_members(agencies)), 3L)
+  # Default: sheriff, city and campus police.
+  expect_equal(.filter_agency_members(agencies)$ori, c("A", "B", "C"))
+  expect_equal(.filter_agency_members(agencies, include_statewide = TRUE)$ori,
+               c("A", "B", "C", "E"))
+  # agency_class replaces the default set; include_statewide still adds state.
+  expect_equal(.filter_agency_members(agencies, "special")$ori, "D")
+  expect_equal(.filter_agency_members(agencies, "special", TRUE)$ori,
+               c("D", "E"))
+  expect_equal(.filter_agency_members(agencies, "tribal")$ori, "F")
+})
+
+test_that(".filter_agency_members rejects unknown classes and a non-logical switch", {
+  agencies <- data.frame(ori = "A", agency_class = "municipal",
+                         stringsAsFactors = FALSE)
+  expect_error(.filter_agency_members(agencies, "sheriff"),
+               "Unknown agency_class: sheriff")
+  expect_error(.filter_agency_members(agencies, include_statewide = NA),
+               "TRUE or FALSE")
+  expect_error(.filter_agency_members(agencies, include_statewide = "yes"),
+               "TRUE or FALSE")
 })
 
 test_that(".filter_agency_members can return zero rows", {
   agencies <- data.frame(
-    ori = "A", agency_class = "municipal", default_member = TRUE,
+    ori = "A", agency_class = "municipal",
     stringsAsFactors = FALSE
   )
   expect_equal(nrow(.filter_agency_members(agencies, "tribal")), 0L)
@@ -71,7 +85,11 @@ test_that(".filter_desc names the filter responsible", {
   expect_equal(.filter_desc("campus"), "agency_class = campus")
   expect_equal(.filter_desc(c("campus", "state")),
                "agency_class = campus, state")
-  expect_equal(.filter_desc(NULL), "default_only = TRUE")
+  expect_equal(.filter_desc(NULL), "the default agency classes")
+  expect_equal(.filter_desc(NULL, TRUE),
+               "the default agency classes, include_statewide = TRUE")
+  expect_equal(.filter_desc("special", TRUE),
+               "agency_class = special, include_statewide = TRUE")
 })
 
 # ---- The cross-level invariant ---------------------------------------------
@@ -146,7 +164,6 @@ test_that(".fanout_agency_detail copies exactly the requested metadata columns",
     agency_name = "Alpha PD",
     agency_type_name = "City",
     agency_class = "municipal",
-    default_member = TRUE,
     county_name = "TESTONIA",
     state_abbr = "CA",
     extra_col = "should not be copied",
@@ -237,4 +254,6 @@ test_that(".fanout_agency_detail keeps survivors when only some agencies fail", 
   expect_equal(nrow(out), 1L)
   expect_equal(out$ori, "CA0000001")
   expect_equal(attr(out, "dropped"), "CA0000002")
+  # The error is kept, keyed by ORI, rather than discarded.
+  expect_equal(attr(out, "dropped_reasons"), c(CA0000002 = "503"))
 })

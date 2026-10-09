@@ -32,6 +32,9 @@ test_that("get_place_crime_detail returns per-period rows for the place's agency
   expect_equal(unique(out$agency_class), "place_primary")
   expect_equal(unique(out$attribution), "name_identity")
   expect_true(all(out$reported))
+  # The place's Census code rides along on every row.
+  expect_equal(unique(out$place_fips), "4845072")
+  expect_equal(unique(out$place_type), "incorporated")
 })
 
 test_that("get_place_crime_detail returns the documented columns in order", {
@@ -108,7 +111,6 @@ fake_place_agencies <- function(n = 1) {
       c("Lufkin Police Department", "Angelina College"),
     agency_type_name = if (n == 1) "City" else c("City", "University or College"),
     agency_class = if (n == 1) "place_primary" else c("place_primary", "campus"),
-    default_member = if (n == 1) TRUE else c(TRUE, FALSE),
     place_name = "Lufkin",
     county_name = "ANGELINA",
     state_abbr = "TX",
@@ -138,6 +140,8 @@ test_that("get_place_crime_detail uses a supplied agencies frame instead of re-r
   expect_false(called)
   expect_equal(nrow(out), 2L)
   expect_equal(unique(out$agency_class), "place_primary")
+  # A supplied frame without the Census code columns gets them, by ORI.
+  expect_equal(names(out), .PLACE_DETAIL_COLS)
 })
 
 test_that("get_place_crime_detail can reach campus agencies via a supplied agencies frame", {
@@ -153,6 +157,16 @@ test_that("get_place_crime_detail can reach campus agencies via a supplied agenc
   expect_equal(nrow(out), 2L)
   expect_equal(unique(out$agency_class), "campus")
   expect_equal(unique(out$attribution), "point_in_polygon")
+})
+
+test_that("get_place_crime_detail queries supplied campus members by default", {
+  testthat::local_mocked_bindings(
+    cde_request = function(...) fake_agency_response(),
+    .package = "fbiCDE"
+  )
+  out <- get_place_crime_detail("Lufkin", "TX", from = "01-2021", to = "02-2021",
+                                agencies = fake_place_agencies(2))
+  expect_setequal(unique(out$agency_class), c("place_primary", "campus"))
 })
 
 test_that("get_place_crime_detail warns rather than silently returning empty when a filter is unsatisfiable", {
@@ -208,4 +222,5 @@ test_that("get_place_crime_detail works against the live API", {
   expect_s3_class(out, "data.frame")
   expect_equal(names(out), .PLACE_DETAIL_COLS)
   expect_gt(nrow(out), 0L)
+  expect_equal(unique(out$place_fips), "4845072")
 })

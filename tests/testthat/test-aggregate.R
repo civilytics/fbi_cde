@@ -14,9 +14,9 @@ make_detail <- function(ori, offense = "V", periods, counts,
     agency_name = paste0(substr(ori, 1, 2), " Agency"),
     agency_type_name = "City",
     agency_class = "municipal",
-    default_member = TRUE,
     county_name = "TESTONIA",
     state_abbr = "CA",
+    county_fips = "06999",
     offense = rep(offense, n),
     period = periods,
     count = counts,
@@ -436,4 +436,78 @@ test_that("join_census_pop output feeds get_county_crime(census_pop)", {
   expect_equal(agg$population, 1682353L)
   expect_equal(agg$denominator_type, "census_pop")
   expect_equal(agg$rate, 10 / 1682353 * 1e5)
+})
+
+# ---- End to end through the real resolver ---------------------------------
+#
+# The tests above build detail frames by hand and inject county_fips, which is
+# how two bugs went unnoticed: get_county_crime_detail() never emitted
+# county_fips (so join_census_pop() errored on real output), and a
+# multi-county agency's raw county_name split the aggregate into one group per
+# distinct string. These run the bundled agency table through the actual
+# resolver and fan-out, mocking only the HTTP seam.
+
+one_month_response <- function(path, ...) {
+  pop <- list("01-2021" = 1000)
+  list(
+    offenses = list(actuals = list("Some PD Offenses" = list("01-2021" = 10)),
+                    rates = list()),
+    populations = list(population = list("Some PD" = pop),
+                       participated_population = list("Some PD" = pop))
+  )
+}
+
+test_that("a county containing multi-county agencies aggregates to one row per period", {
+  local_mocked_bindings(cde_request = one_month_response, .package = "fbiCDE")
+
+  # Franklin County, OH: Columbus PD is "DELAWARE; FAIRFIELD; FRANKLIN", and
+  # several suburbs are also listed under more than one county.
+  detail <- get_county_crime_detail("Franklin", "OH", from = "01-2021",
+                                    to = "01-2021")
+  expect_true("OHCOP0000" %in% detail$ori)
+  expect_equal(unique(detail$county_name), "FRANKLIN")
+
+  agg <- get_county_crime(detail)
+  expect_equal(nrow(agg), 1L)
+  expect_equal(agg$county_name, "FRANKLIN")
+  expect_equal(agg$count, 10 * length(unique(detail$ori)))
+})
+
+test_that("county detail feeds join_census_pop and the census_pop denominator", {
+  local_mocked_bindings(cde_request = one_month_response, .package = "fbiCDE")
+
+  detail <- get_county_crime_detail("Licking", "OH", from = "01-2021",
+                                    to = "01-2021")
+  # Licking's first matching agency is multi-county ("FAIRFIELD; LICKING;
+  # FRANKLIN"); its FIPS was once taken from that row and came out as
+  # Fairfield's (39045).
+  expect_equal(unique(detail$county_fips), "39089")
+
+  joined <- join_census_pop(detail, key = "fake-key",
+                            census_fun = fake_get_census(pop = c(`089` = 178519)))
+  expect_true(all(joined$census_population == 178519L))
+
+  agg <- get_county_crime(joined, denominator = "census_pop")
+  expect_equal(nrow(agg), 1L)
+  expect_equal(agg$population, 178519)
+})
+
+test_that("get_county_crime warns about and carries agencies the fan-out dropped", {
+  local_mocked_bindings(
+    cde_request = function(path, ...) {
+      if (grepl("OHCOP0000", path)) stop("HTTP 500 for ", path, call. = FALSE)
+      one_month_response(path)
+    },
+    .package = "fbiCDE"
+  )
+
+  expect_warning(
+    detail <- get_county_crime_detail("Franklin", "OH", from = "01-2021",
+                                      to = "01-2021"),
+    "request or parse failed: OHCOP0000"
+  )
+  expect_match(attr(detail, "dropped_reasons")[["OHCOP0000"]], "HTTP 500")
+
+  expect_warning(agg <- get_county_crime(detail), "absent from these totals")
+  expect_equal(attr(agg, "dropped"), "OHCOP0000")
 })

@@ -18,11 +18,10 @@ fake_metro_agencies <- function() {
     agency_name = c("Alpha PD", "Beta PD"),
     agency_type_name = "City",
     agency_class = "municipal",
-    default_member = TRUE,
     county_name = c("ALLEGHENY", "BUTLER"),
     state_abbr = "PA",
     county_fips = c("42003", "42019"),
-    latitude = "0", longitude = "0",
+    latitude = 0, longitude = 0,
     cbsa_code = "38300",
     cbsa_title = "Pittsburgh, PA",
     cbsa_type = "metro",
@@ -214,4 +213,14 @@ test_that("get_metro_crime_detail works against the live API", {
                                 to = "03-2019", progress = FALSE)
   expect_s3_class(out, "data.frame")
   expect_equal(names(out), .METRO_DETAIL_COLS)
+})
+
+test_that("a Connecticut metro returns crime from the live API", {
+  skip_if_no_fbi_api()
+  # Connecticut metros resolve through planning regions (#52).
+  out <- get_metro_crime_detail("Torrington, CT", from = "01-2023",
+                                to = "03-2023", progress = FALSE)
+  expect_gt(nrow(out), 0L)
+  expect_equal(unique(out$county_fips), "09160")
+  expect_true(any(out$reported))
 })

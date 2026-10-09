@@ -1,25 +1,23 @@
 # Contributing to fbiCDE
 
-## This repository is a mirror
+## Where development happens
 
-Development happens on Gitea at
-[gitea.civilytics.org/Civilytics/fbiCDE](https://gitea.civilytics.org/Civilytics/fbiCDE).
-This GitHub repository mirrors that repo and exists for CRAN/r-universe
-visibility and for the Windows/macOS coverage GitHub Actions gives us that
-our Linux-only Gitea runner cannot.
+Development happens in a private Gitea repository. This GitHub repository is
+the package's public home: [r-universe](https://civilytics.r-universe.dev/fbiCDE)
+builds releases from it, and GitHub Actions gives us Windows/macOS coverage
+that our Linux-only Gitea runner cannot.
 
 Pull requests opened here are welcome. They get fetched, applied to the
-canonical Gitea repository, and synced back -- because that merge preserves
-your commits' original SHAs, GitHub will mark the PR "Merged" on its own once
-the sync completes, without anyone visibly clicking Merge. That is the
-normal, successful outcome, not a rejection. If it isn't going to be merged,
-you'll get an actual reply saying so.
+Gitea repository, and pushed back here -- because that merge preserves your
+commits' original SHAs, GitHub will mark the PR "Merged" on its own once the
+push lands, without anyone visibly clicking Merge. That is the normal,
+successful outcome, not a rejection. If it isn't going to be merged, you'll
+get an actual reply saying so.
 
 ## Issues
 
-File bugs and feature requests on Gitea:
-<https://gitea.civilytics.org/Civilytics/fbiCDE/issues>. GitHub issues work
-too and get triaged the same way, but Gitea is where the discussion happens.
+File bugs and feature requests here on GitHub:
+<https://github.com/civilytics/fbi_cde/issues>.
 
 ## House rules
 

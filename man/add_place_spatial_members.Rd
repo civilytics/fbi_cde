@@ -7,38 +7,39 @@
 add_place_spatial_members(x, vintage = NULL, places_fun = NULL)
 }
 \arguments{
-\item{x}{A data.frame as returned by [place_agencies()].}
+\item{x}{A data.frame as returned by \code{\link[=place_agencies]{place_agencies()}}.}
 
-\item{vintage}{Optional Census boundary year passed to `tigris::places()`.
+\item{vintage}{Optional Census boundary year passed to \code{tigris::places()}.
 Boundaries change with annexations and new incorporations, so pin this when
-reproducibility matters. `NULL` uses the `tigris` default.}
+reproducibility matters. \code{NULL} uses the \code{tigris} default.}
 
 \item{places_fun}{Function used to fetch place polygons, called as
-`places_fun(state, vintage)` and expected to return an `sf` frame with
-`GEOID`, `NAME`, and `CLASSFP` columns. Defaults to `tigris::places()`.
+\code{places_fun(state, vintage)} and expected to return an \code{sf} frame with
+\code{GEOID}, \code{NAME}, and \code{CLASSFP} columns. Defaults to \code{tigris::places()}.
 Exposed for testing; you should not need to set it.}
 }
 \value{
-`x` with spatially-attributed rows appended and two columns added:
-  \itemize{
-    \item `place_type`: `"incorporated"` or `"cdp"` (Census Designated
-      Place, i.e. unincorporated). `NA` on `name_identity` rows.
-    \item `place_fips`: the matched polygon's GEOID. **Best-effort
-      enrichment, not a promised join key** — it is `NA` on `name_identity`
-      rows, so it does not cover the municipal tier.
-  }
-  Appended rows carry `attribution = "point_in_polygon"` and
-  `default_member = FALSE`.
+\code{x} with spatially-attributed rows appended. On those rows
+\code{place_type} is \code{"incorporated"} or \code{"cdp"} (Census Designated Place, i.e.
+unincorporated) and \code{place_fips} is the GEOID of the polygon the
+agency's headquarters falls in: \strong{best-effort enrichment}, unlike the
+\code{place_fips} of the place's own agency, which is the promised key
+described in \code{\link[=place_agencies]{place_agencies()}}. \code{cousub_fips} is \code{NA} on appended rows.
+The rows of \code{x} keep their codes. Appended rows carry
+\code{attribution = "point_in_polygon"}. Their
+\code{agency_class} decides whether \code{\link[=get_place_crime_detail]{get_place_crime_detail()}} queries them by
+default: \code{"campus"} rows yes; \code{"special"} and \code{"state"} rows only when
+requested.
 }
 \description{
 Attributes campus and other special-district agencies (any agency of type
-`"University or College"`, `"Other"`, or `"Other State Agency"` — CDE has
+\code{"University or College"}, \code{"Other"}, or \code{"Other State Agency"} — CDE has
 no literal "transit" or "airport" type) to a place by point-in-polygon of
 their headquarters coordinates against Census place boundaries. Appends
-them to a [place_agencies()] result.
+them to a \code{\link[=place_agencies]{place_agencies()}} result.
 }
 \details{
-This is opt-in and best-effort. It requires `sf` and `tigris` (both in
+This is opt-in and best-effort. It requires \code{sf} and \code{tigris} (both in
 \sQuote{Suggests}) and downloads boundary shapefiles. Without them the
 function emits a message and returns its input unchanged.
 
@@ -47,11 +48,9 @@ department — whose headquarters genuinely sits on its campus inside the city
 — a sheriff's HQ point carries no information about its jurisdiction. That
 restriction is what makes point-in-polygon defensible for this tier.
 
-The bundled agency table stores `latitude`/`longitude` as character columns,
-and some rows hold the literal string `"NULL"` rather than a real missing
-value; this function coerces and drops those defensively. In practice, 270
-of the 2,324 embedded-tier agencies (11.6%) have no usable coordinates and
-can never be spatially attributed by this function.
+Agencies with no coordinates in the bundled table cannot be placed: 271 of
+the 2,324 embedded-tier agencies (11.7\%) have none and can never be
+spatially attributed by this function.
 }
 \examples{
 \dontrun{
@@ -60,5 +59,5 @@ add_place_spatial_members(x)
 }
 }
 \seealso{
-[place_agencies()]
+\code{\link[=place_agencies]{place_agencies()}}
 }

@@ -14,9 +14,9 @@ make_detail <- function(ori, offense = "V", periods, counts,
     agency_name = paste0(substr(ori, 1, 2), " Agency"),
     agency_type_name = "City",
     agency_class = "municipal",
-    default_member = TRUE,
     county_name = "TESTONIA",
     state_abbr = "CA",
+    county_fips = "06999",
     offense = rep(offense, n),
     period = periods,
     count = counts,
@@ -183,9 +183,9 @@ test_that("drifting denominator is respected via rate interpolation", {
     agency_name = "Test Agency",
     agency_type_name = "City",
     agency_class = "municipal",
-    default_member = TRUE,
     county_name = "TESTONIA",
     state_abbr = "CA",
+    county_fips = "06999",
     offense = rep("V", 3),
     period = periods,
     count = counts,
@@ -288,4 +288,47 @@ test_that("empty detail frame is returned unchanged with new columns", {
   expect_equal(nrow(out), 0L)
   expect_true("imputed" %in% names(out))
   expect_true("impute_method" %in% names(out))
+})
+
+# ---- The shape the CDE actually returns for a gap ---------------------------
+#
+# For a month an agency did not report, the CDE gives no participated
+# population (NA) but still gives its jurisdiction population. Requiring the
+# former meant nothing was ever imputed on real data (0 of 232 gaps in
+# Alameda County, 2021).
+
+test_that("a gap with no participated_population is scaled by population", {
+  detail <- make_detail(
+    ori = "CA9990001",
+    periods = c("01-2021", "02-2021", "03-2021"),
+    counts = c(10, NA, 30),
+    pops = c(20000, 20000, 20000),
+    part_pops = c(20000, NA, 20000)
+  )
+  detail$rate[2] <- NA_real_
+
+  out <- impute_reporting_gaps(detail)
+
+  gap <- out[out$period == "02-2021", ]
+  expect_true(gap$imputed)
+  # rates 50 and 150 -> 100 per 100k, times 20,000 residents -> 20.
+  expect_equal(gap$count, 20)
+  expect_equal(gap$rate, 100)
+  # Still unreported for coverage purposes.
+  expect_false(gap$reported)
+  expect_true(is.na(gap$participated_population))
+})
+
+test_that("an agency with no population (campus, transit) is left unchanged", {
+  detail <- make_detail(
+    ori = "CA9990002",
+    periods = c("01-2021", "02-2021", "03-2021"),
+    counts = c(4, NA, 6),
+    pops = c(0, 0, 0),
+    part_pops = c(0, NA, 0)
+  )
+
+  out <- impute_reporting_gaps(detail)
+  expect_false(any(out$imputed))
+  expect_true(is.na(out$count[out$period == "02-2021"]))
 })

@@ -9,7 +9,7 @@ get_shr(ori = NULL, state_abb = NULL, from = "01-2015", to = "12-2015")
 \arguments{
 \item{ori}{A string of the 9-character ORI code for the desired agency.}
 
-\item{state_abb}{String for state abbreviation. If `NULL` (default) returns
+\item{state_abb}{String for state abbreviation. If \code{NULL} (default) returns
 national data.}
 
 \item{from}{Start date in MM-YYYY format (default "01-2015").}
@@ -21,7 +21,7 @@ A data.frame with columns: geography, period, count
 }
 \description{
 Retrieves homicide offense counts from the FBI's Supplemental Homicide Reports
-via the CDE API endpoint `shr/<level>` with `type=counts`.
+via the CDE API endpoint \verb{shr/<level>} with \code{type=counts}.
 }
 \examples{
 \dontrun{

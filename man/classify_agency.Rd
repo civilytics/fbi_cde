@@ -7,14 +7,14 @@
 classify_agency(agency_type_name)
 }
 \arguments{
-\item{agency_type_name}{Character vector of raw `agency_type_name` values.}
+\item{agency_type_name}{Character vector of raw \code{agency_type_name} values.}
 }
 \value{
-Character vector of `agency_class` values: one of `"county_primary"`,
-  `"municipal"`, `"campus"`, `"state"`, `"tribal"`, `"special"`.
+Character vector of \code{agency_class} values: one of \code{"county_primary"},
+\code{"municipal"}, \code{"campus"}, \code{"state"}, \code{"tribal"}, \code{"special"}.
 }
 \description{
-Maps the CDE's raw `agency_type_name` to a coarse, filterable `agency_class`
-used by the geography functions. Unknown or missing values map to `"special"`.
+Maps the CDE's raw \code{agency_type_name} to a coarse, filterable \code{agency_class}
+used by the geography functions. Unknown or missing values map to \code{"special"}.
 }
 \keyword{internal}

@@ -25,3 +25,5 @@
 ^CLAUDE\.md$
 ^CONTRIBUTING\.md$
 ^data-raw$
+^vignettes/.*\.Rmd\.orig$
+^specs$

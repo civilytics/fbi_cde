@@ -10,13 +10,12 @@ set_api_key(key)
 \item{key}{A character string with the API key (ignored).}
 }
 \value{
-`NULL`. A deprecation message is printed on first call.
+\code{NULL}. A deprecation message is printed on first call.
 }
 \description{
-**Deprecated.** The current CDE API (`cde.ucr.cjis.gov/LATEST/`) does not
+\strong{Deprecated.} The current CDE API (\verb{cde.ucr.cjis.gov/LATEST/}) does not
 require an API key. This function is retained only for backward compatibility
-with code that previously used the legacy `api.data.gov`-hosted API.
-`FBI_API_KEY` is kept as an opt-in switch for live integration tests.
+with code that previously used the legacy \code{api.data.gov}-hosted API.
 }
 \examples{
 \dontrun{

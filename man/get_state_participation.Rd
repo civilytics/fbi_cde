@@ -13,10 +13,10 @@ get_state_participation(state_abb, key = get_api_key())
 }
 \value{
 A one-row data.frame with columns: state_abbr, total_agencies,
-  nibrs_agencies, participation_rate.
+nibrs_agencies, participation_rate.
 }
 \description{
-See [get_agency_participation()] for why this is a modernized
+See \code{\link[=get_agency_participation]{get_agency_participation()}} for why this is a modernized
 reimplementation (share of agencies currently reporting NIBRS) rather than
 the retired year-by-year SRS/NIBRS participation series.
 }

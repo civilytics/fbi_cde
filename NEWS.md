@@ -1,4 +1,340 @@
-# fbi 0.1.0.9000 (development version)
+# fbiCDE 0.1.0.9000 (development version)
+
+## Connecticut metros (#52)
+
+- **Connecticut's seven metros now resolve.** The 2023 delineation builds them
+  from planning regions, Connecticut's county equivalents since 2022, while
+  the bundled agency table has traditional counties, so every Connecticut
+  metro was empty. The CDE's live agency directory now reports each agency's
+  planning region, and the package records that for 101 of the 107 bundled
+  Connecticut agencies (`data-raw/ct_planning_regions.R`). An agency is
+  reachable by its traditional county and by its planning region
+  (`county_agencies("Capitol Planning Region", "CT")`); do not add the two
+  together.
+- The nine planning regions join the county FIPS crosswalk (09110-09190), and
+  a bare region name ("Naugatuck Valley") now resolves to the region rather
+  than to one traditional county it only partly overlaps.
+- Yale and UConn Health campus police are not in the directory under their
+  bundled ORIs, so their metros lack them until the agency snapshot is
+  refreshed. Puerto Rico's metros remain unmapped, with a warning.
+
+## Census codes for places (#46)
+
+- `place_agencies()` and `get_place_crime_detail()` now carry the Census code
+  of the unit each municipal agency polices, as a promised join key:
+  `place_fips` (7 digits, state + place) for a city, town or village;
+  `cousub_fips` (10 digits, state + county + subdivision) for a township or a
+  New England or New York town, which are governments but not Census places;
+  and `place_type` (`"incorporated"`, `"county_subdivision"` or `"cdp"`)
+  saying which applies. 98.7% of the 11,646 municipal agencies resolve; the
+  rest, mostly regional departments, get `NA` rather than a guess.
+- Codes come from a bundled crosswalk built from the Census Bureau's 2020
+  reference code files (`data-raw/place_fips_crosswalk.R`; vintage in the new
+  `PLACE_VINTAGE`). An agency is matched by name only among Census units in
+  its own county; agency coordinates are not used, being too unreliable.
+  Design: `specs/2026-10-06-place-fips-design.md`.
+- `add_place_spatial_members()` keeps the place agency's own codes instead of
+  resetting them to `NA`; the `place_fips` it gives the campus and special
+  agencies it adds is still best-effort (where the headquarters sits).
+- `derive_place_name()` strips the ", <Name> County" that 146 Pennsylvania,
+  Ohio, New Jersey and Michigan agencies carry to tell same-named townships
+  apart. Those places were unreachable by name; now
+  `place_agencies("Hamilton Township", "NJ", county = "Mercer")` finds its
+  department.
+
+## Documentation, distribution and clean-up
+
+- **Arrests by offense: monthly series and age-by-offense demographics.**
+  The arrest endpoint addresses one offense by numeric code
+  (`arrest/<level>/<code>`); a name is an HTTP 400, which the package had read
+  as "a specific offense is no longer addressable". So `get_arrest_count()`
+  returned one total picked out of the all-offense response, and
+  `get_arrest_demographics()` refused any offense, and the juvenile-arrests
+  vignette said the API had no offense-by-age table. It has.
+  - `get_arrest_count(offense = )` returns the offense's **monthly series**
+    (with `comparison = TRUE` too), where it returned one total row.
+  - `get_arrest_demographics(offense = )` accepts any offense name: Ohio's
+    2023 larceny arrests break down to 1,666 under 18.
+  - A name at any level maps to its codes through the new
+    `ucr_arrest_offense_codes` dataset (47 codes, built from the live API by
+    `data-raw/api_vocabularies.R`); a category spanning several codes is
+    their sum, one request each. `"Rape"` and `"Runaway"` have no code and no
+    arrests in the API, and say so.
+  - The API's own all-offense demographics leave out arrests filed under the
+    five "(Unspecified)" offense codes (883 of Ohio's 188,836 in 2023), though
+    its all-offense counts include them. Documented in
+    `?get_arrest_demographics`; summing by offense includes them.
+  - The juvenile-arrests vignette now ranks offenses by juvenile arrests, and
+    the Getting Started vignette shows both.
+- **`get_police_employment()` returns state and national staffing.** It
+  requested `pe/state/{ST}` and `pe/national`, which the CDE answers with
+  every value null, so state and national calls returned no rows, and the
+  package's own tests had recorded those empty answers as "suppressed
+  upstream". The endpoint takes `pe/{ST}` for a state and plain `pe` for the
+  nation (an agency is `pe/{ST}/{ORI}`). No region form returns data, so
+  `region` is now an error. An empty result comes with a message.
+- `get_police_employment()` adds `participated_population` and
+  `employees_per_1000`. A state's counts are sums over the agencies that
+  reported, so they move with coverage: Texas's employee count rose 39% from
+  2018 to 2020 while its rate held near 3.4 per 1,000.
+- Help pages render their markdown. The roxygen comments were written in
+  markdown that the package never enabled, so the help showed backticks and
+  `[fn()]` literally, and any text after a `%` was silently dropped (an
+  unescaped `%` starts an Rd comment).
+- The package is distributed through r-universe
+  (<https://civilytics.r-universe.dev/fbiCDE>), not CRAN. DESCRIPTION's `URL`
+  and `BugReports` point at the public GitHub repository, the maintainer
+  address is real, and the README installs from r-universe. The version is
+  now `0.1.0.9000`, development past the `v0.1.0` release r-universe builds,
+  and this file separates the two.
+- The pkgdown reference index lists every exported topic (place, metro,
+  LEOKA and the county aggregate functions were missing).
+- Removed four unexported helpers left over from the retired api.data.gov
+  API (`make_state()`, `make_year()`, `clean_column_names()`,
+  `combine_url_section()`).
+- The FBI's bulk downloads were investigated (#58); the decision and a
+  download recipe are in `specs/2026-10-06-bulk-downloads-decision.md`. Two of
+  the four documented API gaps (arrests by offense and age; state and national
+  police employment) were package bugs, now fixed. State and national
+  estimates and LEOKA assaults remain bulk-file only, and the package does not
+  read those files.
+- Design specs moved from `docs/superpowers/specs/` to `specs/`, and plans to
+  `specs/plans/` (#61), out of pkgdown's output folder. A Claude Code hook
+  (`.claude/settings.json`) and a Gitea CI step keep them from drifting back
+  to the superpowers default.
+
+## Vignettes
+
+All three vignettes were re-run against the live API, and their prose now
+reads its numbers from the results instead of hard-coding them.
+
+- **Getting Started** (`vignette("fbi")`) was rewritten around the current
+  interface: offense codes, the `comparison` argument, reporting coverage,
+  arrest offense levels, NIBRS codes (with the error an offense name now
+  gives), SHR's reporting gaps (Florida sent 9 homicides for 2019; Georgia
+  484), and LEOKA counting
+  officers killed, not assaulted.
+- **Juvenile arrests** (`vignette("juvenile-arrests")`) corrected:
+  - Reporting coverage comes from `participated_population / population`, not
+    the share of agencies on NIBRS, which measured something else.
+  - The offense ranking covers all 34 offense names at one level, instead of
+    a hand-picked list that left out the largest ("All Other Offenses") and
+    counted drugs through "Drug Abuse Violations" (880 Ohio arrests in 2023),
+    which is only the remainder not classed as possession or sale. The drug
+    total, "Drug/Narcotic Offenses", was 20,997.
+  - The Columbus profile checks that all 12 months reported before using the
+    annual total.
+  - The metro fan-out includes campus police (the default classes), and
+    records the agencies whose requests failed instead of dropping them
+    silently.
+  - Figure alt text is built from the data.
+- **Counties, cities and metro areas** (`vignette("geography")`) is new. It
+  covers membership and agency classes, `get_county_crime_detail()` and the
+  `reported` flag through California's 2021 NIBRS transition, coverage in
+  `get_county_crime()`, `impute_reporting_gaps()`, multi-county agencies,
+  places, metro areas and the `max_agencies` guard.
+
+## Reporting coverage and arrest offense levels
+
+- `get_agency_crime()`, `get_estimated_crime()`, `get_estimated_arson()` and
+  `get_arrest_count()` now return `population` and `participated_population`
+  for each row, from the response's own populations map. Their ratio is the
+  reporting coverage, so a state or national count can be read for what it
+  is: the sum of the agencies that reported. (Pennsylvania's 2023 arrests
+  cover 96% of its population even though only 17% of its agencies report
+  through NIBRS, so NIBRS participation is not a coverage measure.) A
+  single-offense arrest total has no populations; those columns are `NA`.
+- `list_ucr_arrest_offenses(level = )` lists one level of the CDE's arrest
+  names: `"name"` (34), `"category"` (29) or `"breakdown"` (49); the default
+  `"all"` lists every name. Counts within a level do not overlap, so ranking
+  offenses means ranking one level. The `ucr_arrest_offenses` dataset is now
+  a data frame of `offense` and `level`.
+
+## Fixes found by checking against the live API
+
+- **NIBRS works; it never had an outage (#33).** The `nibrs/` endpoint takes
+  short offense codes -- summary groups (`"V"`, `"P"`, `"ROB"`, `"BUR"`, ...)
+  and NIBRS codes (`"13B"`, `"35A"`, `"120"`, ...) -- and answers anything else
+  with an all-null payload. The package documented long names
+  (`list_nibrs_offenses()` returned `"robbery"`,
+  `"burglary-breaking-and-entering"`, ...) and defaulted to `"robbery"` and
+  `"all"`, so every call with documented arguments returned nothing, which
+  read as an upstream outage. Now:
+  - `list_nibrs_offenses()` returns a data.frame of `code` and `label`.
+  - `get_nibrs_victim()`, `get_nibrs_offender()` and `get_nibrs_offense()`
+    default to `offense = "V"`, take codes case-insensitively, and reject an
+    offense name or `"all"` before any request, suggesting the code
+    (`"robbery"` -> `Did you mean "ROB" (Robbery)?`).
+  - The variable lists now match the response: victim `age`, `ethnicity`,
+    `location`, `race`, `relationship`, `sex`; offender `age`, `ethnicity`,
+    `race`, `sex`; offense `related_offenses`, `weapons`. The old lists
+    offered `count`, `bias` and five other variables that do not exist, and
+    `count` was the offender and offense default. Defaults are now `"race"`
+    (victim, offender) and `"weapons"` (offense); an unknown variable is an
+    error.
+  - The NIBRS test fixtures were hand-written, with variables the API never
+    returns; they are replaced by recorded responses.
+- **`get_arrest_count(offense = )` accepts every name the API reports.** It
+  validated against the 34 offense names only, so the 29 categories and 49
+  breakdowns were rejected -- including `"Drug/Narcotic Offenses"`, the only
+  total of drug arrests. (`"Drug Abuse Violations"` is just the drug arrests
+  not classed as possession or sale: 880 of Ohio's 20,997 in 2023.) Names are
+  now checked against the response itself; `ucr_arrest_offenses` lists all 80.
+- **`impute_reporting_gaps()` now fills real gaps.** It scaled interpolated
+  rates by `participated_population`, which the CDE reports as missing for
+  every month an agency did not report, so it filled nothing on real data
+  (0 of 232 gaps in Alameda County, 2021). It now falls back to the agency's
+  `population` in those months (39 of 184 interior gaps filled for Alameda,
+  2020-2021).
+- `get_leoka()` documents that its totals are officers *feloniously killed*
+  (they match the FBI's published 46 in 2020 and 73 in 2021), not assaults.
+- `R/data.R` defined its own copies of `nibrs_offenses`, `ucr_arrest_offenses`,
+  `regions` and the NIBRS variable lists as package objects, a second, stale
+  source of truth that unqualified references picked up. The bundled datasets
+  are now the only copy, rebuilt from the live API by
+  `data-raw/api_vocabularies.R`.
+- **The NYPD, DC's police and the Baltimore City Sheriff are back in their
+  counties.** The CDE gives these three agencies no county (`"N/A"`, or "NOT
+  SPECIFIED" in its live directory), so `county_agencies("District of
+  Columbia", "DC")` found nothing, Manhattan returned a SUNY campus and the
+  State Police, and the New York and Washington metros lacked their largest
+  department. The package now attributes them itself, by ORI, wherever the
+  CDE leaves the county as `"N/A"`:
+  - The NYPD goes to all five boroughs (Bronx, Kings, New York, Queens and
+    Richmond counties). It reports one citywide series, so like any
+    multi-county agency it counts in full in each: **a borough's results are
+    New York City's**, with the city's population.
+  - DC's Metropolitan Police goes to the District of Columbia, and the
+    Baltimore City Sheriff to Baltimore city.
+
+  The county FIPS crosswalk gains Queens (36081), Richmond (36085) and the
+  District of Columbia (11001), which no agency named before
+  (`data-raw/crosswalk_attributed_counties.R`). `fbi_api_agencies` itself
+  still holds the CDE's values.
+
+## Interface changes (breaking)
+
+- **Comparison rows are stripped by default.** For an agency or state, the
+  CDE also sends its state's and the nation's series (a rate but no count).
+  `get_agency_crime()`, `get_estimated_crime()`, `get_estimated_arson()`,
+  `get_arrest_count()` and `get_county_agency_crime()` returned them mixed in
+  with the geography's own rows (an Oakland query gave 18 rows, 6 of them
+  Oakland's), so `mean(rate)` or a plot by period silently mixed geographies.
+  They now return only the queried geography's own series; `comparison = TRUE`
+  brings the others back, labelled by new `series` (`"agency"`, `"state"`,
+  `"national"`) and `series_name` columns.
+- **New output columns for those functions:** `offense` is now the requested
+  code (e.g. `"V"`, or `"all"` for arrests) rather than a series label such as
+  `"Oakland Police Department Offenses"`, and a new `measure` column says
+  `"offenses"`, `"clearances"` or `"arrests"`. Periods are sorted
+  chronologically (they had been sorted as strings, which misorders across
+  years).
+- **`default_only` and `default_member` are gone; `include_statewide` replaces
+  them.** `get_county_crime_detail()`, `get_place_crime_detail()` and
+  `get_metro_crime_detail()` now query, by default, the agencies whose
+  jurisdiction is a specific area below the state: sheriffs, city police and
+  campus police. `include_statewide = TRUE` adds state agencies (state police
+  and highway patrol, other state agencies). Special-purpose agencies
+  (transit, school, airport, port, park and railroad police, task forces) and
+  tribal agencies are queried only when named in `agency_class`. Membership is
+  decided by agency type alone, never by parsing names. What changes:
+  - County: previously every attributed agency was queried; special, state and
+    tribal agencies are now opt-in.
+  - Place and metro: campus police are now included by default (place: when
+    supplied via `add_place_spatial_members()`).
+  - `agency_class` values are validated; an unknown class is an error.
+- `agency_class` corrections: the 11 `"Census Area"` agencies are Alaska city
+  police departments (Nome, Bethel, ...) and are now `"municipal"` (and place
+  members) instead of `"special"`; `"Other State Agency"` is now `"state"`
+  instead of `"special"`.
+- **`fbi_api_agencies` has real column types:** `nibrs` is logical,
+  `latitude`/`longitude` numeric, `nibrs_start_date` a Date, with `NA` where
+  the source had the string `"NULL"`. One placeholder coordinate (`-9, -9`) is
+  now `NA`. The documentation now notes the table is a snapshot whose NIBRS
+  start dates run to September 2019. The conversion is recorded in
+  `data-raw/fbi_api_agencies_types.R`.
+- Tribal agencies' attribution to counties (reservations often cross county
+  lines) and the special-purpose class (single-site agencies mixed with
+  multi-county task forces) are deferred for a later design.
+
+## Network resilience and test infrastructure
+
+- `cde_request()` now retries transient failures with exponential backoff
+  (1, 2, 4 seconds, capped at 30): network errors and timeouts, and HTTP 408,
+  429, 500, 502, 503 and 504. A `Retry-After` header in seconds is honoured
+  (capped at 60); other statuses fail immediately, as before. Each attempt has
+  a timeout. Previously a single dropped connection failed the call, and in a
+  county or metro fan-out silently removed that agency from the totals. Tune
+  with `options(fbiCDE.max_retries = 3)` (`0` disables retries) and
+  `options(fbiCDE.timeout = 60)` (seconds).
+- Offline fixtures are now parsed exactly as `cde_request()` parses live
+  responses (`simplifyVector = FALSE`). They used to be simplified to
+  data.frames, so tests exercised a shape production never sees; the parser
+  branches that existed only for that shape are removed.
+- Live API tests are switched on with `FBI_CDE_LIVE=true`. They used to require
+  `FBI_API_KEY` (the CDE needs no key) and always skipped on CI, so nothing
+  automated ever ran them. `.gitea/live-api.yaml.example` is a ready-made
+  weekly Gitea workflow for them (inert until moved into `.gitea/workflows/`);
+  they deliberately do not run on GitHub.
+- Removed the legacy test scaffolding inherited from the original package:
+  `tests/testthat/setup.R` and the 86 CSVs plus one `.rda` in `inst/testdata`
+  (recorded from the retired `api.usa.gov` API, shipped in every build, and
+  unused by any test), along with the internal reader for them.
+
+## Correctness fixes from the package review
+
+Several of these are regressions from the multi-county matching fix (#56): an
+agency that polices several counties now matches each of them, but its raw
+`county_name` (`"DELAWARE; FAIRFIELD; FRANKLIN"`) was still treated as the
+row's county downstream.
+
+- **Behaviour change:** `county_agencies()` now sets `county_name` to the
+  queried county on every row, and keeps the CDE's own list in a new
+  `agency_county_names` column (also on `metro_agencies()`). Previously a
+  multi-county agency carried its raw list, which:
+  - split `get_county_crime()` into one row per distinct string. Franklin
+    County, OH aggregated to 7 rows per period instead of 1.
+  - gave `county_agencies()` the wrong `county_fips` whenever the first
+    matching agency was multi-county. Licking County, OH got Fairfield's FIPS
+    (39045 instead of 39089), which then fed the wrong population to
+    `join_census_pop()`.
+  - left `metro_agencies()` rows internally inconsistent: `county_fips` and
+    `central_outlying` described one county while `county_name` listed three.
+- `get_county_crime_detail()` now returns `county_fips`. Without it,
+  `join_census_pop()` errored on real detail output, so the documented
+  `denominator = "census_pop"` workflow never worked; the tests had been adding
+  the column by hand.
+- `county_to_fips()` now looks the name up in the bundled crosswalk before
+  applying its patch table. Four Virginia independent cities that share a name
+  with a county resolved to the county: Richmond city gave 51159 (Richmond
+  County) instead of 51760, and likewise Fairfax, Franklin and Roanoke cities.
+  It now agrees with the crosswalk for every county name the CDE uses (a new
+  test checks all 3,733).
+- `counties_with_fips()` returned a zero-row data.frame. It now returns one row
+  per resolvable county (`state_abbr`, `county_name`, `county_fips`).
+- `get_agencies()` requested `agency/{state}` and coerced the response with
+  `as.data.frame()`, which on the live county-keyed shape gave one junk row per
+  state. It now uses `agency/byStateAbbr/{state}` (the endpoint the
+  participation functions already use), returns one row per agency, and skips a
+  failing state with a warning rather than erroring. Its offline fixture
+  (`agency-byStateAbbr-CA.json`) was synthetic and did not match the endpoint's
+  real shape; the test now uses the recorded Rhode Island response, parsed both
+  ways, and checks the request path.
+- `place_agencies(county = )` compared the county exactly, so
+  `place_agencies("Columbus", "OH", county = "Franklin")` found nothing.
+- The agency fan-out behind `get_*_crime_detail()` now keeps each failed
+  agency's error in `attr(x, "dropped_reasons")`, and its warning no longer
+  says "returned no data" for what may be an HTTP or parse error.
+  `get_county_crime()` warns when its input carries dropped agencies and keeps
+  `attr(x, "dropped")`: those agencies are missing from the denominator too,
+  so `coverage_fraction` cannot account for them.
+- README: `get_arrest_demographics(offense = "murder")` always errors (only
+  `"all"` is supported); the NIBRS offender example now uses a call known to
+  return data.
+- `?cde_base_url` named the pre-rename option `fbi.cde.base_url`; it is
+  `fbiCDE.cde.base_url`.
+
+# fbiCDE 0.1.0
 
 ## Metro (CBSA) geography (v0.5, Issue #45)
 

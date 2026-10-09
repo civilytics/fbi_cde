@@ -10,30 +10,34 @@ county_to_fips(state, county)
 counties_with_fips()
 }
 \arguments{
-\item{state}{A two-letter state abbreviation (e.g. `"CA"`, `"TX"`) or a
-two-digit state FIPS code (e.g. `"06"`, `"48"`). Case-insensitive.}
+\item{state}{A two-letter state abbreviation (e.g. \code{"CA"}, \code{"TX"}) or a
+two-digit state FIPS code (e.g. \code{"06"}, \code{"48"}). Case-insensitive.}
 
-\item{county}{A county name as stored in `fbi_api_agencies` (typically
-uppercase, may include `" CITY"` suffix for independent cities, or
-`";"` for multi-county agencies).}
+\item{county}{A county name as stored in \code{fbi_api_agencies} (typically
+uppercase, may include \code{" CITY"} suffix for independent cities, or
+\code{";"} for multi-county agencies).}
 }
 \value{
-A character string with the 5-digit county FIPS code (e.g. `"06037"`)
-  or `NA_character_` when the county cannot be resolved (e.g. `"N/A"` county,
-  dissolved boroughs).
+A character string with the 5-digit county FIPS code (e.g. \code{"06037"})
+or \code{NA_character_} when the county cannot be resolved (e.g. \code{"N/A"} county,
+dissolved boroughs). \code{counties_with_fips()} returns a data.frame with one
+row per resolvable county: \code{state_abbr}, \code{county_name} (as the CDE spells
+it), and \code{county_fips}.
 }
 \description{
 Map a state + county name to a 5-digit county FIPS code using the FBI's
 internal agency-to-county mapping and a tigris-derived crosswalk.
 }
 \details{
-The crosswalk is built at package build time from `tigris::counties()` and
-covers 98.6% of unique (state, county) pairs in `fbi_api_agencies`.
+The crosswalk is built at package build time from \code{tigris::counties()} and
+covers 98.6\% of unique (state, county) pairs in \code{fbi_api_agencies}.
 
 Unresolvable cases:
-- `county = "N/A"` (agency has no county assigned — state police, tribal, etc.)
-- `VALDEZ-CORDOVA` (dissolved AK borough; split into Chugach & Copper River
-  census areas in 2015, no single FIPS exists)
+\itemize{
+\item \code{county = "N/A"} (agency has no county assigned — state police, tribal, etc.)
+\item \code{VALDEZ-CORDOVA} (dissolved AK borough; split into Chugach & Copper River
+census areas in 2015, no single FIPS exists)
+}
 }
 \examples{
 county_to_fips("CA", "LOS ANGELES")
