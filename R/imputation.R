@@ -27,7 +27,8 @@
 #'
 #' @param detail A data.frame as returned by [get_county_crime_detail()], with at
 #'   least the columns: \code{ori}, \code{offense}, \code{period}, \code{count},
-#'   \code{participated_population}, \code{rate}, \code{reported}.
+#'   \code{population}, \code{participated_population}, \code{rate},
+#'   \code{reported}.
 #' @param method Imputation method. Currently only `"interpolate"` is supported,
 #'   which uses linear interpolation of \code{rate} across time (in months), then
 #'   scales by each gap month's own population as described above. Gaps at the
@@ -54,7 +55,7 @@ impute_reporting_gaps <- function(detail, method = "interpolate") {
     stop("'detail' must be a data.frame", call. = FALSE)
   }
 
-  required_cols <- c("ori", "offense", "period", "count",
+  required_cols <- c("ori", "offense", "period", "count", "population",
                      "participated_population", "rate", "reported")
   missing_cols <- setdiff(required_cols, names(detail))
   if (length(missing_cols) > 0) {
@@ -67,11 +68,11 @@ impute_reporting_gaps <- function(detail, method = "interpolate") {
          "'. Only 'interpolate' is supported.", call. = FALSE)
   }
 
-  # Convert MM-YYYY to numeric YYYYMM for ordering and interpolation.
-  period_to_num <- function(p) {
-    parts <- strsplit(p, "-", fixed = TRUE)
-    as.numeric(vapply(parts, function(x) paste0(x[2], x[1]), character(1)))
-  }
+  # Months since year 0, so consecutive months are 1 apart across a year
+  # boundary. YYYYMM put 12-2020 and 01-2021 89 apart, so interpolation
+  # across a new year drifted toward the later value: a 2021 gap between
+  # 12-2020 and 01-2022 was filled almost flat at the 2022 level.
+  period_to_num <- .period_key
 
   # Handle empty input: add flag columns and return immediately.
   if (nrow(detail) == 0L) {

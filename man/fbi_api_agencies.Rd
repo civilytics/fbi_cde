@@ -10,7 +10,10 @@ A data frame with 18459 rows and 13 variables:
 \item{ori}{9-character unique ID for the agency (ORI)}
 \item{agency_name}{Agency name}
 \item{agency_type_name}{Type of department, e.g. City, County,
-University or College}
+University or College. Louisiana's and Alaska's types are the CDE's
+live directory's: the snapshot had typed every Louisiana agency
+\code{"Parish"} and every Alaska agency by its borough or census area.
+\code{NA} for 18 of those agencies that the directory no longer lists}
 \item{state_name}{State name}
 \item{state_abbr}{State abbreviation}
 \item{division_name}{Census division name}

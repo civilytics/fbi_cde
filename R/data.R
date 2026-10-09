@@ -80,8 +80,8 @@
 #' level to its codes and sum them. Built by `data-raw/api_vocabularies.R`
 #' from the `lookup/offenses?type=arrest` codes (plus Suspicion, 320, which
 #' the lookup omits), placing each by the names its own response reports.
-#' Two names in [ucr_arrest_offenses], `"Rape"` and `"Runaway"`, have no code
-#' and no arrests.
+#' Three names in [ucr_arrest_offenses], `"Rape"`, `"Rape - Not Specified"`
+#' and `"Runaway"`, have no code and no arrests.
 #'
 #' @format A data frame with 47 rows and 5 variables:
 #' \describe{
@@ -107,7 +107,10 @@
 #'   \item{ori}{9-character unique ID for the agency (ORI)}
 #'   \item{agency_name}{Agency name}
 #'   \item{agency_type_name}{Type of department, e.g. City, County,
-#'   University or College}
+#'   University or College. Louisiana's and Alaska's types are the CDE's
+#'   live directory's: the snapshot had typed every Louisiana agency
+#'   \code{"Parish"} and every Alaska agency by its borough or census area.
+#'   \code{NA} for 18 of those agencies that the directory no longer lists}
 #'   \item{state_name}{State name}
 #'   \item{state_abbr}{State abbreviation}
 #'   \item{division_name}{Census division name}

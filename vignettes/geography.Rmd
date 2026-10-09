@@ -22,7 +22,7 @@ boundary. This vignette shows how membership is decided, what the itemised
 results look like, and how to add them up without fooling yourself.
 
 Everything below was run against the live API on
-2026-10-06.
+2026-10-09.
 
 
 ```r
@@ -136,8 +136,8 @@ county <- get_county_crime(detail)
 county[county$period %in% c("06-2020", "06-2021"),
        c("period", "count", "population", "rate", "coverage_fraction")]
 #>     period count population       rate coverage_fraction
-#> 11 06-2020   792    1673000 47.3401076       1.000000000
-#> 12 06-2021    11    1663468  0.6612691       0.007255324
+#> 6  06-2020   792    1673000 47.3401076       1.000000000
+#> 18 06-2021    11    1663468  0.6612691       0.007255324
 ```
 
 

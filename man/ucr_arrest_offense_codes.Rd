@@ -28,7 +28,7 @@ breakdown, and reports its arrests under one offense name and one category.
 level to its codes and sum them. Built by \code{data-raw/api_vocabularies.R}
 from the \code{lookup/offenses?type=arrest} codes (plus Suspicion, 320, which
 the lookup omits), placing each by the names its own response reports.
-Two names in \link{ucr_arrest_offenses}, \code{"Rape"} and \code{"Runaway"}, have no code
-and no arrests.
+Three names in \link{ucr_arrest_offenses}, \code{"Rape"}, \code{"Rape - Not Specified"}
+and \code{"Runaway"}, have no code and no arrests.
 }
 \keyword{datasets}

@@ -17,6 +17,7 @@ make_detail <- function(ori, offense = "V", periods, counts,
     county_name = "TESTONIA",
     state_abbr = "CA",
     county_fips = "06999",
+    agency_county_names = "TESTONIA",
     offense = rep(offense, n),
     period = periods,
     count = counts,
@@ -29,6 +30,36 @@ make_detail <- function(ori, offense = "V", periods, counts,
 }
 
 # ---- Layer 2 aggregate tests ----------------------------------------------
+
+test_that("get_county_crime reports a month no agency reported as NA, not 0", {
+  a <- make_detail(ori = "CA9990001", periods = c("11-2019", "12-2019"),
+                   counts = c(5, NA), part_pops = c(20000, NA))
+  b <- make_detail(ori = "CA9990002", periods = c("11-2019", "12-2019"),
+                   counts = c(7, NA), part_pops = c(20000, NA))
+  out <- get_county_crime(rbind(a, b))
+
+  dec <- out[out$period == "12-2019", ]
+  expect_true(is.na(dec$count))
+  expect_true(is.na(dec$rate))
+  expect_equal(dec$coverage_fraction, 0)
+  # A month someone reported still sums what was reported.
+  expect_equal(out$count[out$period == "11-2019"], 12)
+})
+
+test_that("get_county_crime returns periods in chronological order", {
+  periods <- c("11-2019", "12-2019", "01-2020", "02-2020")
+  detail <- make_detail(ori = "CA9990001", periods = periods,
+                        counts = c(1, 2, 3, 4))
+  out <- get_county_crime(detail[c(3, 1, 4, 2), ])
+  expect_equal(out$period, periods)
+  expect_equal(out$count, c(1, 2, 3, 4))
+})
+
+test_that("get_county_crime says which grouping columns are missing", {
+  detail <- make_detail(ori = "CA9990001", periods = "01-2021", counts = 1)
+  detail$county_name <- NULL
+  expect_error(get_county_crime(detail), "county_name")
+})
 
 test_that("get_county_crime sums counts and uses jurisdiction_pop denominator", {
   # Two agencies in the same county, same period.
