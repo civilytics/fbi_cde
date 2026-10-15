@@ -100,6 +100,24 @@ test_that("a year without estimates fails before any other request", {
   expect_equal(seen$paths, "nibrs-estimation/state/6/133")
 })
 
+test_that("a state without a published estimate says so", {
+  seen <- new.env()
+  seen$paths <- character(0)
+  fixture <- read_fixture("nibrs-estimation-state-5-133-2022.json")
+  local_mocked_bindings(
+    cde_request = function(path, ...) {
+      seen$paths <- c(seen$paths, path)
+      fixture
+    },
+    .package = "fbiCDE"
+  )
+  expect_equal(nrow(get_nibrs_estimate("AZ", year = 2022)), 0L)
+  seen$paths <- character(0)
+  expect_error(imputation_gap("AZ", year = 2022),
+               "The FBI publishes no V total for AZ in 2022.", fixed = TRUE)
+  expect_equal(seen$paths, "nibrs-estimation/state/5/133")
+})
+
 test_that("unsupported arguments are refused before any request", {
   local_mocked_bindings(
     cde_request = function(...) stop("no request expected"),
@@ -131,6 +149,13 @@ test_that("every supported offense's estimate matches Texas's NIBRS counts live"
     out <- imputation_gap("TX", year = 2022, offense = code)
     expect_lt(abs(out$share_estimated), 0.1, label = code)
   }
+})
+
+test_that("Arizona has no published estimate live", {
+  skip_if_no_fbi_api()
+  # Fails if the FBI starts publishing Arizona's estimate: the offline test
+  # then needs another state's recorded empty response.
+  expect_error(imputation_gap("AZ", year = 2022), "publishes no V total")
 })
 
 test_that("the national gap covers both estimate years live", {

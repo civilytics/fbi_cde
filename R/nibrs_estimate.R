@@ -198,6 +198,8 @@ parse_nibrs_estimate_response <- function(response, geography, year, offense,
 #'   `"Offense"` table's row with `variable` `"Offense Count - Total"`.
 #'   Bounds are as published: `NA` where the FBI gives none, and below zero
 #'   for some small counts.
+#'   A geography the FBI publishes no estimate for (Arizona, in both years)
+#'   returns zero rows.
 #' @export
 #'
 #' @examples

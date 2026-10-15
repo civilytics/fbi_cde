@@ -37,8 +37,9 @@
   est <- get_nibrs_estimate(state_abb, year = year, offense = offense)
   total <- est[est$variable == "Offense Count - Total", , drop = FALSE]
   if (nrow(total) != 1L) {
-    stop("The FBI's estimate for ", offense, " in ", year,
-         " has no offense total.", call. = FALSE)
+    stop("The FBI publishes no ", offense, " total for ",
+         if (is.null(state_abb)) "the nation" else state_abb, " in ", year,
+         ".", call. = FALSE)
   }
 
   reported <- .series_total(get_reported_crime(

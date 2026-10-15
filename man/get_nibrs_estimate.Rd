@@ -27,6 +27,8 @@ A data.frame with one row per category: \code{geography}, \code{year},
 \code{"Offense"} table's row with \code{variable} \code{"Offense Count - Total"}.
 Bounds are as published: \code{NA} where the FBI gives none, and below zero
 for some small counts.
+A geography the FBI publishes no estimate for (Arizona, in both years)
+returns zero rows.
 }
 \description{
 Returns the FBI's \emph{estimate}: its published figure for a state or the
