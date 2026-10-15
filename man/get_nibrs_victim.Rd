@@ -53,6 +53,7 @@ get_nibrs_victim(state_abb = "OH", offense = "ROB", variable = "age",
 }
 \seealso{
 Other NIBRS functions:
+\code{\link[=get_nibrs_estimate]{get_nibrs_estimate()}},
 \code{\link[=get_nibrs_offender]{get_nibrs_offender()}},
 \code{\link[=get_nibrs_offense]{get_nibrs_offense()}},
 \code{\link[=list_nibrs_offender_variables]{list_nibrs_offender_variables()}},

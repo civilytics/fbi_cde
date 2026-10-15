@@ -31,6 +31,12 @@ reference:
       - get_state_participation
       - get_region_participation
       - get_agency_participation
+  - title: Published estimates
+    desc: >
+      The FBI's NIBRS estimates, and how much of them was modeled rather
+      than reported
+    contents:
+      - get_nibrs_estimate
   - title: Counties
     desc: >
       County membership, itemized crime per agency, and the county aggregate

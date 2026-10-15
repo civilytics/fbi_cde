@@ -7,6 +7,15 @@
 crime agencies reported to the FBI, never the FBI's estimates, and the new
 names say so. The old names still work and warn.
 
+## The FBI's published estimates
+
+- `get_nibrs_estimate()` returns the FBI's NIBRS estimates for a state or
+  the nation, with 95% confidence intervals, by offense table (offenses,
+  victims, incidents, arrests). The API has them for 2021 and 2022 only.
+  The new bundled tables `nibrs_estimation_states`,
+  `nibrs_estimation_indicators` and `nibrs_estimation_years` hold the
+  estimates' own state and offense IDs.
+
 ## Fixes from a second package review
 
 Found by reviewing the code end to end and checking each finding against the

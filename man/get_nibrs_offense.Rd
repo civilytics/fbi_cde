@@ -48,6 +48,7 @@ get_nibrs_offense(state_abb = "OH", offense = "ROB", variable = "weapons",
 }
 \seealso{
 Other NIBRS functions:
+\code{\link[=get_nibrs_estimate]{get_nibrs_estimate()}},
 \code{\link[=get_nibrs_offender]{get_nibrs_offender()}},
 \code{\link[=get_nibrs_victim]{get_nibrs_victim()}},
 \code{\link[=list_nibrs_offender_variables]{list_nibrs_offender_variables()}},
