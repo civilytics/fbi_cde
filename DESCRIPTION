@@ -1,6 +1,6 @@
 Package: fbiCDE
 Title: R Wrapper for the FBI Crime Data Explorer (CDE) API
-Version: 0.1.0.9000
+Version: 0.2.0
 Authors@R: 
     person(given = "Jared E.",
            family = "Knowles",
@@ -38,5 +38,5 @@ Imports:
 Language: en-US
 Config/testthat/edition: 3
 Roxygen: list(markdown = TRUE)
-Config/roxygen2/version: 8.0.0
+Config/roxygen2/version: 8.1.1
 VignetteBuilder: knitr

@@ -43,7 +43,7 @@ fetches it.
 }
 \details{
 This function was called \code{get_estimated_crime()} until fbiCDE
-0.1.0.9000; the old name still works and warns.
+0.2.0; the old name still works and warns.
 }
 \examples{
 \dontrun{

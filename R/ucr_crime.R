@@ -71,7 +71,7 @@ get_agency_crime <- function(ori,
 #' fetches it.
 #'
 #' This function was called `get_estimated_crime()` until fbiCDE
-#' 0.1.0.9000; the old name still works and warns.
+#' 0.2.0; the old name still works and warns.
 #'
 #' @seealso `vignette("estimates")` for reported, estimated and imputed
 #'   crime.
@@ -125,7 +125,7 @@ get_reported_crime <- function(state_abb = NULL,
 #'
 #' [get_reported_crime()] for arson (`offense = "ARS"`): reported sums, not
 #' the FBI's estimates. Called `get_estimated_arson()` until fbiCDE
-#' 0.1.0.9000; the old name still works and warns.
+#' 0.2.0; the old name still works and warns.
 #'
 #' @family UCR crime functions
 #' @inheritParams get_reported_crime

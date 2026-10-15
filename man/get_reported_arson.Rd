@@ -29,7 +29,7 @@ A data.frame with the columns described in \code{\link[=get_agency_crime]{get_ag
 \description{
 \code{\link[=get_reported_crime]{get_reported_crime()}} for arson (\code{offense = "ARS"}): reported sums, not
 the FBI's estimates. Called \code{get_estimated_arson()} until fbiCDE
-0.1.0.9000; the old name still works and warns.
+0.2.0; the old name still works and warns.
 }
 \examples{
 \dontrun{

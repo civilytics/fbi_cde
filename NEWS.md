@@ -1,4 +1,4 @@
-# fbiCDE 0.1.0.9000 (development version)
+# fbiCDE 0.2.0
 
 ## Renamed: `get_reported_crime()` and `get_reported_arson()`
 
@@ -119,7 +119,8 @@ live API.
 
 ### Capstone
 
-- The design for the imputation-gap capstone (#42) is proposed in
+- The design for the imputation-gap capstone (#42), which shipped as
+  `imputation_gap()` above, is in
   `specs/2026-10-09-capstone-imputation-gap-design.md`. The API does publish
   FBI estimates, as NIBRS estimates for 2021-2022 (`nibrs-estimation/`), and
   they show what the capstone is for: California's 2021 violent crime summed
