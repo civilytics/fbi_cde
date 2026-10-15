@@ -37,6 +37,7 @@ reference:
       than reported
     contents:
       - get_nibrs_estimate
+      - imputation_gap
   - title: Counties
     desc: >
       County membership, itemized crime per agency, and the county aggregate
