@@ -76,3 +76,7 @@ get_county_crime(detail)
 get_county_crime(detail, denominator = "participated_pop")
 }
 }
+\seealso{
+\code{vignette("estimates")} for reported, estimated and imputed
+crime.
+}

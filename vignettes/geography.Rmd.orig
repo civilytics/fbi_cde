@@ -130,9 +130,9 @@ filled <- impute_reporting_gaps(detail)
 table(reported = filled$reported, imputed = filled$imputed)
 ```
 
-Imputation is opt-in and visible: the raw detail is never altered, and
-`participated_population` stays missing on imputed rows, so coverage still
-shows the month as unreported.
+Imputation by `impute_reporting_gaps()` is opt-in and visible: the raw
+detail is never altered, and `participated_population` stays missing on
+imputed rows, so coverage still shows the month as unreported.
 
 ## Agencies in more than one county
 

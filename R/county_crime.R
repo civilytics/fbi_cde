@@ -307,6 +307,8 @@ get_county_agency_crime <- function(county, state, offense = "V",
 #'   `detail` carries `attr(detail, "dropped")` (agencies whose request failed
 #'   in [get_county_crime_detail()]), the result warns and keeps that attribute:
 #'   those agencies are missing from every total, including the denominator.
+#' @seealso `vignette("estimates")` for reported, estimated and imputed
+#'   crime.
 #' @export
 #' @examples
 #' \dontrun{

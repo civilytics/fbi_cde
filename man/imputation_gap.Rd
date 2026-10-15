@@ -74,6 +74,9 @@ imputation_gap(year = 2021:2022)
 }
 }
 \seealso{
+\code{vignette("estimates")} for reported, estimated and imputed
+crime.
+
 Other NIBRS functions:
 \code{\link[=get_nibrs_estimate]{get_nibrs_estimate()}},
 \code{\link[=get_nibrs_offender]{get_nibrs_offender()}},

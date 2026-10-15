@@ -53,6 +53,9 @@ ca[ca$variable == "Offense Count - Total", ]
 }
 }
 \seealso{
+\code{vignette("estimates")} for reported, estimated and imputed
+crime.
+
 Other NIBRS functions:
 \code{\link[=get_nibrs_offender]{get_nibrs_offender()}},
 \code{\link[=get_nibrs_offense]{get_nibrs_offense()}},

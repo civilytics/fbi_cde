@@ -51,6 +51,9 @@ get_reported_crime("CA")
 }
 }
 \seealso{
+\code{vignette("estimates")} for reported, estimated and imputed
+crime.
+
 Other UCR crime functions:
 \code{\link[=get_agency_crime]{get_agency_crime()}},
 \code{\link[=get_agency_participation]{get_agency_participation()}},

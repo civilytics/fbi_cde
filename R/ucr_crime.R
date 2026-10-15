@@ -73,6 +73,8 @@ get_agency_crime <- function(ori,
 #' This function was called `get_estimated_crime()` until fbiCDE
 #' 0.1.0.9000; the old name still works and warns.
 #'
+#' @seealso `vignette("estimates")` for reported, estimated and imputed
+#'   crime.
 #' @family UCR crime functions
 #' @param state_abb String for state abbreviation. If `NULL` (default) returns
 #'   national data.

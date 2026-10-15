@@ -22,6 +22,9 @@ names say so. The old names still work and warn.
   California did in 2022, as well as agencies that did not report. For
   California, the model supplied 83% of the 2021 violent-crime estimate and
   65% of 2022's.
+- `vignette("estimates")` defines *reported*, *estimated* and *imputed*,
+  which the package's documentation now uses consistently, and shows the
+  California and national comparisons.
 
 ## Fixes from a second package review
 

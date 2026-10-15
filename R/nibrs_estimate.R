@@ -181,6 +181,8 @@ parse_nibrs_estimate_response <- function(response, geography, year, offense,
 #' "NIBRS Estimates" page, which the CDE's public API documentation does not
 #' list.
 #'
+#' @seealso `vignette("estimates")` for reported, estimated and imputed
+#'   crime.
 #' @family NIBRS functions
 #' @param state_abb String for state abbreviation. If `NULL` (default) returns
 #'   national data.

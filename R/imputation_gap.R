@@ -131,6 +131,8 @@
 #'   \item{share_estimated, share_lower, share_upper}{`gap / published`: the
 #'     share of the published figure the model supplied, with bounds}
 #' }
+#' @seealso `vignette("estimates")` for reported, estimated and imputed
+#'   crime.
 #' @family NIBRS functions
 #' @export
 #'
