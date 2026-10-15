@@ -1,6 +1,6 @@
 Package: fbiCDE
 Title: R Wrapper for the FBI Crime Data Explorer (CDE) API
-Version: 0.2.0
+Version: 0.2.0.9000
 Authors@R: 
     person(given = "Jared E.",
            family = "Knowles",
