@@ -107,6 +107,9 @@ reference:
       - ucr_arrest_offenses
       - ucr_arrest_offense_codes
       - regions
+      - nibrs_estimation_states
+      - nibrs_estimation_indicators
+      - nibrs_estimation_years
   - title: API Key Management
     desc: Functions for managing API keys (legacy)
     contents:

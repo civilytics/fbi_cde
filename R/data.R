@@ -131,3 +131,47 @@
 #' }
 #' @source \url{https://cde.ucr.cjis.gov/LATEST/}
 "fbi_api_agencies"
+
+#' States the FBI's NIBRS estimates cover, with their estimate IDs.
+#'
+#' The estimates API identifies a state by its own number, in roughly
+#' alphabetical order of the postal code (Alaska 1, Alabama 2, California
+#' 6), not by FIPS. Built from `nibrs-estimation/lookup/all` by
+#' `data-raw/api_vocabularies.R`. The lookup's "Federal" and "Other" entries
+#' have no state abbreviation and are left out.
+#'
+#' @format A data frame with 57 rows and 3 variables:
+#' \describe{
+#'   \item{state_abbr}{Postal abbreviation, as passed to `state_abb`}
+#'   \item{state_name}{Name as the lookup gives it}
+#'   \item{id}{The estimates API's state ID}
+#' }
+#' @source \url{https://cde.ucr.cjis.gov/LATEST/nibrs-estimation/lookup/all}
+"nibrs_estimation_states"
+
+#' Offenses ("indicators") the FBI's NIBRS estimates cover.
+#'
+#' Built from `nibrs-estimation/lookup/all` by `data-raw/api_vocabularies.R`.
+#' [get_nibrs_estimate()] accepts an `id` from this table, or one of the
+#' summary codes `"V"`, `"P"`, `"ROB"`, `"ASS"`, `"BUR"`, `"LAR"`, `"MVT"`,
+#' `"ARS"`, `"HOM"` and `"RPE"`.
+#'
+#' @format A data frame with 71 rows and 3 variables:
+#' \describe{
+#'   \item{group}{The lookup's group: `"Person"`, `"Property"`, `"Society"`
+#'     or `"GroupB"`}
+#'   \item{indicator}{Offense name, e.g. `"Violent Crime"`}
+#'   \item{id}{The estimates API's indicator ID, e.g. 133}
+#' }
+#' @source \url{https://cde.ucr.cjis.gov/LATEST/nibrs-estimation/lookup/all}
+"nibrs_estimation_indicators"
+
+#' Years the FBI's NIBRS estimates cover in the API.
+#'
+#' Built from `nibrs-estimation/lookup/all` by `data-raw/api_vocabularies.R`.
+#' The API publishes estimates for 2021 and 2022 only; a live test fails when
+#' the FBI adds a year, so the package can be rebuilt.
+#'
+#' @format An integer vector.
+#' @source \url{https://cde.ucr.cjis.gov/LATEST/nibrs-estimation/lookup/all}
+"nibrs_estimation_years"
