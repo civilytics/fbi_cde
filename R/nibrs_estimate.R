@@ -53,8 +53,9 @@
 # estimate indicator each maps to (by its name in nibrs_estimation_indicators)
 # and the NIBRS offense codes whose counts make up the same offense. Summary
 # property crime is burglary, larceny and motor vehicle theft (arson is
-# separate); summary rape is the revised definition (11A, 11B, 11C). Each
-# code was checked live against summarized/ on 2026-10-15 (spec 3.3).
+# separate); summary rape is the revised definition (11A, 11B, 11C), the
+# estimates' "Revised Rape" (their "Rape" is 11A alone). Each code was
+# checked live against summarized/ on 2026-10-15 (spec 3.3).
 .ESTIMATE_OFFENSES <- list(
   V   = list(indicator = "Violent Crime",
              nibrs = c("09A", "11A", "11B", "11C", "120", "13A")),
@@ -71,7 +72,7 @@
   ARS = list(indicator = "Arson", nibrs = "200"),
   HOM = list(indicator = "Murder and Non-negligent Manslaughter",
              nibrs = "09A"),
-  RPE = list(indicator = "Rape", nibrs = c("11A", "11B", "11C"))
+  RPE = list(indicator = "Revised Rape", nibrs = c("11A", "11B", "11C"))
 )
 
 .ESTIMATE_COLS <- c("geography", "year", "offense", "indicator", "table",

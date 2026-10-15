@@ -28,6 +28,11 @@ test_that("every supported offense maps to exactly one estimate indicator", {
   expect_equal(
     ind$id[ind$indicator == .ESTIMATE_OFFENSES$V$indicator], 133L
   )
+  # Summary rape is the revised definition: the estimates' "Revised Rape"
+  # (120), not their "Rape" (118), which is NIBRS 11A alone.
+  expect_equal(
+    ind$id[ind$indicator == .ESTIMATE_OFFENSES$RPE$indicator], 120L
+  )
   expect_equal(.ESTIMATE_OFFENSES$V$nibrs,
                c("09A", "11A", "11B", "11C", "120", "13A"))
 })

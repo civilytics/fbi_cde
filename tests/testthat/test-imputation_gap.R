@@ -122,6 +122,17 @@ test_that("Texas 2022 is almost entirely reported in NIBRS live", {
   expect_lt(abs(out$share_estimated), 0.02)
 })
 
+test_that("every supported offense's estimate matches Texas's NIBRS counts live", {
+  skip_if_no_fbi_api()
+  # Texas 2022 reported almost entirely in NIBRS, so the estimate and its
+  # NIBRS counts agree closely. An offense mapped to the wrong indicator
+  # (RPE to "Rape", NIBRS 11A only) was 47% off.
+  for (code in names(.ESTIMATE_OFFENSES)) {
+    out <- imputation_gap("TX", year = 2022, offense = code)
+    expect_lt(abs(out$share_estimated), 0.1, label = code)
+  }
+})
+
 test_that("the national gap covers both estimate years live", {
   skip_if_no_fbi_api()
   out <- imputation_gap(year = 2021:2022)
