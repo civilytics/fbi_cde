@@ -66,7 +66,7 @@ get_agencies <- function() {
 # -> array of agency records -- into one row per agency, keeping every scalar
 # field.
 .flatten_agency_directory <- function(response) {
-  if (is.null(response) || length(response) == 0) {
+  if (.is_empty_agency_directory(response)) {
     return(NULL)
   }
   rows <- lapply(response, function(county_data) {
@@ -177,7 +177,8 @@ get_states <- function() {
 #' If TRUE (not default), returns only the ORI and the agency_name columns.
 #' @param exact_match
 #' If TRUE (default), finds matches based on exact match of agency name. Else,
-#' uses `grep()` to find agencies with similar names to inputted agency.
+#' treats each element of `agency` as a regular expression (case ignored) and
+#' returns the agencies whose names match any of them.
 #'
 #' @return
 #' A data.frame with information about the agency - including ORI code and geographic information. The agency will have as many rows as agencies matched from the `agency` input.
@@ -194,8 +195,10 @@ get_agency_info <- function(agency,
     data <- fbiCDE::fbi_api_agencies[tolower(fbiCDE::fbi_api_agencies$agency_name) %in%
                                     tolower(agency), ]
   } else {
-    data <- fbiCDE::fbi_api_agencies[grep(tolower(agency),
-                                       tolower(fbiCDE::fbi_api_agencies$agency_name)), ]
+    # grep() takes one pattern; it used only agency[1], with a warning.
+    names_lc <- tolower(fbiCDE::fbi_api_agencies$agency_name)
+    hits <- unique(unlist(lapply(tolower(agency), grep, x = names_lc)))
+    data <- fbiCDE::fbi_api_agencies[sort(hits), ]
   }
   if (!is.null(state)) {
     data <- data[tolower(data$state_name) %in% tolower(state), ]

@@ -21,15 +21,21 @@ test_that("get_leoka parses year-to-date totals", {
   expect_equal(result$total_officers_doi, 44)
 })
 
-test_that("get_leoka loops over a year range", {
+test_that("get_leoka loops over a year range, dropping a year with no data", {
+  # Both responses are recorded: the CDE answers 2019 with a null chart.
+  years <- integer(0)
   local_mocked_bindings(
-    cde_request = function(path, query = list(), ...) read_fixture("leoka-ytd-2020.json"),
+    cde_request = function(path, query = list(), ...) {
+      years <<- c(years, query$year)
+      read_fixture(sprintf("leoka-ytd-%d.json", query$year))
+    },
     .package = "fbiCDE"
   )
   result <- get_leoka(2019, 2020)
 
-  expect_equal(nrow(result), 2)
-  expect_equal(result$year, c(2019, 2020))
+  expect_equal(years, c(2019, 2020))
+  expect_equal(nrow(result), 1)
+  expect_equal(result$year, 2020)
 })
 
 test_that("get_leoka rejects inverted year ranges", {

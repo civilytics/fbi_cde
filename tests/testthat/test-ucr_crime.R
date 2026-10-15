@@ -122,6 +122,29 @@ test_that("get_estimated_crime returns expected shape from live API", {
   expect_true(nrow(result) > 0)
 })
 
+test_that("a lower-case ORI returns the agency's data live", {
+  skip_if_no_fbi_api()
+  lower <- get_agency_crime("ca0010900", from = "01-2020", to = "02-2020")
+  upper <- get_agency_crime("CA0010900", from = "01-2020", to = "02-2020")
+  expect_gt(nrow(lower), 0L)
+  expect_equal(lower, upper)
+})
+
+test_that("get_estimated_crime returns a state's own series live", {
+  skip_if_no_fbi_api()
+  result <- get_estimated_crime("OH", from = "01-2022", to = "03-2022")
+  expect_equal(nrow(result), 6L)   # offenses and clearances, 3 months each
+  expect_equal(unique(result$geography), "OH")
+  expect_true(all(result$participated_population <= result$population))
+})
+
+test_that("a CDE error explains itself live", {
+  skip_if_no_fbi_api()
+  # A four-digit year passes the package's date check but not the CDE's.
+  expect_error(get_estimated_crime(from = "2015", to = "2020"),
+               "expected format MM-YYYY")
+})
+
 test_that("get_estimated_arson returns expected shape from live API", {
   skip_if_no_fbi_api()
   result <- get_estimated_arson()

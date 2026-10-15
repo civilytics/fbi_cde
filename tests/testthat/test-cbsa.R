@@ -110,3 +110,11 @@ test_that("the largest metros carry the expected county counts", {
   expect_equal(nrow(ny), 1L)
   expect_equal(ny$n_counties, 22L)
 })
+
+test_that("list_metros sorts titles the same way in every locale", {
+  # order() follows the locale's collation, which put
+  # "Albany-Schenectady-Troy, NY" first under C.UTF-8 and last elsewhere.
+  albany <- grep("^Albany", list_metros()$cbsa_title, value = TRUE)
+  expect_equal(albany, c("Albany, GA", "Albany, OR",
+                         "Albany-Schenectady-Troy, NY"))
+})

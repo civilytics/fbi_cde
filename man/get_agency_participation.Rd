@@ -25,8 +25,9 @@ participation (confirmed by inspecting the CDE web app's client bundle and
 probing the live API -- see Issue #1). This is a modernized
 reimplementation: it reports whether \code{ori} currently reports to NIBRS,
 sourced live from \verb{agency/byStateAbbr/} (state derived from the first two
-characters of \code{ori}), in place of the retired year-by-year
-SRS/NIBRS participation series.
+characters of \code{ori}; Nebraska's \code{NB} and Guam's \code{GM} are looked up as \code{NE}
+and \code{GU}), in place of the retired year-by-year SRS/NIBRS participation
+series.
 }
 \examples{
 \dontrun{

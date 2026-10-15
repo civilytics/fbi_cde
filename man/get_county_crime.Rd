@@ -8,8 +8,9 @@ get_county_crime(detail, denominator = "jurisdiction_pop")
 }
 \arguments{
 \item{detail}{A data.frame as returned by \code{\link[=get_county_crime_detail]{get_county_crime_detail()}}, with at
-least the columns: \code{offense}, \code{period}, \code{count}, \code{population},
-\code{participated_population}, \code{reported}.}
+least the columns: \code{county_name}, \code{state_abbr}, \code{offense}, \code{period},
+\code{count}, \code{population}, \code{participated_population}. Imputed counts (from
+\code{\link[=impute_reporting_gaps]{impute_reporting_gaps()}}) are summed like reported ones.}
 
 \item{denominator}{Denominator strategy. One of:
 \itemize{
@@ -25,7 +26,8 @@ from \code{\link[=join_census_pop]{join_census_pop()}}).
 }
 \value{
 A data.frame with columns: \code{county_name}, \code{state_abbr}, \code{offense},
-\code{period}, \code{count} (sum of reported counts), \code{population} (the denominator
+\code{period}, \code{count} (sum of reported counts; \code{NA} when no agency reported),
+\code{population} (the denominator
 value used), \code{participated_population} (sum of participated populations),
 \code{rate} (\code{count / population * 1e5}), \code{denominator_type} (which strategy was
 used), and \code{coverage_fraction} (\code{participated_population / population}).
@@ -47,10 +49,22 @@ The default denominator (\code{"jurisdiction_pop"}) sums each agency's own
 \code{population} column. Empirical probes confirm this is coherent: a sheriff's
 population is the \emph{unincorporated remainder} it polices, and contract cities
 report under their own ORI — so the sum of \code{jurisdiction_pop} approximates
-the full county with no double-count. Use \code{denominator = "participated_pop"} for a coverage-
-consistent rate (drops uncovered months), or \code{denominator = "census_pop"}
-to supply an external Census population (requires the \code{county_fips} column
-from \code{\link[=county_agencies]{county_agencies()}} and a Census join).
+the full county with no double-count between sheriff and cities. Use
+\code{denominator = "participated_pop"} for a coverage-consistent rate (drops
+uncovered months), or \code{denominator = "census_pop"} to supply an external
+Census population (requires the \code{county_fips} column from
+\code{\link[=county_agencies]{county_agencies()}} and a Census join).
+
+One exception: an agency that polices several counties reports a single
+series, and it is counted \strong{in full} in each of its counties, count and
+population alike. Columbus PD puts all of Columbus in Delaware and
+Fairfield counties' totals as well as Franklin's, and the NYPD makes every
+borough's total New York City's. Those rows are the ones whose
+\code{agency_county_names} lists more than one county; drop them from \code{detail}
+first to exclude such agencies.
+
+A period in which no agency reported has an \code{NA} count and rate, not 0;
+\code{coverage_fraction} is then 0. Rows are in chronological order.
 }
 \examples{
 \dontrun{

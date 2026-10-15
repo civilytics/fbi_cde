@@ -1,5 +1,105 @@
 # fbiCDE 0.1.0.9000 (development version)
 
+## Fixes from a second package review
+
+Found by reviewing the code end to end and checking each finding against the
+live API.
+
+### Geography
+
+- **Louisiana and Alaska agencies have real types.** The bundled snapshot
+  typed every Louisiana agency `"Parish"` and every Alaska agency by its
+  borough or census area, and membership is decided by type, so all 226
+  Louisiana agencies were classed as sheriffs. No Louisiana city resolved as
+  a place (`place_agencies("New Orleans", "LA")` found nothing),
+  `agency_class = "municipal"` returned nothing in Louisiana, and 53 of 65
+  parishes warned of several sheriffs, `get_county_agency_crime("Orleans",
+  "LA")` returning Delgado Community College's series. In Alaska the State
+  Troopers, two airports and the university classed as city police.
+  `fbi_api_agencies` now carries the CDE's live directory types for both
+  states (`data-raw/agency_type_repair.R`): New Orleans PD is `"City"`,
+  Delgado `"University or College"`, the Troopers `"State Police"`. The 18
+  agencies the directory no longer lists have `NA`, an unknown type, which
+  classes as `"special"` (queried only on request).
+- Louisiana's 119 newly municipal agencies get Census place codes; rebuilding
+  the place crosswalk also matched La Cañada Flintridge, Cañon City and
+  Española, whose `ñ` the previous build had failed to transliterate. Codes
+  for the other 11,491 agencies are unchanged.
+- **`impute_reporting_gaps()` counts months across a new year.** Periods were
+  numbered YYYYMM, so December and the next January were 89 apart, and a gap
+  spanning a new year was filled nearly flat at the later value. A 2021 gap
+  between 0 in December 2020 and 130 in January 2022 now fills 10, 20, ...,
+  120 instead of 61 to 69. It now also requires the `population` column it
+  falls back to.
+- **`get_county_crime()` no longer reports "nobody reported" as zero crime.**
+  A month in which no agency reported summed to a count of 0 and a rate of
+  0; it is now `NA`, with `coverage_fraction` 0. Rows are in chronological
+  order (they were sorted as strings, 01-2020 before 11-2019), and missing
+  `county_name` or `state_abbr` columns are named in the error instead of
+  failing obscurely.
+- `get_county_crime_detail()` returns `agency_county_names`, the CDE's own
+  county list, so the rows a multi-county agency contributes in full to each
+  of its counties can be seen and dropped. `?get_county_crime` had claimed
+  "no double-count" while summing them; it now says how they count.
+- An unknown county warns once, from `county_agencies()`, instead of also
+  blaming the agency-class filter (as the place and metro functions already
+  did).
+- `metro_agencies()` resolves short names containing a dash or slash
+  (`"Winston-Salem"`, `"Louisville"`), and an ambiguous short name suggests a
+  state that works (`state = "GA"`, not `"GA-AL"`, which matched nothing).
+  `list_metros()` sorts the same way in every locale.
+
+### API wrappers
+
+- **A lower-case ORI returns the agency's data.** `is_valid_ori()` accepted
+  `"ca0010900"`, but the CDE matches ORIs case-sensitively and answers an
+  unknown one with HTTP 200 and no counts, so `get_agency_crime()`,
+  `get_arrest_count()`, `get_arrest_demographics()`, `get_shr()` and the
+  NIBRS functions returned zero rows. They now upper-case the ORI. Passing
+  more than one ORI is an "Invalid ORI code" error.
+- **Nebraska, Guam and empty directories in the participation functions.**
+  Nebraska's ORIs start `NB` and Guam's `GM`, but the CDE's directory files
+  them under `NE` and `GU`; `get_agency_participation()` looked up the ORI's
+  prefix and crashed on the empty answer for `NB`, so it failed for all 269
+  bundled Nebraska agencies. `get_state_participation("AS")` crashed the same
+  way, and `get_region_participation("U.S. Territories")` rejected Guam's
+  `GM`. An empty directory is now zero agencies.
+- **Errors carry the CDE's explanation.** The CDE answers a bad request with
+  plain text ("From year and month date is not valid, expected format
+  MM-YYYY."), which the error message dropped, leaving a bare "HTTP 400".
+- `get_police_employment()` leaves a staffing category the response omits
+  for a year as `NA` rather than 0, which undercounted the totals built from
+  it, and rejects an inverted year range like the other functions.
+- `get_agency_info(exact_match = FALSE)` matches every pattern in `agency`
+  rather than only the first.
+- Documentation: `get_estimated_crime()` and `get_estimated_arson()` are
+  titled "reported" counts and say they are not the FBI's estimates; the
+  larceny code is `"LAR"`, not `"LARC"`; three arrest names (not two) have no
+  arrests; the API-key deprecation message prints on every call.
+
+### Tests
+
+- The SHR fixtures were hand-written, with invented values from March 2015
+  on (national 920 where the API has 1,062); they are re-recorded.
+- New recorded fixtures: NIBRS national, the LEOKA 2019 null year and an
+  empty agency directory. The county fan-out is now also tested against a
+  recorded agency response.
+- Tests that could not fail now check what they claim: county name matching
+  (they checked `county_name`, which is always the queried county), imputation
+  edges, and place comparison-row stripping.
+- New live tests for national and state arrests, NIBRS at agency and
+  national level, state-level `get_estimated_crime()`, lower-case ORIs,
+  Nebraska and the territories.
+
+### Capstone
+
+- The design for the imputation-gap capstone (#42) is proposed in
+  `specs/2026-10-09-capstone-imputation-gap-design.md`. The API does publish
+  FBI estimates, as NIBRS estimates for 2021-2022 (`nibrs-estimation/`), and
+  they show what the capstone is for: California's 2021 violent crime summed
+  to 36,439 from agencies covering 26% of its population, against a
+  published estimate of 217,539.
+
 ## Connecticut metros (#52)
 
 - **Connecticut's seven metros now resolve.** The 2023 delineation builds them

@@ -33,8 +33,10 @@
 
 # Resolve a user-supplied metro name to its crosswalk rows.
 #
-# Exact title first (unique nationally), then the short name before the first
-# comma or dash. An ambiguous short name errors listing candidates rather than
+# Exact title first (unique nationally), then a short name: the title's city
+# part ("Winston-Salem", "Dallas-Fort Worth-Arlington"), or its first city,
+# before a dash or slash ("Dallas", "Louisville" in "Louisville/Jefferson
+# County"). An ambiguous short name errors listing candidates rather than
 # guessing. Returns 0 rows when nothing matches.
 .resolve_cbsa <- function(metro, state = NULL) {
   cw <- .cbsa_table()
@@ -45,9 +47,11 @@
     return(hit)
   }
 
-  # Short-name path: match the portion before the first comma or dash.
-  short <- toupper(trimws(sub("[-,].*$", "", cw$cbsa_title)))
-  hit <- cw[short == key, , drop = FALSE]
+  # Short-name path. Cutting at the first dash alone made "Winston-Salem"
+  # unreachable, and a slash was not a separator, so "Louisville" was too.
+  cities <- toupper(trimws(sub(",.*$", "", cw$cbsa_title)))
+  first_city <- trimws(sub("[-/].*$", "", cities))
+  hit <- cw[cities == key | first_city == key, , drop = FALSE]
 
   if (nrow(hit) > 0 && !is.null(state)) {
     # CBSA titles end in a comma-separated list of state abbreviations.
@@ -60,10 +64,13 @@
 
   titles <- unique(hit$cbsa_title)
   if (length(titles) > 1) {
+    # Suggest one state, not the title's whole suffix: state = "GA-AL"
+    # matches nothing.
     stop("Metro '", metro, "' is ambiguous: it matches ", length(titles),
          " CBSAs (", paste(titles, collapse = ", "),
          "). Pass the full title, or disambiguate with state = \"",
-         sub("^.*,\\s*", "", titles[1]), "\".", call. = FALSE)
+         sub("-.*$", "", sub("^.*,\\s*", "", titles[1])), "\".",
+         call. = FALSE)
   }
 
   hit
@@ -192,8 +199,8 @@ metro_agencies <- function(metro, state = NULL) {
 # across all rows. Filtering to names without a semicolon gives the canonical
 # entry: 3,143 such rows for 3,143 distinct FIPS -- an exact 1:1, with every
 # FIPS represented. Skipping that filter would sometimes pick a multi-county
-# row, and county_agencies() matches county_name exactly, so it would return a
-# subset of the county rather than the county.
+# row, and county_agencies() matches one county name against each part of an
+# agency's county list, so a multi-county string would match no agency.
 .cbsa_county_lookup <- function(fips) {
   cw <- crosswalk
   sel <- cw[!is.na(cw$county_fips) &

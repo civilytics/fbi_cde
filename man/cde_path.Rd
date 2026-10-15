@@ -15,7 +15,7 @@ cde_path(type, level, offense = NULL)
 \code{"agency/XX"} (replace XX with ORI code).}
 
 \item{offense}{Optional character string with the offense identifier
-(e.g. \code{"V"} for violent crime, \code{"LARC"} for larceny). Defaults to \code{NULL}.}
+(e.g. \code{"V"} for violent crime, \code{"LAR"} for larceny). Defaults to \code{NULL}.}
 }
 \value{
 A character string with the API path, e.g.

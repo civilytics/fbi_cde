@@ -54,6 +54,13 @@ original `fbi` package by Jacob Kaplan.
 - Bundled `fbi_api_agencies` (~18,459 rows): has `county_name` (stored
   **UPPERCASE**), lat/long, `agency_type_name` — but **no FIPS** and no
   place/municipality codes. A county sheriff's `agency_type_name` is `County`.
+  The snapshot had typed every Louisiana agency `Parish` and every Alaska
+  agency by its borough; `data-raw/agency_type_repair.R` replaced them with
+  the live directory's types (18 agencies it no longer lists are `NA`).
+- **Two states' ORIs don't start with their postal code:** Nebraska's are
+  `NB`, Guam's `GM` (also Guam's bundled `state_abbr`). The CDE's directory
+  files them under `NE` and `GU`. The CDE matches ORIs case-sensitively, so
+  wrappers upper-case them (`.check_ori()`).
 - **Population semantics:** in `summarized` responses, a sheriff's `population` is
   the *unincorporated remainder* it polices, **not** the whole county; contract
   cities (e.g. LASD's Compton, West Hollywood) report under their **own** city
@@ -61,7 +68,7 @@ original `fbi` package by Jacob Kaplan.
   `population` vs `participated_population` is the reporting-coverage gap.
 - Dates are `MM-YYYY` except police employment (`YYYY`).
 
-## Geography feature (v0.2–v0.4, shipped)
+## Geography feature (v0.2–v0.5, shipped)
 
 County- and place-level agency membership + itemized crime, an *attribution*
 model (which agencies are attributed to a geography — not spatial-truth).
@@ -121,13 +128,15 @@ Layers:
 ## Roadmap
 
 Full design + phased plan: `specs/2026-07-13-geography-first-querying-design.md`.
-Status: **v0.4 shipped** (county resolver + detail + aggregate; place
-resolver + detail + spatial members). Planned phases (each its own
-spec → plan → implementation cycle; tracked as Gitea issues):
-- **v0.2b** — optional reporting-gap imputation (`impute_reporting_gaps()`, off by default).
-- **v0.3** — Layer 2 aggregate (denominator model) + county FIPS crosswalk (derive
-  from `county_name` + patch table; **do not ship LEAIC** — licensing/staleness)
-  + Census join (`censusapi`, `Suggests`).
+Status: **v0.2-v0.5 shipped** (county resolver, detail, imputation and
+aggregate; Census join; place and metro geography). Each phase is its own
+spec → plan → implementation cycle:
+- **v0.2b** — **shipped.** Optional reporting-gap imputation
+  (`impute_reporting_gaps()`, off by default).
+- **v0.3** — **shipped.** Layer 2 aggregate (`get_county_crime()`, denominator
+  model) + county FIPS crosswalk (derived from `county_name` + patch table;
+  **do not ship LEAIC** — licensing/staleness) + Census join
+  (`join_census_pop()`, `censusapi` in `Suggests`).
 - **v0.4** — **shipped.** Place/municipal membership: `place_agencies()`,
   `get_place_crime_detail()`, and opt-in `add_place_spatial_members()`
   (`sf`/`tigris` in `Suggests`). Spec:
@@ -139,8 +148,12 @@ spec → plan → implementation cycle; tracked as Gitea issues):
 - **Place FIPS** as a promised join key (Gitea #46) — **shipped** as a
   name-and-county crosswalk, no `sf`. Spec:
   `specs/2026-10-06-place-fips-design.md`.
-- **Capstone** — imputation gap: FBI published aggregate vs. sum of reported
-  components (uses the `reported`/coverage columns already collected).
+- **Capstone (#42)** — imputation gap: FBI published aggregate vs. sum of
+  reported components. **Proposed, awaiting review:**
+  `specs/2026-10-09-capstone-imputation-gap-design.md`. The only published
+  estimates in the API are `nibrs-estimation/` (state, region, national;
+  2021-2022 only; numeric state and offense IDs, with confidence bounds).
+  Nothing below the state.
 - **Bulk downloads (#58)** — **decided:** no bulk-file reader for now;
   estimates and LEOKA assaults are bulk-only (recipe and the shape of a future
   reader in `specs/2026-10-06-bulk-downloads-decision.md`). Any reader needs

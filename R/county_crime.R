@@ -74,7 +74,8 @@ parse_agency_detail <- function(response, ori, offense, from, to) {
 
 .DETAIL_COLS <- c(
   "ori", "agency_name", "agency_type_name", "agency_class",
-  "county_name", "state_abbr", "county_fips", "offense", "period", "count",
+  "county_name", "state_abbr", "county_fips", "agency_county_names",
+  "offense", "period", "count",
   "population", "participated_population", "rate", "reported"
 )
 
@@ -94,6 +95,7 @@ parse_agency_detail <- function(response, ori, offense, from, to) {
     county_name = character(0),
     state_abbr = character(0),
     county_fips = character(0),
+    agency_county_names = character(0),
     offense = character(0),
     period = character(0),
     count = numeric(0),
@@ -127,7 +129,8 @@ parse_agency_detail <- function(response, ori, offense, from, to) {
 #' for Delaware, Fairfield and Franklin counties, OH. The extreme case is New
 #' York City, where the NYPD is the police of all five boroughs: any borough
 #' returns **citywide** NYPD counts with New York City's population. Do not
-#' sum counties that share an agency; see [county_agencies()].
+#' sum counties that share an agency; see [county_agencies()]. Such rows are
+#' the ones whose `agency_county_names` lists more than one county.
 #'
 #' @param county County name (case-insensitive).
 #' @param state Two-letter state abbreviation.
@@ -145,7 +148,8 @@ parse_agency_detail <- function(response, ori, offense, from, to) {
 #' @param progress If `TRUE`, print a simple progress line per agency.
 #' @return A data.frame with one row per agency-period: the agency metadata from
 #'   [county_agencies()] (including `county_fips`, which [join_census_pop()]
-#'   needs), then `offense`, `period`, `count`, `population`,
+#'   needs, and `agency_county_names`, the CDE's own county list), then
+#'   `offense`, `period`, `count`, `population`,
 #'   `participated_population`, `rate`, and `reported`. Agencies whose request
 #'   or parse fails are dropped with a warning; their ORIs are recorded in
 #'   `attr(x, "dropped")` and the errors in `attr(x, "dropped_reasons")`.
@@ -162,19 +166,26 @@ get_county_crime_detail <- function(county, state, offense = "V",
   cde_validate_dates(from, to, "mm-yyyy")
 
   agencies <- county_agencies(county, state)
+  pre_filter_n <- nrow(agencies)
   agencies <- .filter_agency_members(agencies, agency_class, include_statewide)
 
   if (nrow(agencies) == 0) {
-    warning("No agencies to query for '", county, "', ", state,
-            " after filtering (", .filter_desc(agency_class, include_statewide),
-            ")", call. = FALSE)
+    # An unknown county has already been warned about by county_agencies();
+    # blaming the class filter as well would mislead.
+    if (pre_filter_n > 0) {
+      warning("No agencies to query for '", county, "', ", state,
+              " after filtering (",
+              .filter_desc(agency_class, include_statewide), ")",
+              call. = FALSE)
+    }
     return(.empty_detail_frame())
   }
 
   .fanout_agency_detail(
     agencies = agencies,
     meta_cols = c("agency_name", "agency_type_name", "agency_class",
-                  "county_name", "state_abbr", "county_fips"),
+                  "county_name", "state_abbr", "county_fips",
+                  "agency_county_names"),
     cols = .DETAIL_COLS,
     empty_fn = .empty_detail_frame,
     offense = offense, from = from, to = to, progress = progress
@@ -254,14 +265,27 @@ get_county_agency_crime <- function(county, state, offense = "V",
 #' `population` column. Empirical probes confirm this is coherent: a sheriff's
 #' population is the *unincorporated remainder* it polices, and contract cities
 #' report under their own ORI — so the sum of `jurisdiction_pop` approximates
-#' the full county with no double-count. Use `denominator = "participated_pop"` for a coverage-
-#' consistent rate (drops uncovered months), or `denominator = "census_pop"`
-#' to supply an external Census population (requires the `county_fips` column
-#' from [county_agencies()] and a Census join).
+#' the full county with no double-count between sheriff and cities. Use
+#' `denominator = "participated_pop"` for a coverage-consistent rate (drops
+#' uncovered months), or `denominator = "census_pop"` to supply an external
+#' Census population (requires the `county_fips` column from
+#' [county_agencies()] and a Census join).
+#'
+#' One exception: an agency that polices several counties reports a single
+#' series, and it is counted **in full** in each of its counties, count and
+#' population alike. Columbus PD puts all of Columbus in Delaware and
+#' Fairfield counties' totals as well as Franklin's, and the NYPD makes every
+#' borough's total New York City's. Those rows are the ones whose
+#' `agency_county_names` lists more than one county; drop them from `detail`
+#' first to exclude such agencies.
+#'
+#' A period in which no agency reported has an `NA` count and rate, not 0;
+#' `coverage_fraction` is then 0. Rows are in chronological order.
 #'
 #' @param detail A data.frame as returned by [get_county_crime_detail()], with at
-#'   least the columns: `offense`, `period`, `count`, `population`,
-#'   `participated_population`, `reported`.
+#'   least the columns: `county_name`, `state_abbr`, `offense`, `period`,
+#'   `count`, `population`, `participated_population`. Imputed counts (from
+#'   [impute_reporting_gaps()]) are summed like reported ones.
 #' @param denominator Denominator strategy. One of:
 #'   \itemize{
 #'     \item \code{"jurisdiction_pop"} — sum of agency `population` columns
@@ -274,7 +298,8 @@ get_county_agency_crime <- function(county, state, offense = "V",
 #'       from [join_census_pop()]).
 #'   }
 #' @return A data.frame with columns: `county_name`, `state_abbr`, `offense`,
-#'   `period`, `count` (sum of reported counts), `population` (the denominator
+#'   `period`, `count` (sum of reported counts; `NA` when no agency reported),
+#'   `population` (the denominator
 #'   value used), `participated_population` (sum of participated populations),
 #'   `rate` (`count / population * 1e5`), `denominator_type` (which strategy was
 #'   used), and `coverage_fraction` (`participated_population / population`).
@@ -297,8 +322,8 @@ get_county_crime <- function(detail, denominator = "jurisdiction_pop") {
     stop("'detail' must be a data.frame", call. = FALSE)
   }
 
-  required_cols <- c("offense", "period", "count", "population",
-                     "participated_population")
+  required_cols <- c("county_name", "state_abbr", "offense", "period",
+                     "count", "population", "participated_population")
   missing_cols <- setdiff(required_cols, names(detail))
   if (length(missing_cols) > 0) {
     stop("'detail' is missing required columns: ",
@@ -351,8 +376,11 @@ get_county_crime <- function(detail, denominator = "jurisdiction_pop") {
     sub <- detail[idx[1], , drop = FALSE]  # take first row for metadata
     vals <- detail[idx, , drop = FALSE]
 
-    # Sum counts (NA = did not report; only sum reported values).
-    total_count <- sum(vals$count, na.rm = TRUE)
+    # Sum counts (NA = did not report; only sum reported values). A period in
+    # which no agency reported is unknown, not zero: sum(NA, na.rm = TRUE) is
+    # 0, which read as a county with no crime, at a rate of 0.
+    total_count <- if (all(is.na(vals$count))) NA_real_ else
+      sum(vals$count, na.rm = TRUE)
 
     # Sum participated populations.
     total_participated <- sum(vals$participated_population, na.rm = TRUE)
@@ -368,7 +396,7 @@ get_county_crime <- function(detail, denominator = "jurisdiction_pop") {
     }
 
     # Rate and coverage fraction.
-    rate <- if (!is.na(denom) && denom > 0)
+    rate <- if (!is.na(total_count) && !is.na(denom) && denom > 0)
       total_count / denom * 1e5 else NA_real_
     coverage <- if (!is.na(denom) && denom > 0)
       total_participated / denom else NA_real_
@@ -389,6 +417,9 @@ get_county_crime <- function(detail, denominator = "jurisdiction_pop") {
   })
 
   out <- do.call(rbind, agg_rows)
+  # interaction() levels sort periods as strings (01-2020 before 11-2019).
+  out <- out[order(out$county_name, out$state_abbr, out$offense,
+                   .period_key(out$period), method = "radix"), , drop = FALSE]
   rownames(out) <- NULL
   out <- out[, .AGGREGATE_COLS, drop = FALSE]
   attr(out, "dropped") <- dropped

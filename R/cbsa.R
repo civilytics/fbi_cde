@@ -62,7 +62,10 @@ list_metros <- function(type = NULL) {
     n_counties = as.integer(counts[cw$cbsa_code[keys]]),
     stringsAsFactors = FALSE
   )
-  out <- out[order(out$cbsa_title), , drop = FALSE]
+  # Radix sorts in C-locale order on every machine; the default follows the
+  # locale, which puts "Albany-Schenectady-Troy, NY" before or after
+  # "Albany, GA" depending on where it runs.
+  out <- out[order(out$cbsa_title, method = "radix"), , drop = FALSE]
   rownames(out) <- NULL
   attr(out, "vintage") <- CBSA_VINTAGE
   out

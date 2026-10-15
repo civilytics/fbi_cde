@@ -6,7 +6,7 @@
 #' with code that previously used the legacy `api.data.gov`-hosted API.
 #'
 #' @return
-#' `NULL`. A deprecation message is printed on first call.
+#' `NULL`. A deprecation message is printed on every call.
 #' @export
 #'
 #' @examples
@@ -28,7 +28,7 @@ get_api_key <- function() {
 #' @param key A character string with the API key (ignored).
 #'
 #' @return
-#' `NULL`. A deprecation message is printed on first call.
+#' `NULL`. A deprecation message is printed on every call.
 #' @export
 #'
 #' @examples

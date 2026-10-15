@@ -58,13 +58,8 @@ get_shr <- function(ori = NULL,
                     state_abb = NULL,
                     from = "01-2015",
                     to = "12-2015") {
-  if (!is.null(ori) && !is_valid_ori(ori)) {
-    stop(
-      "Invalid ORI code: ", ori,
-      ". Must be 9 characters: 2 letters followed by 7 alphanumerics",
-      " (e.g., CA0010900 or CA001300X)",
-      call. = FALSE
-    )
+  if (!is.null(ori)) {
+    ori <- .check_ori(ori)
   }
 
   if (!is.null(state_abb) && !is_valid_state(state_abb)) {

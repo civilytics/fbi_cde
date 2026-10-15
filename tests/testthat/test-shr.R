@@ -1,4 +1,7 @@
 # Offline tests for SHR functions using fixtures.
+#
+# The fixtures are recorded responses for 2015 (re-recorded 2026-10-09; the
+# originals were hand-written, with invented values from March 2015 on).
 
 test_that("get_shr parses national-level response", {
   local_fbi_fixture("shr-national.json")
@@ -62,7 +65,8 @@ test_that("get_shr returns correct count values from national fixture", {
   expect_equal(jan_count, 1088)
 
   jun_count <- result$count[result$period == "06-2015"]
-  expect_equal(jun_count, 1120)
+  expect_equal(jun_count, 1186)
+  expect_equal(sum(result$count), 13783)
 })
 
 test_that("get_shr returns correct count values from agency fixture", {
@@ -73,7 +77,15 @@ test_that("get_shr returns correct count values from agency fixture", {
   expect_equal(jan_count, 10)
 
   jun_count <- result$count[result$period == "06-2015"]
-  expect_equal(jun_count, 18)
+  expect_equal(jun_count, 7)
+})
+
+test_that("get_shr returns correct count values from state fixture", {
+  local_fbi_fixture("shr-state-CA.json")
+  result <- get_shr(state_abb = "CA")
+
+  expect_equal(result$count[result$period == "06-2015"], 180)
+  expect_equal(sum(result$count), 1863)
 })
 
 # Live tests

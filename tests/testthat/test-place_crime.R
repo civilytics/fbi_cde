@@ -47,8 +47,11 @@ test_that("get_place_crime_detail returns the documented columns in order", {
 })
 
 test_that("get_place_crime_detail strips state comparison rows", {
+  # Put the comparison series first, so picking the first series would fail.
+  response <- fake_agency_response()
+  response$offenses$actuals <- rev(response$offenses$actuals)
   testthat::local_mocked_bindings(
-    cde_request = function(...) fake_agency_response(),
+    cde_request = function(...) response,
     .package = "fbiCDE"
   )
   out <- get_place_crime_detail("Lufkin", "TX", from = "01-2021", to = "02-2021")

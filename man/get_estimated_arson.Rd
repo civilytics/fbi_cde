@@ -2,7 +2,7 @@
 % Please edit documentation in R/ucr_crime.R
 \name{get_estimated_arson}
 \alias{get_estimated_arson}
-\title{Get estimated arson data}
+\title{Get state- or national-level reported arson counts}
 \usage{
 get_estimated_arson(
   state_abb = NULL,
@@ -27,7 +27,8 @@ own series. Has no effect on a national query.}
 A data.frame with the columns described in \code{\link[=get_agency_crime]{get_agency_crime()}}.
 }
 \description{
-Get estimated arson data
+\code{\link[=get_estimated_crime]{get_estimated_crime()}} for arson (\code{offense = "ARS"}): reported sums, not
+the FBI's estimates.
 }
 \examples{
 \dontrun{

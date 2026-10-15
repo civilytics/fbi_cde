@@ -2,7 +2,7 @@
 % Please edit documentation in R/ucr_crime.R
 \name{get_estimated_crime}
 \alias{get_estimated_crime}
-\title{Get state- or national-level estimated crime counts}
+\title{Get state- or national-level reported crime counts}
 \usage{
 get_estimated_crime(
   state_abb = NULL,
@@ -31,7 +31,14 @@ own series. Has no effect on a national query.}
 A data.frame with the columns described in \code{\link[=get_agency_crime]{get_agency_crime()}}.
 }
 \description{
-Get state- or national-level estimated crime counts
+Despite its name, this returns the sum of what the agencies that reported
+each month sent, not the FBI's published estimates, which also impute for
+agencies that did not report. Compare \code{participated_population} with
+\code{population} to see how much of the state or nation a month covers. The
+FBI's state and national SRS estimates are published as a bulk download
+only, which the package does not read; the
+\href{https://github.com/civilytics/fbi_cde/blob/main/specs/2026-10-06-bulk-downloads-decision.md}{download recipe}
+fetches it.
 }
 \examples{
 \dontrun{

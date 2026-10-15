@@ -40,7 +40,8 @@ not tell the two apart. Default \code{FALSE}.}
 \value{
 A data.frame with one row per agency-period: the agency metadata from
 \code{\link[=county_agencies]{county_agencies()}} (including \code{county_fips}, which \code{\link[=join_census_pop]{join_census_pop()}}
-needs), then \code{offense}, \code{period}, \code{count}, \code{population},
+needs, and \code{agency_county_names}, the CDE's own county list), then
+\code{offense}, \code{period}, \code{count}, \code{population},
 \code{participated_population}, \code{rate}, and \code{reported}. Agencies whose request
 or parse fails are dropped with a warning; their ORIs are recorded in
 \code{attr(x, "dropped")} and the errors in \code{attr(x, "dropped_reasons")}.
@@ -67,7 +68,8 @@ returned in full for each of its counties: Columbus PD's rows are the same
 for Delaware, Fairfield and Franklin counties, OH. The extreme case is New
 York City, where the NYPD is the police of all five boroughs: any borough
 returns \strong{citywide} NYPD counts with New York City's population. Do not
-sum counties that share an agency; see \code{\link[=county_agencies]{county_agencies()}}.
+sum counties that share an agency; see \code{\link[=county_agencies]{county_agencies()}}. Such rows are
+the ones whose \code{agency_county_names} lists more than one county.
 }
 \examples{
 \dontrun{

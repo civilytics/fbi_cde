@@ -34,8 +34,11 @@
   "Tribal"                = "tribal",
   "Other"                 = "special",
   "Other State Agency"    = "state",
-  # The CDE's "Census Area" agencies are Alaska city police departments
-  # (Nome, Bethel, Dillingham, ...), not special-purpose agencies.
+  # "Parish", "Borough", "Municipality", "City and Borough" and "Census Area"
+  # were the old snapshot's placeholders for every Louisiana and Alaska agency
+  # (data-raw/agency_type_repair.R replaced them); the bundled table no longer
+  # carries them. The "Census Area" agencies were Alaska city police (Nome,
+  # Bethel, Dillingham, ...).
   "Census Area"           = "municipal"
 )
 
