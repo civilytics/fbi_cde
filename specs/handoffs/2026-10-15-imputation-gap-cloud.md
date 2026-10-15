@@ -35,9 +35,10 @@ and the California and national numbers from the knitted vignette.
   notes about those are environmental.
 
 ## Current state — verified 2026-10-15
-- `main` is at `797017c` on both Gitea and GitHub ("docs: implementation
-  plan for the imputation-gap capstone (#42)"). Confirm with
-  `git log --oneline -3`.
+- `main` on both Gitea and GitHub has the plan at `797017c` ("docs:
+  implementation plan for the imputation-gap capstone (#42)") and this
+  handoff on top of it, in one or two docs-only commits. Confirm with
+  `git log --oneline -4`.
 - Offline suite on `e93b58b` (the parent of the two docs commits; nothing in
   `R/` has changed since): 1,299 expectations, 0 failures, 0 errors, 36
   skipped. All the skips are live tests. Command:
