@@ -149,11 +149,19 @@ spec → plan → implementation cycle:
   name-and-county crosswalk, no `sf`. Spec:
   `specs/2026-10-06-place-fips-design.md`.
 - **Capstone (#42)** — imputation gap: FBI published aggregate vs. sum of
-  reported components. **Design decided 2026-10-15, not yet planned:**
-  `specs/2026-10-09-capstone-imputation-gap-design.md`. The only published
-  estimates in the API are `nibrs-estimation/` (state, region, national;
-  2021-2022 only; numeric state and offense IDs, with confidence bounds).
-  Nothing below the state.
+  reported components. **shipped.**
+  `specs/2026-10-09-capstone-imputation-gap-design.md`. `get_nibrs_estimate()`
+  and `imputation_gap()`; plan `specs/plans/2026-10-15-imputation-gap.md`.
+  The only published estimates in the API are `nibrs-estimation/` (state,
+  region, national; 2021-2022 only; numeric state and offense IDs, with
+  confidence bounds). Nothing below the state. Three facts the spec (§3.3)
+  gets wrong, measured 2026-10-15: 2021 was not all NIBRS (six states'
+  `summarized` 2021 counts include summary-format reports; New Jersey 5,353
+  of 12,972 violent crimes), so the counting difference is measured where
+  both coverages match (Texas 2022: about -1% for violent crime, NIBRS
+  counting more); the estimates' "Rape" (118) is NIBRS 11A alone, and
+  summary `RPE` is "Revised Rape" (120); Arizona has no estimate
+  (`{"data": null}`).
 - **Bulk downloads (#58)** — **decided:** no bulk-file reader for now;
   estimates and LEOKA assaults are bulk-only (recipe and the shape of a future
   reader in `specs/2026-10-06-bulk-downloads-decision.md`). Any reader needs

@@ -60,15 +60,21 @@ get_agency_crime <- function(ori,
 
 #' Get state- or national-level reported crime counts
 #'
-#' Despite its name, this returns the sum of what the agencies that reported
-#' each month sent, not the FBI's published estimates, which also impute for
-#' agencies that did not report. Compare `participated_population` with
-#' `population` to see how much of the state or nation a month covers. The
-#' FBI's state and national SRS estimates are published as a bulk download
-#' only, which the package does not read; the
+#' Returns crime *reported* to the FBI: the sum of what the agencies that
+#' reported each month sent, in either format (NIBRS, or the older summary
+#' format). It is not the FBI's *estimate*, which adds a model's prediction
+#' for everything outside NIBRS. Compare `participated_population`
+#' with `population` to see how much of the state or nation a month covers.
+#' The FBI's state and national summary-format estimates are published as a
+#' bulk download only, which the package does not read; the
 #' [download recipe](https://github.com/civilytics/fbi_cde/blob/main/specs/2026-10-06-bulk-downloads-decision.md)
 #' fetches it.
 #'
+#' This function was called `get_estimated_crime()` until fbiCDE
+#' 0.1.0.9000; the old name still works and warns.
+#'
+#' @seealso `vignette("estimates")` for reported, estimated and imputed
+#'   crime.
 #' @family UCR crime functions
 #' @param state_abb String for state abbreviation. If `NULL` (default) returns
 #'   national data.
@@ -85,13 +91,13 @@ get_agency_crime <- function(ori,
 #'
 #' @examples
 #' \dontrun{
-#' get_estimated_crime("CA")
+#' get_reported_crime("CA")
 #' }
-get_estimated_crime <- function(state_abb = NULL,
-                                from = "01-2015",
-                                to = "12-2020",
-                                offense = "V",
-                                comparison = FALSE) {
+get_reported_crime <- function(state_abb = NULL,
+                               from = "01-2015",
+                               to = "12-2020",
+                               offense = "V",
+                               comparison = FALSE) {
   if (!is.null(state_abb) && !is_valid_state(state_abb)) {
     stop("Invalid state abbreviation: ", state_abb, call. = FALSE)
   }
@@ -117,24 +123,25 @@ get_estimated_crime <- function(state_abb = NULL,
 
 #' Get state- or national-level reported arson counts
 #'
-#' [get_estimated_crime()] for arson (`offense = "ARS"`): reported sums, not
-#' the FBI's estimates.
+#' [get_reported_crime()] for arson (`offense = "ARS"`): reported sums, not
+#' the FBI's estimates. Called `get_estimated_arson()` until fbiCDE
+#' 0.1.0.9000; the old name still works and warns.
 #'
 #' @family UCR crime functions
-#' @inheritParams get_estimated_crime
+#' @inheritParams get_reported_crime
 #'
 #' @return A data.frame with the columns described in [get_agency_crime()].
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' get_estimated_arson("CA")
+#' get_reported_arson("CA")
 #' }
-get_estimated_arson <- function(state_abb = NULL,
-                                from = "01-2015",
-                                to = "12-2020",
-                                comparison = FALSE) {
-  get_estimated_crime(
+get_reported_arson <- function(state_abb = NULL,
+                               from = "01-2015",
+                               to = "12-2020",
+                               comparison = FALSE) {
+  get_reported_crime(
     state_abb = state_abb,
     from = from,
     to = to,

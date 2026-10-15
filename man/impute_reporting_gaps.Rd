@@ -30,6 +30,8 @@ on imputed rows; \code{NA} elsewhere.
 }
 \description{
 Fills temporal holes within agencies that report some periods but miss others.
+The values it imputes are this package's, from each agency's own
+neighboring months, not the FBI's estimate (see \code{\link[=get_nibrs_estimate]{get_nibrs_estimate()}}).
 Operates on \code{rate} so a drifting denominator is respected: the rate is
 linearly interpolated across time (in months), then scaled by the gap
 month's own population to derive the imputed count. That is its
@@ -54,4 +56,8 @@ detail <- get_county_crime_detail("Alameda", "CA", from = "01-2019", to = "12-20
 filled <- impute_reporting_gaps(detail, method = "interpolate")
 table(filled$reported, filled$imputed)
 }
+}
+\seealso{
+\code{vignette("estimates")} for reported, estimated and imputed
+crime.
 }

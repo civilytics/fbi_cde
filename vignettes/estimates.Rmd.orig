@@ -1,0 +1,130 @@
+---
+title: "Reported, estimated and imputed crime"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Reported, estimated and imputed crime}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+```{r setup}
+library(fbiCDE)
+```
+
+Three words describe where a crime count comes from, and this package uses
+each with one meaning.
+
+- **Reported**: the sum of what agencies submitted to the FBI, in either
+  format (NIBRS, or the older summary format). It covers only the agencies
+  that reported. `get_reported_crime()` returns it.
+- **Estimated**: the FBI's published figure. It adds a statistical model's
+  prediction for everything outside NIBRS: agencies that did not report,
+  and agencies that reported only in the older summary format. It comes
+  with a 95% confidence interval. `get_nibrs_estimate()` returns it.
+- **Imputed**: a value filled in for a missing report. The FBI's estimate
+  imputes, and so does `impute_reporting_gaps()`, which fills an agency's
+  missing months from its own neighboring months. This package always says
+  which one it means.
+
+## Where the FBI publishes estimates
+
+The API publishes the FBI's NIBRS estimates for 2021 and 2022, for each
+state and the nation. It publishes none for counties, cities or metro
+areas. The FBI's older summary-format estimates, 1979 onward, are a bulk
+download that this package does not read.
+
+## How much of the published figure was modeled
+
+`imputation_gap()` compares the estimate with reported crime. The FBI
+builds the estimate from NIBRS reports alone, so the gap is measured
+against crime reported in NIBRS.
+
+```{r gap}
+ca <- imputation_gap("CA", year = 2021:2022)
+ca[, c("year", "reported", "reported_nibrs", "reported_other",
+       "coverage", "coverage_nibrs", "published", "share_estimated")]
+```
+
+In 2021 California's reports reached the FBI through NIBRS only: the two
+coverage figures are the same. Most California agencies had not switched
+to NIBRS, and agencies reporting in NIBRS covered
+`r round(100 * ca$coverage_nibrs[1])`% of the state's population. The
+FBI's model supplied `r round(100 * ca$share_estimated[1])`% of its
+published figure of `r format(ca$published[1], big.mark = ",")` violent
+crimes.
+
+In 2022 the FBI accepted both formats. Agencies reporting in either format
+covered `r round(100 * ca$coverage[2])`% of the population, but those
+reporting in NIBRS covered `r round(100 * ca$coverage_nibrs[2])`%. The
+FBI's model treated the rest as missing, including the
+`r format(ca$reported_other[2], big.mark = ",")` violent crimes reported in
+the older format, and supplied `r round(100 * ca$share_estimated[2])`% of
+the published figure.
+
+Those older-format reports are a check on the model. The model supplied
+`r format(ca$gap[2], big.mark = ",")` violent crimes for the agencies
+outside NIBRS, which reported
+`r format(ca$reported_other[2], big.mark = ",")` themselves.
+
+California's own count gives a second check for 2021. The California
+Department of Justice collected 2021 reports in both formats and published
+183,546 violent crimes ([Crime in California 2021, Table
+3](https://data-openjustice.doj.ca.gov/sites/default/files/2022-08/Crime%20In%20CA%202021_0.pdf)).
+That is below the lower bound of the FBI's 95% interval,
+`r format(round(ca$published_lower[1]), big.mark = ",")`.
+
+Not every state's 2021 reports were NIBRS. In New Jersey, for example,
+some agencies reported in the older format:
+
+```{r nj}
+nj <- imputation_gap("NJ", year = 2021)
+nj[, c("reported", "reported_nibrs", "reported_other", "coverage",
+       "coverage_nibrs")]
+```
+
+Agencies reporting in either format covered
+`r round(100 * nj$coverage)`% of New Jersey's population, and those
+reporting in NIBRS `r round(100 * nj$coverage_nibrs)`%. Of the
+`r format(nj$reported, big.mark = ",")` violent crimes reported,
+`r format(nj$reported_other, big.mark = ",")` arrived in the older format,
+and the FBI's model treated them as missing.
+
+```{r national}
+imputation_gap(year = 2021:2022)[, c("year", "coverage_nibrs",
+                                     "published", "share_estimated",
+                                     "share_lower", "share_upper")]
+```
+
+## The counting difference
+
+The two formats count offenses differently; for example, the summary
+format counts only the most serious offense in an incident. Where every
+report arrived in NIBRS, the difference between `reported` and
+`reported_nibrs` is the counting difference alone. Texas in 2022 is such a
+case: its two coverage figures are the same for every offense.
+
+```{r residual}
+codes <- c("V", "P", "ROB", "ASS", "BUR", "LAR", "MVT", "ARS", "HOM", "RPE")
+tx <- do.call(rbind, lapply(codes, function(code) {
+  imputation_gap("TX", year = 2022, offense = code)
+}))
+tx$difference <- round(100 * tx$reported_other / tx$reported_nibrs, 1)
+tx[, c("offense", "coverage", "coverage_nibrs", "reported",
+       "reported_nibrs", "difference", "share_estimated")]
+```
+
+NIBRS counts slightly more violent crime than the summary rules do
+(`r tx$difference[1]`%), and for every offense but burglary
+(`r tx$difference[5]`%) the two series are within about 2% of each other.
+A `reported_other` of that size, negative included, means nearly every
+report arrived in NIBRS.
+
+The gap needs no such allowance: it compares the estimate with NIBRS
+counts, which follow the same rules. It is still not exactly zero where the
+model had little to supply. In Texas in 2022 it runs from
+`r round(100 * min(tx$share_estimated), 1)`% to
+`r round(100 * max(tx$share_estimated), 1)`% of the estimate.

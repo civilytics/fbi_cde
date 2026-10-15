@@ -13,6 +13,9 @@
 #   ucr_arrest_offense_codes  the numeric codes the arrest/ endpoint takes for
 #                             one offense, each with the name, category and
 #                             breakdown it reports under
+#   nibrs_estimation_states      state abbreviation -> the estimates' own ID
+#   nibrs_estimation_indicators  estimate indicator (offense) names and IDs
+#   nibrs_estimation_years       years nibrs-estimation/ serves
 #
 # The previous NIBRS vocabularies did not match the API: offenses were long
 # names ("robbery", "burglary-breaking-and-entering") for which the endpoint
@@ -109,9 +112,20 @@ ucr_arrest_offense_codes <- ucr_arrest_offense_codes[
 rownames(ucr_arrest_offense_codes) <- NULL
 stopifnot(!anyDuplicated(ucr_arrest_offense_codes$code))
 
+# ---- NIBRS estimation vocabularies -----------------------------------------
+# nibrs-estimation/lookup/all: numeric state and indicator IDs (not FIPS) and
+# the years the estimates cover. Parsed by the package's own parser so the
+# bundled data and the offline test read the response the same way.
+est <- .parse_estimation_lookup(cde_request("nibrs-estimation/lookup/all"))
+nibrs_estimation_states <- est$states
+nibrs_estimation_indicators <- est$indicators
+nibrs_estimation_years <- est$years
+
 for (obj in c("nibrs_offenses", "nibrs_victim_variables",
               "nibrs_offender_variables", "nibrs_offense_variables",
-              "ucr_arrest_offenses", "ucr_arrest_offense_codes")) {
+              "ucr_arrest_offenses", "ucr_arrest_offense_codes",
+              "nibrs_estimation_states", "nibrs_estimation_indicators",
+              "nibrs_estimation_years")) {
   save(list = obj, file = file.path("data", paste0(obj, ".rda")),
        compress = "bzip2", version = 2)
 }

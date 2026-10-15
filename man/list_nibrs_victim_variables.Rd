@@ -17,9 +17,11 @@ list_nibrs_victim_variables()
 }
 \seealso{
 Other NIBRS functions:
+\code{\link[=get_nibrs_estimate]{get_nibrs_estimate()}},
 \code{\link[=get_nibrs_offender]{get_nibrs_offender()}},
 \code{\link[=get_nibrs_offense]{get_nibrs_offense()}},
 \code{\link[=get_nibrs_victim]{get_nibrs_victim()}},
+\code{\link[=imputation_gap]{imputation_gap()}},
 \code{\link[=list_nibrs_offender_variables]{list_nibrs_offender_variables()}},
 \code{\link[=list_nibrs_offense_variables]{list_nibrs_offense_variables()}},
 \code{\link[=list_nibrs_offenses]{list_nibrs_offenses()}},

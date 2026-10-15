@@ -8,6 +8,8 @@
 #' Impute reporting gaps in county crime detail data
 #'
 #' Fills temporal holes within agencies that report some periods but miss others.
+#' The values it imputes are this package's, from each agency's own
+#' neighboring months, not the FBI's estimate (see [get_nibrs_estimate()]).
 #' Operates on \code{rate} so a drifting denominator is respected: the rate is
 #' linearly interpolated across time (in months), then scaled by the gap
 #' month's own population to derive the imputed count. That is its
@@ -42,6 +44,8 @@
 #'     \item \code{impute_method}: character, the method name (e.g. `"interpolate"`)
 #'       on imputed rows; \code{NA} elsewhere.
 #'   }
+#' @seealso `vignette("estimates")` for reported, estimated and imputed
+#'   crime.
 #' @importFrom stats approx
 #' @export
 #' @examples

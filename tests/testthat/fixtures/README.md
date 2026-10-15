@@ -12,9 +12,9 @@ returns the parsed JSON body. Tests stub that one function to return a saved
 fixture instead, using the helper in `../helper-fbiCDE.R`:
 
 ```r
-test_that("get_estimated_crime parses a national summary", {
+test_that("get_reported_crime parses a national summary", {
   local_fbi_fixture("summarized-national-V.json")   # stubs cde_request()
-  out <- get_estimated_crime()
+  out <- get_reported_crime()
   expect_s3_class(out, "data.frame")
   expect_true(all(c("offense", "period", "count") %in% names(out)))
 })

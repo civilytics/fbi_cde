@@ -59,6 +59,19 @@ get_agency_crime("CA0010900")
 get_arrest_demographics(state_abb = "CA")
 ```
 
+## Reported, estimated and imputed
+
+- **Reported**: the sum of what agencies submitted to the FBI, in either
+  format (NIBRS, or the older summary format). `get_reported_crime()`.
+- **Estimated**: the FBI’s published figure, which adds a model’s
+  prediction for everything outside NIBRS, with a 95% confidence
+  interval. `get_nibrs_estimate()`, for 2021 and 2022.
+- **Imputed**: a value filled in for a missing report, by the FBI’s
+  model or by `impute_reporting_gaps()`.
+
+`imputation_gap()` shows how much of the FBI’s published figure its
+model supplied. See `vignette("estimates")`.
+
 ## Table of Contents
 
 - [Lookups](#lookups)
@@ -99,21 +112,26 @@ Functions for querying UCR Offenses Known and Clearances data.
 | Function | Description |
 |----|----|
 | `get_agency_crime()` | Get agency-level crime data |
-| `get_estimated_crime()` | Get state- or national-level estimated crime counts |
-| `get_estimated_arson()` | Get estimated arson data |
+| `get_reported_crime()` | Get state- or national-level reported crime counts |
+| `get_reported_arson()` | Get state- or national-level reported arson counts |
+| `get_nibrs_estimate()` | Get the FBI’s published NIBRS estimates, 2021-2022 |
+| `imputation_gap()` | How much of the FBI’s published figure was estimated |
 
 ``` r
 # Agency-level crime data (violent crime)
 get_agency_crime("CA0010900")
 
-# State-level estimated crime
-get_estimated_crime("CA")
+# State-level reported crime
+get_reported_crime("CA")
 
-# National-level estimated crime
-get_estimated_crime()
+# National-level reported crime
+get_reported_crime()
 
-# Estimated arson data for a state
-get_estimated_arson("CA")
+# Reported arson for a state
+get_reported_arson("CA")
+
+# How much of California's published violent crime was modeled
+imputation_gap("CA", year = 2021:2022)
 ```
 
 ### Arrest

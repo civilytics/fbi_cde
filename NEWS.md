@@ -1,5 +1,31 @@
 # fbiCDE 0.1.0.9000 (development version)
 
+## Renamed: `get_reported_crime()` and `get_reported_arson()`
+
+`get_estimated_crime()` and `get_estimated_arson()` are now
+`get_reported_crime()` and `get_reported_arson()`. They always returned the
+crime agencies reported to the FBI, never the FBI's estimates, and the new
+names say so. The old names still work and warn.
+
+## The FBI's published estimates
+
+- `get_nibrs_estimate()` returns the FBI's NIBRS estimates for a state or
+  the nation, with 95% confidence intervals, by offense table (offenses,
+  victims, incidents, arrests). The API has them for 2021 and 2022 only.
+  The new bundled tables `nibrs_estimation_states`,
+  `nibrs_estimation_indicators` and `nibrs_estimation_years` hold the
+  estimates' own state and offense IDs.
+- `imputation_gap()` shows how much of the FBI's published state or
+  national figure its model supplied. It splits reported crime by format,
+  because the FBI's estimate is built from NIBRS reports only: it models
+  agencies that reported only in the older summary format, as much of
+  California did in 2022, as well as agencies that did not report. For
+  California, the model supplied 83% of the 2021 violent-crime estimate and
+  65% of 2022's.
+- `vignette("estimates")` defines *reported*, *estimated* and *imputed*,
+  which the package's documentation now uses consistently, and shows the
+  California and national comparisons.
+
 ## Fixes from a second package review
 
 Found by reviewing the code end to end and checking each finding against the

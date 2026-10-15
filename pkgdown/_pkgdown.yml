@@ -26,11 +26,18 @@ reference:
     desc: Functions for querying UCR Offenses Known and Clearances data
     contents:
       - get_agency_crime
-      - get_estimated_crime
-      - get_estimated_arson
+      - get_reported_crime
+      - get_reported_arson
       - get_state_participation
       - get_region_participation
       - get_agency_participation
+  - title: Published estimates
+    desc: >
+      The FBI's NIBRS estimates, and how much of them was modeled rather
+      than reported
+    contents:
+      - get_nibrs_estimate
+      - imputation_gap
   - title: Counties
     desc: >
       County membership, itemized crime per agency, and the county aggregate
@@ -107,6 +114,9 @@ reference:
       - ucr_arrest_offenses
       - ucr_arrest_offense_codes
       - regions
+      - nibrs_estimation_states
+      - nibrs_estimation_indicators
+      - nibrs_estimation_years
   - title: API Key Management
     desc: Functions for managing API keys (legacy)
     contents:
