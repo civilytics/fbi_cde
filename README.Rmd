@@ -103,21 +103,21 @@ Functions for querying UCR Offenses Known and Clearances data.
 | Function | Description |
 |---|---|
 | `get_agency_crime()` | Get agency-level crime data |
-| `get_estimated_crime()` | Get state- or national-level estimated crime counts |
-| `get_estimated_arson()` | Get estimated arson data |
+| `get_reported_crime()` | Get state- or national-level reported crime counts |
+| `get_reported_arson()` | Get state- or national-level reported arson counts |
 
 ```{r, eval=FALSE}
 # Agency-level crime data (violent crime)
 get_agency_crime("CA0010900")
 
-# State-level estimated crime
-get_estimated_crime("CA")
+# State-level reported crime
+get_reported_crime("CA")
 
-# National-level estimated crime
-get_estimated_crime()
+# National-level reported crime
+get_reported_crime()
 
-# Estimated arson data for a state
-get_estimated_arson("CA")
+# Reported arson for a state
+get_reported_arson("CA")
 ```
 
 ### Arrest

@@ -26,8 +26,8 @@ reference:
     desc: Functions for querying UCR Offenses Known and Clearances data
     contents:
       - get_agency_crime
-      - get_estimated_crime
-      - get_estimated_arson
+      - get_reported_crime
+      - get_reported_arson
       - get_state_participation
       - get_region_participation
       - get_agency_participation

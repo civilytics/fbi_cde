@@ -47,9 +47,9 @@ test_that("get_agency_crime(comparison = TRUE) labels state and national series"
   )
 })
 
-test_that("get_estimated_crime parses national-level response", {
+test_that("get_reported_crime parses national-level response", {
   local_fbi_fixture("summarized-national-V.json")
-  result <- get_estimated_crime(from = "01-2019", to = "03-2019")
+  result <- get_reported_crime(from = "01-2019", to = "03-2019")
 
   expect_s3_class(result, "data.frame")
   expect_equal(unique(result$geography), "US")
@@ -59,9 +59,9 @@ test_that("get_estimated_crime parses national-level response", {
   expect_true(all(!is.na(result$count)))
 })
 
-test_that("get_estimated_crime parses state-level response", {
+test_that("get_reported_crime parses state-level response", {
   local_fbi_fixture("summarized-state-CA-V.json")
-  result <- get_estimated_crime("CA", from = "01-2019", to = "03-2019")
+  result <- get_reported_crime("CA", from = "01-2019", to = "03-2019")
 
   expect_s3_class(result, "data.frame")
   expect_equal(unique(result$geography), "CA")
@@ -70,16 +70,16 @@ test_that("get_estimated_crime parses state-level response", {
                c(13582, 12113, 14201))
 
   # The national comparison series comes back only on request.
-  with_us <- get_estimated_crime("CA", from = "01-2019", to = "03-2019",
+  with_us <- get_reported_crime("CA", from = "01-2019", to = "03-2019",
                                  comparison = TRUE)
   expect_equal(nrow(with_us), 12)
   expect_equal(unique(with_us$series), c("state", "national"))
   expect_true(all(is.na(with_us$count[with_us$series == "national"])))
 })
 
-test_that("get_estimated_arson parses arson response", {
+test_that("get_reported_arson parses arson response", {
   local_fbi_fixture("summarized-national-ARS.json")
-  result <- get_estimated_arson(from = "01-2019", to = "03-2019")
+  result <- get_reported_arson(from = "01-2019", to = "03-2019")
 
   expect_s3_class(result, "data.frame")
   expect_equal(unique(result$geography), "US")
@@ -87,17 +87,17 @@ test_that("get_estimated_arson parses arson response", {
   expect_true(all(!is.na(result$count)))
 })
 
-test_that("get_estimated_crime validates state abbreviation", {
-  expect_error(get_estimated_crime(state_abb = "XX"), "Invalid state abbreviation")
+test_that("get_reported_crime validates state abbreviation", {
+  expect_error(get_reported_crime(state_abb = "XX"), "Invalid state abbreviation")
 })
 
 test_that("get_agency_crime validates ORI", {
   expect_error(get_agency_crime("bad-ori"), "Invalid ORI code")
 })
 
-test_that("get_estimated_crime rejects inverted date ranges", {
+test_that("get_reported_crime rejects inverted date ranges", {
   expect_error(
-    get_estimated_crime(from = "12-2020", to = "01-2015"),
+    get_reported_crime(from = "12-2020", to = "01-2015"),
     "Invalid date range"
   )
 })
@@ -114,9 +114,9 @@ test_that("get_agency_crime returns expected shape from live API", {
   expect_true("offense" %in% names(result))
 })
 
-test_that("get_estimated_crime returns expected shape from live API", {
+test_that("get_reported_crime returns expected shape from live API", {
   skip_if_no_fbi_api()
-  result <- get_estimated_crime()
+  result <- get_reported_crime()
 
   expect_s3_class(result, "data.frame")
   expect_true(nrow(result) > 0)
@@ -130,9 +130,9 @@ test_that("a lower-case ORI returns the agency's data live", {
   expect_equal(lower, upper)
 })
 
-test_that("get_estimated_crime returns a state's own series live", {
+test_that("get_reported_crime returns a state's own series live", {
   skip_if_no_fbi_api()
-  result <- get_estimated_crime("OH", from = "01-2022", to = "03-2022")
+  result <- get_reported_crime("OH", from = "01-2022", to = "03-2022")
   expect_equal(nrow(result), 6L)   # offenses and clearances, 3 months each
   expect_equal(unique(result$geography), "OH")
   expect_true(all(result$participated_population <= result$population))
@@ -141,13 +141,13 @@ test_that("get_estimated_crime returns a state's own series live", {
 test_that("a CDE error explains itself live", {
   skip_if_no_fbi_api()
   # A four-digit year passes the package's date check but not the CDE's.
-  expect_error(get_estimated_crime(from = "2015", to = "2020"),
+  expect_error(get_reported_crime(from = "2015", to = "2020"),
                "expected format MM-YYYY")
 })
 
-test_that("get_estimated_arson returns expected shape from live API", {
+test_that("get_reported_arson returns expected shape from live API", {
   skip_if_no_fbi_api()
-  result <- get_estimated_arson()
+  result <- get_reported_arson()
 
   expect_s3_class(result, "data.frame")
   expect_true(nrow(result) > 0)
@@ -210,4 +210,19 @@ test_that("a series missing from the populations map gets NA, not an error", {
                        populations = list(population = list()))
   expect_true(is.na(out$population))
   expect_true(is.na(out$participated_population))
+})
+
+test_that("get_estimated_crime() still works, with a deprecation warning", {
+  local_fbi_fixture("summarized-state-CA-V.json")
+  expect_warning(
+    old <- get_estimated_crime("CA", from = "01-2019", to = "03-2019"),
+    "get_reported_crime"
+  )
+  expect_equal(old, get_reported_crime("CA", from = "01-2019", to = "03-2019"))
+})
+
+test_that("get_estimated_arson() still works, with a deprecation warning", {
+  local_fbi_fixture("summarized-national-ARS.json")
+  expect_warning(old <- get_estimated_arson(), "get_reported_arson")
+  expect_equal(old, get_reported_arson())
 })

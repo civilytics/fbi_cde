@@ -67,10 +67,9 @@ The agencies used below:
 ## Summarized crime
 
 `get_agency_crime()` returns an agency's monthly offenses and clearances;
-`get_estimated_crime()` does the same for a state, or the nation when
-`state_abb` is `NULL`; `get_estimated_arson()` is `get_estimated_crime()` for
-arson. ("Estimated" is a legacy name: these are reported figures, not
-estimates.)
+`get_reported_crime()` does the same for a state, or the nation when
+`state_abb` is `NULL`; `get_reported_arson()` is `get_reported_crime()` for
+arson.
 
 The `offense` argument takes a code. The default `"V"` is violent crime and
 `"P"` property crime; `get_offense_codes()` lists the rest:
@@ -101,7 +100,7 @@ with_context[, c("series", "series_name", "measure", "count", "rate")]
 ```
 
 ```{r summarized-state}
-texas_crime <- get_estimated_crime("TX", from = "01-2019", to = "03-2019")
+texas_crime <- get_reported_crime("TX", from = "01-2019", to = "03-2019")
 texas_crime
 ```
 
@@ -110,7 +109,7 @@ reporting coverage: the count is the sum of the agencies that reported, not an
 estimate for everyone.
 
 ```{r summarized-national}
-national_arson <- get_estimated_arson(from = "01-2019", to = "03-2019")
+national_arson <- get_reported_arson(from = "01-2019", to = "03-2019")
 national_arson[, c("geography", "measure", "period", "count", "rate")]
 ```
 

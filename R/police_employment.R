@@ -4,7 +4,7 @@
 #' an agency, a state, or the nation, from the CDE's police employment (`pe`)
 #' endpoint.
 #'
-#' @inheritParams get_estimated_arson
+#' @inheritParams get_reported_arson
 #' @inheritParams get_agency_crime
 #' @param region Not supported: the CDE publishes no region-level police
 #'   employment, and passing a region is an error. Sum the states instead.

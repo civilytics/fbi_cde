@@ -1,5 +1,12 @@
 # fbiCDE 0.1.0.9000 (development version)
 
+## Renamed: `get_reported_crime()` and `get_reported_arson()`
+
+`get_estimated_crime()` and `get_estimated_arson()` are now
+`get_reported_crime()` and `get_reported_arson()`. They always returned the
+crime agencies reported to the FBI, never the FBI's estimates, and the new
+names say so. The old names still work and warn.
+
 ## Fixes from a second package review
 
 Found by reviewing the code end to end and checking each finding against the

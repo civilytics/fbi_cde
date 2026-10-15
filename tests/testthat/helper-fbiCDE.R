@@ -50,9 +50,9 @@ read_fixture <- function(name) {
 # which returns already-parsed JSON. Mocking that one function makes every
 # data function testable offline.
 #
-#   test_that("get_estimated_crime parses national summary", {
+#   test_that("get_reported_crime parses national summary", {
 #     local_fbi_fixture("summarized-national-V.json")
-#     out <- get_estimated_crime()
+#     out <- get_reported_crime()
 #     expect_s3_class(out, "data.frame")
 #   })
 local_fbi_fixture <- function(fixture, env = parent.frame()) {
