@@ -149,7 +149,7 @@ spec → plan → implementation cycle:
   name-and-county crosswalk, no `sf`. Spec:
   `specs/2026-10-06-place-fips-design.md`.
 - **Capstone (#42)** — imputation gap: FBI published aggregate vs. sum of
-  reported components. **Proposed, awaiting review:**
+  reported components. **Design decided 2026-10-15, not yet planned:**
   `specs/2026-10-09-capstone-imputation-gap-design.md`. The only published
   estimates in the API are `nibrs-estimation/` (state, region, national;
   2021-2022 only; numeric state and offense IDs, with confidence bounds).
@@ -217,3 +217,8 @@ spec → plan → implementation cycle:
   names, `"all"` — with an all-null payload, which once looked like an outage.
   Vocabularies come from `data-raw/api_vocabularies.R`; rebuild rather than
   hand-edit them. A geography with no NIBRS data also returns all-nulls.
+  With `?type=counts` the same endpoint instead returns monthly `actuals`
+  shaped like `summarized`, counting NIBRS submissions only; that form
+  takes NIBRS codes (`13A`, `120`, ...) and answers summary codes (`V`)
+  with zeros. `summarized` counts both formats; the difference is the
+  agencies still reporting in the old summary format.
