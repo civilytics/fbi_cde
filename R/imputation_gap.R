@@ -81,8 +81,8 @@
 #' Compares the FBI's *estimate* for a state or the nation with the crime
 #' agencies *reported* to the FBI, and says how much of the estimate the
 #' FBI's model supplied. The FBI builds its estimate from NIBRS reports only
-#' and models everything else: agencies that did not report and, in 2022,
-#' agencies that reported only in the older summary format. So the gap is
+#' and models everything else: agencies that did not report, and agencies
+#' that reported only in the older summary format. So the gap is
 #' measured against `reported_nibrs`, and `reported_other` shows the
 #' summary-format reports the model predicted rather than used.
 #'
@@ -90,14 +90,17 @@
 #' [nibrs_estimation_years]), and for states and the nation only. A year it
 #' does not cover fails with the API's message listing the years it has.
 #'
-#' The NIBRS and summary-format counts differ slightly even where every
-#' agency reported in NIBRS, because the two count offenses differently
-#' (the summary format counts only the most serious offense in an incident).
-#' Measured nationally for 2021, that difference is about 1% for violent
-#' crime and larger for some offenses (about 5% for burglary, 7% for
-#' homicide); `vignette("estimates")` gives the full table. A `gap` or
-#' `reported_other` smaller than that difference, including a negative one,
-#' means nothing was modeled.
+#' `reported` and `reported_nibrs` differ a little even where every report
+#' arrived in NIBRS, because the two formats count offenses differently
+#' (for example, the summary format counts only the most serious offense in
+#' an incident). In Texas in 2022, where every report did, `reported_other`
+#' is about -1% of `reported_nibrs` for violent crime and within about 2%
+#' for every supported offense but burglary (about 6%); `vignette("estimates")`
+#' gives the table. A `reported_other` of that size, negative included,
+#' means nearly every report arrived in NIBRS. `gap` compares two NIBRS
+#' figures, so the counting difference does not enter it, but it is not
+#' exactly zero where little was modeled: for Texas's 2022 violent crime it
+#' is -0.7% of the estimate.
 #'
 #' Each row takes one estimate request, one `summarized` request and one
 #' `nibrs` request per NIBRS offense code that makes up `offense` (six for

@@ -34,7 +34,7 @@ A data.frame with the columns described in \code{\link[=get_agency_crime]{get_ag
 Returns crime \emph{reported} to the FBI: the sum of what the agencies that
 reported each month sent, in either format (NIBRS, or the older summary
 format). It is not the FBI's \emph{estimate}, which adds a model's prediction
-for the agencies that did not report. Compare \code{participated_population}
+for everything outside NIBRS. Compare \code{participated_population}
 with \code{population} to see how much of the state or nation a month covers.
 The FBI's state and national summary-format estimates are published as a
 bulk download only, which the package does not read; the

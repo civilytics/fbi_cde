@@ -40,8 +40,8 @@ share of the published figure the model supplied, with bounds}
 Compares the FBI's \emph{estimate} for a state or the nation with the crime
 agencies \emph{reported} to the FBI, and says how much of the estimate the
 FBI's model supplied. The FBI builds its estimate from NIBRS reports only
-and models everything else: agencies that did not report and, in 2022,
-agencies that reported only in the older summary format. So the gap is
+and models everything else: agencies that did not report, and agencies
+that reported only in the older summary format. So the gap is
 measured against \code{reported_nibrs}, and \code{reported_other} shows the
 summary-format reports the model predicted rather than used.
 }
@@ -50,14 +50,17 @@ The API publishes estimates for 2021 and 2022 only (see
 \link{nibrs_estimation_years}), and for states and the nation only. A year it
 does not cover fails with the API's message listing the years it has.
 
-The NIBRS and summary-format counts differ slightly even where every
-agency reported in NIBRS, because the two count offenses differently
-(the summary format counts only the most serious offense in an incident).
-Measured nationally for 2021, that difference is about 1\% for violent
-crime and larger for some offenses (about 5\% for burglary, 7\% for
-homicide); \code{vignette("estimates")} gives the full table. A \code{gap} or
-\code{reported_other} smaller than that difference, including a negative one,
-means nothing was modeled.
+\code{reported} and \code{reported_nibrs} differ a little even where every report
+arrived in NIBRS, because the two formats count offenses differently
+(for example, the summary format counts only the most serious offense in
+an incident). In Texas in 2022, where every report did, \code{reported_other}
+is about -1\% of \code{reported_nibrs} for violent crime and within about 2\%
+for every supported offense but burglary (about 6\%); \code{vignette("estimates")}
+gives the table. A \code{reported_other} of that size, negative included,
+means nearly every report arrived in NIBRS. \code{gap} compares two NIBRS
+figures, so the counting difference does not enter it, but it is not
+exactly zero where little was modeled: for Texas's 2022 violent crime it
+is -0.7\% of the estimate.
 
 Each row takes one estimate request, one \code{summarized} request and one
 \code{nibrs} request per NIBRS offense code that makes up \code{offense} (six for

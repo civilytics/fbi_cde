@@ -17,10 +17,11 @@ names say so. The old names still work and warn.
   estimates' own state and offense IDs.
 - `imputation_gap()` shows how much of the FBI's published state or
   national figure its model supplied. It splits reported crime by format,
-  because the FBI's estimate is built from NIBRS reports only: in 2022 it
-  models agencies that reported in the older summary format as well as
-  agencies that did not report. For California, the model supplied 83% of
-  the 2021 violent-crime estimate and 65% of 2022's.
+  because the FBI's estimate is built from NIBRS reports only: it models
+  agencies that reported only in the older summary format, as much of
+  California did in 2022, as well as agencies that did not report. For
+  California, the model supplied 83% of the 2021 violent-crime estimate and
+  65% of 2022's.
 
 ## Fixes from a second package review
 

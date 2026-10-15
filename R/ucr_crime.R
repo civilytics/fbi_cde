@@ -63,7 +63,7 @@ get_agency_crime <- function(ori,
 #' Returns crime *reported* to the FBI: the sum of what the agencies that
 #' reported each month sent, in either format (NIBRS, or the older summary
 #' format). It is not the FBI's *estimate*, which adds a model's prediction
-#' for the agencies that did not report. Compare `participated_population`
+#' for everything outside NIBRS. Compare `participated_population`
 #' with `population` to see how much of the state or nation a month covers.
 #' The FBI's state and national summary-format estimates are published as a
 #' bulk download only, which the package does not read; the
