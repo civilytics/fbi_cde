@@ -1,5 +1,8 @@
 # fbiCDE 0.2.0.9000 (development version)
 
+- DESCRIPTION links to an archived copy of Jacob Kaplan's original `fbi`
+  package; its GitHub repository no longer exists.
+
 # fbiCDE 0.2.0
 
 ## Renamed: `get_reported_crime()` and `get_reported_arson()`

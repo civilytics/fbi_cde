@@ -12,7 +12,8 @@ Description: An R wrapper for the FBI Crime Data Explorer (CDE) API
     summarized crime data, arrest statistics, NIBRS incident-level data,
     Supplemental Homicide Reports (SHR), and police employment statistics.
     No API key is required for the current CDE host. Based on the original
-    fbi package by Jacob Kaplan (https://github.com/jacobkap/fbi).
+    fbi package by Jacob Kaplan, archived at
+    <https://web.archive.org/web/20210103232307/https://github.com/jacobkap/fbi/>.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
